@@ -10,13 +10,23 @@ export type ProviderStatus = {
   configured: boolean;
 };
 
+const CHOOSE =
+  "Set IMAGE_PROVIDER=gemini or IMAGE_PROVIDER=firefly — both are configured and " +
+  "guessing which one should spend money is not a decision this code should make.";
+
 /**
- * Picks the generator from whatever credentials are actually present.
+ * Picks the generator, explicitly.
  *
- * Firefly wins when configured because this is an Adobe-native pipeline;
- * Gemini is the path that any evaluator can run with a free self-serve key.
- * There is no silent fallback -- whichever one runs is named in the UI, in
- * report.json, and in every provenance record.
+ * An earlier version let Firefly win simply because two environment variables
+ * happened to be present. That is the wrong default for an adapter this repo
+ * has never executed against a live endpoint: the run that matters would have
+ * silently changed provider. So selection is stated, not inferred —
+ * `IMAGE_PROVIDER` decides, and the only inference left is the unambiguous
+ * case where exactly one real provider is configured.
+ *
+ * There is no runtime fallback. If the selected provider cannot be built the
+ * run fails, because quietly producing something from a different source is
+ * the failure mode this whole codebase is written against.
  */
 export function selectGenerator(
   env: NodeJS.ProcessEnv = process.env,
@@ -24,18 +34,42 @@ export function selectGenerator(
   model?: string,
 ): HeroGenerator {
   const { FIREFLY_SERVICES_CLIENT_ID, FIREFLY_SERVICES_CLIENT_SECRET, GEMINI_API_KEY } = env;
+  const firefly = Boolean(FIREFLY_SERVICES_CLIENT_ID && FIREFLY_SERVICES_CLIENT_SECRET);
+  const gemini = Boolean(GEMINI_API_KEY);
+  const chosen = env.IMAGE_PROVIDER?.trim().toLowerCase();
 
-  if (FIREFLY_SERVICES_CLIENT_ID && FIREFLY_SERVICES_CLIENT_SECRET) {
-    return new FireflyHeroGenerator(FIREFLY_SERVICES_CLIENT_ID, FIREFLY_SERVICES_CLIENT_SECRET);
+  if (chosen === "firefly") {
+    if (!firefly) {
+      throw new Error(
+        "IMAGE_PROVIDER=firefly but FIREFLY_SERVICES_CLIENT_ID / _SECRET are not set.",
+      );
+    }
+    return new FireflyHeroGenerator(
+      FIREFLY_SERVICES_CLIENT_ID as string,
+      FIREFLY_SERVICES_CLIENT_SECRET as string,
+    );
   }
 
-  if (GEMINI_API_KEY) {
-    return new GeminiHeroGenerator(GEMINI_API_KEY, model || env.GEMINI_IMAGE_MODEL);
+  if (chosen === "gemini") {
+    if (!gemini) throw new Error("IMAGE_PROVIDER=gemini but GEMINI_API_KEY is not set.");
+    return new GeminiHeroGenerator(GEMINI_API_KEY as string, model || env.GEMINI_IMAGE_MODEL);
   }
 
-  // No credentials: render offline rather than fail. The repo stays runnable
-  // on a fresh clone, and the placeholder is labelled as such everywhere it
-  // appears -- it is never counted as a generation.
+  if (chosen) throw new Error(`Unknown IMAGE_PROVIDER "${chosen}". Use gemini or firefly.`);
+
+  if (firefly && gemini) throw new Error(CHOOSE);
+  if (firefly) {
+    return new FireflyHeroGenerator(
+      FIREFLY_SERVICES_CLIENT_ID as string,
+      FIREFLY_SERVICES_CLIENT_SECRET as string,
+    );
+  }
+  if (gemini)
+    return new GeminiHeroGenerator(GEMINI_API_KEY as string, model || env.GEMINI_IMAGE_MODEL);
+
+  // No credentials at all: render offline rather than fail, so the repo runs on
+  // a fresh clone. The result is labelled a placeholder everywhere it appears,
+  // is never counted as a generation, and cannot satisfy `final` mode.
   return new PlaceholderHeroGenerator();
 }
 
@@ -51,7 +85,7 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
           ? `Adobe Firefly — ${g.model}`
           : g.provider === "google-gemini"
             ? `Google Gemini — ${g.model}`
-            : "Offline placeholder — no model will be called",
+            : "Offline preview — no model will be called",
       configured: g.provider !== "offline-placeholder",
     };
   } catch (error) {
