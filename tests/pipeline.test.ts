@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
@@ -7,7 +8,7 @@ import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
 import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
-import { parseBrief, runCampaign } from "../src/pipeline.js";
+import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
 import { sanitizeId } from "../src/report.js";
 import { RATIOS } from "../src/schema.js";
 import { findProhibited, preflight } from "../src/validation.js";
@@ -282,6 +283,55 @@ markets:
     const result = await preflight(parseBrief(badFrench));
     expect(result.status).toBe("fail");
     expect(result.checks.find((c) => c.id === "legal.prohibitedWords")?.status).toBe("fail");
+  });
+});
+
+describe("the sample brief library", () => {
+  /**
+   * Each sample advertises what it will do. If a brief drifts from its own
+   * description the library becomes a sales pitch, so the claims are asserted
+   * against real runs.
+   */
+  const manifest = JSON.parse(
+    readFileSync(path.resolve("samples/briefs.json"), "utf8"),
+  ) as { file: string; label: string; expect: string }[];
+
+  it("lists every brief that exists, and every listed brief exists", async () => {
+    const listed = manifest.map((m) => m.file).sort();
+    const onDisk = (await readdir(path.resolve("samples")))
+      .filter((f) => (f.endsWith(".yaml") || f.endsWith(".json")) && f !== "briefs.json")
+      .sort();
+    expect(listed).toEqual(onDisk);
+  });
+
+  it.each(manifest.filter((m) => !m.expect.includes("blocked")))(
+    "$label produces exactly what it advertises",
+    async ({ file, expect: claim }) => {
+      const [, variants] = claim.match(/(\d+) creatives/) ?? [];
+      const [, generations] = claim.match(/(\d+) generation/) ?? [];
+
+      const report = await runCampaign(await loadBriefFile(`samples/${file}`), {
+        outputRoot: outputs,
+        mode: "final",
+        generator: new FakeApiGenerator(),
+      });
+
+      expect(report.metrics.variantsCreated).toBe(Number(variants));
+      expect(report.metrics.generationRequests).toBe(Number(generations));
+      expect(report.metrics.validationFailed).toBe(0);
+    },
+  );
+
+  it("blocks the non-compliant brief before any spend", async () => {
+    const counting = new FakeApiGenerator();
+    await expect(
+      runCampaign(await loadBriefFile("samples/campaign-legal-fail.yaml"), {
+        outputRoot: outputs,
+        mode: "final",
+        generator: counting,
+      }),
+    ).rejects.toThrow(/preflight failed/i);
+    expect(counting.calls).toBe(0);
   });
 });
 

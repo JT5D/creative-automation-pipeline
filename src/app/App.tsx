@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CampaignReport, PipelineEvent, ProviderStatus, RunState } from "./types.js";
+import type {
+  BriefSummary,
+  CampaignReport,
+  PipelineEvent,
+  ProviderStatus,
+  RunState,
+} from "./types.js";
 
 const POLL_MS = 750;
 
@@ -23,16 +29,27 @@ const EVENT_LABELS: Record<string, string> = {
 export function App() {
   const [brief, setBrief] = useState("");
   const [locale, setLocale] = useState<string>("all");
+  const [library, setLibrary] = useState<BriefSummary[]>([]);
+  const [active, setActive] = useState<string>("campaign.yaml");
   const [provider, setProvider] = useState<ProviderStatus | null>(null);
   const [run, setRun] = useState<RunState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    fetch("/api/sample-brief").then((r) => r.text()).then(setBrief).catch(() => {});
+    fetch("/api/briefs").then((r) => r.json()).then(setLibrary).catch(() => {});
     fetch("/api/provider").then((r) => r.json()).then(setProvider).catch(() => {});
     return () => { if (timer.current) clearInterval(timer.current); };
   }, []);
+
+  const loadBrief = useCallback((file: string) => {
+    setActive(file);
+    setRun(null);
+    setError(null);
+    fetch(`/api/briefs/${file}`).then((r) => r.text()).then(setBrief).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadBrief("campaign.yaml"); }, [loadBrief]);
 
   const poll = useCallback((runId: string) => {
     if (timer.current) clearInterval(timer.current);
@@ -80,6 +97,27 @@ export function App() {
         <section className="panel">
           <h2>1 · Campaign brief</h2>
           <p className="hint">YAML or JSON. Edit freely — it is parsed and validated on run.</p>
+
+          {library.length > 0 && (
+            <>
+              <div className="briefs">
+                {library.map((b) => (
+                  <button
+                    key={b.file}
+                    className={active === b.file ? "on" : ""}
+                    onClick={() => loadBrief(b.file)}
+                    title={b.teaches}
+                  >
+                    {b.label}
+                    <em>{b.expect}</em>
+                  </button>
+                ))}
+              </div>
+              <p className="teaches">
+                {library.find((b) => b.file === active)?.teaches}
+              </p>
+            </>
+          )}
           <textarea
             className="brief"
             value={brief}

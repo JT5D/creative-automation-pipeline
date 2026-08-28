@@ -9,7 +9,7 @@ import type { CampaignReport } from "./report.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
 const OUTPUT_ROOT = path.resolve("outputs");
-const SAMPLE_BRIEF = path.resolve("samples/campaign.yaml");
+const SAMPLES_DIR = path.resolve("samples");
 
 type RunState = {
   runId: string;
@@ -34,11 +34,28 @@ app.get("/api/provider", (_req, res) => {
   res.json(providerStatus());
 });
 
-app.get("/api/sample-brief", async (_req, res) => {
+/** The sample library, so a reviewer can see more than the flattering case. */
+app.get("/api/briefs", async (_req, res) => {
   try {
-    res.type("text/plain").send(await readFile(SAMPLE_BRIEF, "utf8"));
+    const manifest = JSON.parse(await readFile(path.join(SAMPLES_DIR, "briefs.json"), "utf8"));
+    res.json(manifest);
   } catch {
-    res.status(404).json({ error: "samples/campaign.yaml not found" });
+    res.json([]);
+  }
+});
+
+app.get("/api/briefs/:file", async (req, res) => {
+  // The filename is user input and becomes a path, so keep it inside samples/.
+  const name = path.basename(req.params.file);
+  const target = path.join(SAMPLES_DIR, name);
+  if (!target.startsWith(SAMPLES_DIR + path.sep)) {
+    res.status(400).json({ error: "Invalid brief name" });
+    return;
+  }
+  try {
+    res.type("text/plain").send(await readFile(target, "utf8"));
+  } catch {
+    res.status(404).json({ error: `samples/${name} not found` });
   }
 });
 

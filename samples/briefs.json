@@ -1,0 +1,32 @@
+[
+  {
+    "file": "campaign.yaml",
+    "label": "Autumn Glow — DACH",
+    "teaches": "The canonical run. One hero reused, one generated, three markets: 24 creatives from 1 model call.",
+    "expect": "24 creatives · 1 generation"
+  },
+  {
+    "file": "campaign-minimal.yaml",
+    "label": "Restock — UK",
+    "teaches": "The smallest valid brief, and the cheapest run. Both heroes already approved, so nothing is generated.",
+    "expect": "8 creatives · 0 generations"
+  },
+  {
+    "file": "campaign-cold-start.yaml",
+    "label": "Nordvik — cold start",
+    "teaches": "A different brand launching from nothing. No approved assets at all, so both heroes are generated from text.",
+    "expect": "8 creatives · 2 generations"
+  },
+  {
+    "file": "campaign-legal-fail.yaml",
+    "label": "Rejected copy",
+    "teaches": "A brief carrying prohibited claims. Preflight stops it before a single credit is spent.",
+    "expect": "blocked at preflight"
+  },
+  {
+    "file": "campaign.json",
+    "label": "Autumn Glow — JSON",
+    "teaches": "The same brief in JSON. Both formats normalize to one validated object.",
+    "expect": "24 creatives · 1 generation"
+  }
+]

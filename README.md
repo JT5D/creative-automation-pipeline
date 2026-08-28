@@ -165,6 +165,25 @@ CAMPAIGN COMPLETE  Lumen Botanicals — Autumn Glow (DACH)
 
 ---
 
+## The sample library
+
+Five briefs ship with the repo, and the console loads any of them in a click.
+They exist to show the range rather than only the flattering case — including
+the expensive one and the one that gets rejected.
+
+| Brief | What it shows | Result |
+|---|---|---|
+| **Autumn Glow — DACH** | The canonical run: one hero reused, one generated, three markets | 24 creatives · **1** generation |
+| **Restock — UK** | The smallest valid brief. Both heroes already approved | 8 creatives · **0** generations |
+| **Nordvik — cold start** | A different brand launching from nothing, no approved assets at all | 8 creatives · **2** generations |
+| **Rejected copy** | Prohibited claims in the brief | blocked at preflight, **£0 spent** |
+| **Autumn Glow — JSON** | The same brief in JSON | 24 creatives · **1** generation |
+
+Read down the right-hand column and the economics are the whole argument: cost
+tracks *how much a brand has already approved*, not how many creatives it
+wants. A test asserts each brief produces exactly what it advertises, so the
+library cannot drift into a sales pitch.
+
 ## Key design decisions
 
 ### 1. Asset origin is a boundary concern

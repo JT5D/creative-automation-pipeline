@@ -89,3 +89,10 @@ export type ProviderStatus = {
   label: string;
   configured: boolean;
 };
+
+export type BriefSummary = {
+  file: string;
+  label: string;
+  teaches: string;
+  expect: string;
+};
