@@ -39,6 +39,21 @@ export type GeneratedHero = {
  * Swapping Gemini for Adobe Firefly Services, or for a customer's own
  * fine-tuned model, is a change to exactly one file. Nothing downstream of
  * the canonical hero moves.
+ *
+ * SEAM, and the two Firefly Services that land here:
+ *
+ *   Firefly Generate   the like-for-like replacement. src/providers/firefly.ts
+ *                      is written against it and has never executed, because
+ *                      Firefly Services needs an enterprise entitlement.
+ *
+ *   Custom Models      the one that would actually change the design. This
+ *                      request carries `referenceAssetPath` because a general
+ *                      model has to be shown the product to keep it, and that
+ *                      reference is the most fragile thing in the generation
+ *                      path. A model trained on the brand's own products knows
+ *                      the product, so the anchor stops being load-bearing.
+ *
+ * developer.adobe.com/firefly-services/docs/guides/ - verified 2026-08-29.
  */
 export interface HeroGenerator {
   readonly provider: string;

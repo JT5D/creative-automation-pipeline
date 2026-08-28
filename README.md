@@ -688,6 +688,34 @@ GenStudio                              ← approval, activation, performance
 The two seams that matter are already isolated. Everything between the canonical
 hero and the exported file stays exactly as it is.
 
+### Which Firefly Service replaces which line of this code
+
+Verified against [Adobe Firefly Services docs](https://developer.adobe.com/firefly-services/docs/guides/)
+on 2026-08-29. Firefly Services is Firefly APIs plus Photoshop, Lightroom and
+Content Tagging APIs; the Firefly REST surface includes Generate, **Reframe**,
+Translate, Lip-Sync and Custom Models.
+
+| What this repo does | The seam | Firefly Service that replaces it | Which goal or pain point it moves |
+|---|---|---|---|
+| Generates a hero from a packshot | `HeroGenerator` | **Firefly Generate**, or **Custom Models** trained on the brand's own products | Goal 2, brand consistency. A model trained on the product removes the identity risk this pipeline manages with a reference image and a locked typography rule |
+| Centre-crops one hero to four ratios | `composeVariant`, fit `cover` | **Reframe** | The limitation named in decision 4. Reframe tracks the subject across aspect ratios instead of assuming it sits in the middle 56% |
+| Reads approved assets off disk | `findApprovedHero()` | **AEM Assets / customer DAM**, indexed by **Content Tagging** | Pain point 4, siloed data. Tagging on ingest is what makes "reuse when available" work past a folder |
+| Asks the prompt for a retouch standard | the retouch clause in `buildHeroPrompt` | **Photoshop APIs** (masking, mask refinement) | Deterministic beats hopeful. A mask is not a sentence a model may ignore |
+| Ships localized copy as signed-off data | `markets[].message` | **Firefly Translate**, with the same human gate in front of it | Goal 3, relevance. The seam is real; the sign-off is the point |
+| Produces stills only | nothing here does video | **Text-to-Video** and **Image-to-Video** | Reels and TikTok are video-first placements. This is the largest honest gap in the deliverable |
+| Never publishes | no publishing stub exists, on purpose | **GenStudio** | Goals 4 and 5. Activation and real performance data live where the campaign runs |
+
+Two of those are worth saying out loud in a review. **Reframe** solves a
+limitation this repo documents against itself rather than one it hides, and
+**Custom Models** would retire the single most fragile thing in the generation
+path, which is asking a general model to preserve a specific product.
+
+The absence of a publishing stub is also deliberate and is the same argument:
+a stub that cannot be executed is a claim, not a capability. The post body, the
+tag set and the alt text are produced and sit under the creatives ready to
+paste, which is the honest stopping point for a pipeline with no publishing
+entitlement.
+
 Deliberately out of scope: ingest and format conversion, prompt/copy assistance,
 video, scheduled publishing, approval routing and a staging dashboard. The
 assignment asks for a creative automation pipeline, not a publishing platform;
