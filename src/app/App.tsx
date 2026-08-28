@@ -75,9 +75,25 @@ export function App() {
     };
   }, [refreshInsights]);
 
-  /** Locales come from the brief text, so the toggles track what you typed. */
+  /**
+   * Locales come from the brief text, so the toggles track what you typed.
+   *
+   * Both formats have to work here. A YAML-shaped regex found nothing in a JSON
+   * brief, so the market chips silently vanished on the sample that advertises
+   * itself as the same campaign in JSON. The format test is the same one
+   * parseBrief uses on the server: a leading brace means JSON.
+   */
   const locales = useMemo(() => {
-    const found = [...brief.matchAll(/^\s*-?\s*locale:\s*["']?([\w-]+)/gm)].map((m) => m[1]);
+    const text = brief.trim();
+    if (text.startsWith("{")) {
+      try {
+        const markets = (JSON.parse(text) as { markets?: { locale?: string }[] }).markets ?? [];
+        return [...new Set(markets.map((m) => m.locale).filter(Boolean) as string[])];
+      } catch {
+        return []; // mid-edit JSON: no chips rather than wrong chips
+      }
+    }
+    const found = [...text.matchAll(/^\s*-?\s*locale:\s*["']?([\w-]+)/gm)].map((m) => m[1]);
     return [...new Set(found)];
   }, [brief]);
 

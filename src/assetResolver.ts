@@ -49,8 +49,10 @@ export async function resolveHero(
     };
   }
 
-  const prompt = buildHeroPrompt(product, ctx.brief);
+  // Resolved first: the art direction changes depending on whether we are
+  // preserving a real product or inventing one.
   const reference = await findApprovedHero(product.referenceAssetPath);
+  const prompt = buildHeroPrompt(product, ctx.brief, Boolean(reference));
 
   // In dev, an already-paid-for hero is reused so that iterating on layout or
   // UI never costs another generation. It is labelled GENERATED · CACHED
@@ -199,7 +201,12 @@ export async function findApprovedHero(maybePath?: string): Promise<string | und
  * craft conventions, not anyone's imagery. Style is not copyrightable and none
  * is reproduced; every pixel here is generated from this brief.
  */
-export function buildHeroPrompt(product: Product, brief: CampaignBrief): string {
+export function buildHeroPrompt(
+  product: Product,
+  brief: CampaignBrief,
+  /** True when an approved packshot is being sent as an identity anchor. */
+  hasReference = false,
+): string {
   if (product.generationPrompt) return product.generationPrompt;
 
   // The brief's prose already ends its own sentences; re-punctuating it gave
@@ -258,8 +265,22 @@ export function buildHeroPrompt(product: Product, brief: CampaignBrief): string 
     "no smears, no double lids, no warped geometry, no visible seams, and no",
     "second product, prop or duplicate of the item anywhere in the frame.",
 
-    "Absolutely no text, no lettering, no typography, no logos, no watermarks,",
-    "and no packaging claims of any kind in the image.",
+    // The last clause has to flip with the reference, or it fights itself.
+    //
+    // With no packshot the model is inventing the packaging, so any lettering
+    // it draws is a fabricated claim on a regulated cosmetic -- prohibit all of
+    // it. With an approved packshot we are paying for the opposite: the real
+    // product, preserved. Telling the model "no logos" while handing it the
+    // brand's own jar is an instruction to erase the thing we supplied.
+    hasReference
+      ? "Preserve the supplied product EXACTLY as it appears in the reference: " +
+        "its geometry, proportions, cap, closure, surface finish, colours, and " +
+        "any label or brand mark already on it. Do not restyle, redraw, " +
+        "relabel or substitute the product. Add no new packaging text, no new " +
+        "claims, no invented logos. No typography anywhere else in the scene, " +
+        "and no watermarks."
+      : "Absolutely no text, no lettering, no typography, no logos, no " +
+        "watermarks, and no packaging claims of any kind in the image.",
   ]
     .filter(Boolean)
     .join(" ");

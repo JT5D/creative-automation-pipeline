@@ -36,8 +36,10 @@ export type ComposedCreative = {
   fontSize: number;
   lines: string[];
   copyFits: boolean;
-  /** Opaque-pixel ratio of the isolated text layer. Proof glyphs really drew. */
+  /** Opaque-pixel ratio of the whole text layer. */
   textInkRatio: number;
+  /** Opaque-pixel ratio of the HEADLINE alone -- proof the campaign message drew. */
+  headlineInkRatio: number;
   logoRendered: boolean;
   disclaimerRendered: boolean;
   ctaRendered: boolean;
@@ -352,8 +354,21 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     disclaimer,
   });
 
-  const textPng = await sharp(Buffer.from(textLayer)).png().toBuffer();
+  const textPng = await sharp(Buffer.from(textLayer.svg)).png().toBuffer();
+
+  // Every element is rasterized ALONE and its ink counted.
+  //
+  // One combined layer could not prove the campaign message rendered: the CTA
+  // pill and the disclaimer draw into the same layer, so their ink alone would
+  // satisfy the check while the headline was missing. And `ctaRendered` used to
+  // be Boolean(callToAction), which proves the brief had a CTA, not that one
+  // reached the pixels. Measuring each separately is the only version of these
+  // checks that can actually go red.
+  const inkOf = async (svg: string) => inkRatio(await sharp(Buffer.from(svg)).png().toBuffer());
+  const headlineInkRatio = await inkOf(textLayer.headlineSvg);
   const textInkRatio = await inkRatio(textPng);
+  const ctaInkRatio = textLayer.ctaSvg ? await inkOf(textLayer.ctaSvg) : 0;
+  const disclaimerInkRatio = textLayer.disclaimerSvg ? await inkOf(textLayer.disclaimerSvg) : 0;
   layers.push({ input: textPng, left: 0, top: 0 });
 
   if (logoBuffer) {
@@ -371,9 +386,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     lines: fit.lines,
     copyFits: fit.fits,
     textInkRatio,
+    headlineInkRatio,
     logoRendered: Boolean(logoBuffer),
-    disclaimerRendered: Boolean(disclaimer),
-    ctaRendered: Boolean(callToAction?.trim()),
+    disclaimerRendered: disclaimerInkRatio > 0,
+    ctaRendered: ctaInkRatio > 0,
     enforceSafeZone: tpl.enforceSafeZone,
     scrimmed: Boolean(tpl.scrim),
     textBounds: {
@@ -427,7 +443,14 @@ function buildTextLayer(args: {
   accent: string;
   callToAction?: string;
   disclaimer?: string;
-}): string {
+}): {
+  /** What actually gets composited. */
+  svg: string;
+  /** Each element alone, on the full canvas, so its ink can be counted. */
+  headlineSvg: string;
+  ctaSvg: string | null;
+  disclaimerSvg: string | null;
+} {
   const { width, height, tpl, fit, textColor, accent, callToAction, disclaimer } = args;
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
@@ -478,12 +501,15 @@ function buildTextLayer(args: {
       `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(disclaimer)}</text>`
     : "";
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    ${rule}
-    ${lines}
-    ${ctaSvg}
-    ${disclaimerSvg}
-  </svg>`;
+  const canvasSvg = (body: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${body}</svg>`;
+
+  return {
+    svg: canvasSvg(`${rule}\n${lines}\n${ctaSvg}\n${disclaimerSvg}`),
+    headlineSvg: canvasSvg(lines),
+    ctaSvg: ctaSvg ? canvasSvg(ctaSvg) : null,
+    disclaimerSvg: disclaimerSvg ? canvasSvg(disclaimerSvg) : null,
+  };
 }
 
 /** Returns null rather than throwing: a missing logo is a warning, not a stop. */

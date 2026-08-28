@@ -155,15 +155,22 @@ const dimensionsCheck: CreativeCheck = ({ rendered, ratio }) => {
   };
 };
 
-/** The one that makes "message rendered" a fact: it counts ink, not intent. */
+/**
+ * The one that makes "message rendered" a fact: it counts ink, not intent.
+ *
+ * It measures the HEADLINE layer specifically. Measured against the combined
+ * text layer, a creative that drew only its CTA and disclaimer would have
+ * passed a check whose name claims the campaign message is present -- which is
+ * the requirement the exercise is most explicit about.
+ */
 const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
-  const ok = rendered.textInkRatio >= MIN_INK_RATIO;
+  const ok = rendered.headlineInkRatio >= MIN_INK_RATIO;
   return {
     id: "message.rendered",
     status: ok ? "pass" : "fail",
     message: ok
-      ? `Campaign message rasterized (${(rendered.textInkRatio * 100).toFixed(3)}% ink coverage)`
-      : `No glyphs detected in the text layer (${(rendered.textInkRatio * 100).toFixed(4)}%) — copy did not render`,
+      ? `Campaign message rasterized (${(rendered.headlineInkRatio * 100).toFixed(3)}% headline ink)`
+      : `No headline glyphs detected (${(rendered.headlineInkRatio * 100).toFixed(4)}%) — the campaign message did not render`,
   };
 };
 

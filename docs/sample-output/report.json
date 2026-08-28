@@ -18,14 +18,14 @@
       "message": "Réveillez-vous avec une peau visiblement plus éclatante"
     }
   ],
-  "mode": "final",
+  "mode": "dev",
   "provider": {
     "provider": "google-gemini",
     "model": "gemini-3-pro-image"
   },
-  "startedAt": "2026-08-28T21:07:01.420Z",
-  "completedAt": "2026-08-28T21:07:35.200Z",
-  "durationMs": 33780,
+  "startedAt": "2026-08-28T21:17:56.065Z",
+  "completedAt": "2026-08-28T21:18:32.394Z",
+  "durationMs": 36329,
   "preflight": {
     "status": "pass",
     "checks": [
@@ -92,7 +92,7 @@
   },
   "successMetrics": {
     "timeSaved": {
-      "minutes": 599.44,
+      "minutes": 599.39,
       "baselineMinutesPerCreative": 25,
       "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
     },
@@ -105,7 +105,7 @@
       "creativesPerGenerationCall": 24,
       "costPerCreativeUsd": 0.00558,
       "reuseRate": 0.5,
-      "secondsPerCreative": 1.41
+      "secondsPerCreative": 1.51
     }
   },
   "assignmentProof": {
@@ -185,7 +185,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.066% ink coverage)"
+                "message": "Campaign message rasterized (2.558% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -214,7 +214,7 @@
               }
             ]
           },
-          "durationMs": 541
+          "durationMs": 869
         },
         {
           "ratio": "1x1",
@@ -234,7 +234,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.169% ink coverage)"
+                "message": "Campaign message rasterized (2.672% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -263,7 +263,7 @@
               }
             ]
           },
-          "durationMs": 496
+          "durationMs": 819
         },
         {
           "ratio": "1x1",
@@ -283,7 +283,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.166% ink coverage)"
+                "message": "Campaign message rasterized (2.984% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -312,7 +312,7 @@
               }
             ]
           },
-          "durationMs": 474
+          "durationMs": 651
         },
         {
           "ratio": "4x5",
@@ -332,7 +332,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.245% ink coverage)"
+                "message": "Campaign message rasterized (2.039% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -361,7 +361,7 @@
               }
             ]
           },
-          "durationMs": 507
+          "durationMs": 700
         },
         {
           "ratio": "4x5",
@@ -381,7 +381,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.475% ink coverage)"
+                "message": "Campaign message rasterized (2.278% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -410,7 +410,7 @@
               }
             ]
           },
-          "durationMs": 499
+          "durationMs": 382
         },
         {
           "ratio": "4x5",
@@ -430,7 +430,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.478% ink coverage)"
+                "message": "Campaign message rasterized (2.532% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -459,7 +459,7 @@
               }
             ]
           },
-          "durationMs": 393
+          "durationMs": 725
         },
         {
           "ratio": "9x16",
@@ -479,7 +479,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.096% ink coverage)"
+                "message": "Campaign message rasterized (1.987% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -513,7 +513,7 @@
               }
             ]
           },
-          "durationMs": 571
+          "durationMs": 580
         },
         {
           "ratio": "9x16",
@@ -533,7 +533,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.943% ink coverage)"
+                "message": "Campaign message rasterized (2.631% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -567,7 +567,7 @@
               }
             ]
           },
-          "durationMs": 567
+          "durationMs": 435
         },
         {
           "ratio": "9x16",
@@ -587,7 +587,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.263% ink coverage)"
+                "message": "Campaign message rasterized (3.346% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -621,7 +621,7 @@
               }
             ]
           },
-          "durationMs": 458
+          "durationMs": 480
         },
         {
           "ratio": "16x9",
@@ -641,7 +641,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.150% ink coverage)"
+                "message": "Campaign message rasterized (1.356% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -675,7 +675,7 @@
               }
             ]
           },
-          "durationMs": 433
+          "durationMs": 313
         },
         {
           "ratio": "16x9",
@@ -695,7 +695,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.724% ink coverage)"
+                "message": "Campaign message rasterized (1.786% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -729,7 +729,7 @@
               }
             ]
           },
-          "durationMs": 434
+          "durationMs": 322
         },
         {
           "ratio": "16x9",
@@ -749,7 +749,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.103% ink coverage)"
+                "message": "Campaign message rasterized (2.381% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -783,7 +783,7 @@
               }
             ]
           },
-          "durationMs": 441
+          "durationMs": 324
         }
       ]
     },
@@ -802,9 +802,9 @@
           "provider": "google-gemini",
           "operation": "image-reference",
           "model": "gemini-3-pro-image",
-          "prompt": "Premium beauty campaign photograph of Overnight Recovery Cream by Lumen Botanicals. Audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction: Calm, clinical, warm. Understated luxury — never hype. Shot on a 100mm macro lens at f/9, focus stacked so the entire product is critically sharp from front to back. Tripod, no motion blur. Lighting is soft and directional from the upper left, with open fill from the right and a narrow highlight raking the product's edge to separate it from the background. Highlights are controlled and rolled off, never blown; shadows are soft and open. The lighting is felt, not seen: no softbox, reflector, light stand, modifier or any studio equipment appears in frame. The product stands on a honed stone or matte plaster surface against a seamless background with a gentle tonal gradient. Restrained tonal colour grade, sympathetic to the brand palette without tinting the product itself. Materials must read as real: frosted glass transmits light correctly with a crisp polished rim, and the cap is smooth lacquered metal or resin with a clean specular roll-off and a precise machined edge. The container is CLOSED with its cap fully seated, and is opaque: the contents are NOT visible. Do not render cream, lotion, product texture or any substance inside or on the vessel. WIDE SHOT. The camera is pulled well back and the product is SMALL and distant in a large empty set -- a single small jar alone on a wide expanse of surface. The product occupies only the central third of the image and is surrounded by a large amount of empty space on every side. Most of this picture is background. Do not fill the frame with the product; do not crop it; the entire product including its base is visible with room to spare. Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical, circular openings drawn as true undistorted ellipses. No lumps, no curdling, no smears, no double lids, no warped geometry, no visible seams, and no second product, prop or duplicate of the item anywhere in the frame. Absolutely no text, no lettering, no typography, no logos, no watermarks, and no packaging claims of any kind in the image.",
-          "durationMs": 23974,
-          "requestId": "v1_ChdrZmlSYXBEY0Y5UGRfdU1QN3JDUndBRRIXa2ZpUmFwRGNGOVBkX3VNUDdyQ1J3QUU"
+          "prompt": "Premium beauty campaign photograph of Overnight Recovery Cream by Lumen Botanicals. Audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction: Calm, clinical, warm. Understated luxury — never hype. Shot on a 100mm macro lens at f/9, focus stacked so the entire product is critically sharp from front to back. Tripod, no motion blur. Lighting is soft and directional from the upper left, with open fill from the right and a narrow highlight raking the product's edge to separate it from the background. Highlights are controlled and rolled off, never blown; shadows are soft and open. The lighting is felt, not seen: no softbox, reflector, light stand, modifier or any studio equipment appears in frame. The product stands on a honed stone or matte plaster surface against a seamless background with a gentle tonal gradient. Restrained tonal colour grade, sympathetic to the brand palette without tinting the product itself. Materials must read as real: frosted glass transmits light correctly with a crisp polished rim, and the cap is smooth lacquered metal or resin with a clean specular roll-off and a precise machined edge. The container is CLOSED with its cap fully seated, and is opaque: the contents are NOT visible. Do not render cream, lotion, product texture or any substance inside or on the vessel. WIDE SHOT. The camera is pulled well back and the product is SMALL and distant in a large empty set -- a single small jar alone on a wide expanse of surface. The product occupies only the central third of the image and is surrounded by a large amount of empty space on every side. Most of this picture is background. Do not fill the frame with the product; do not crop it; the entire product including its base is visible with room to spare. Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical, circular openings drawn as true undistorted ellipses. No lumps, no curdling, no smears, no double lids, no warped geometry, no visible seams, and no second product, prop or duplicate of the item anywhere in the frame. Preserve the supplied product EXACTLY as it appears in the reference: its geometry, proportions, cap, closure, surface finish, colours, and any label or brand mark already on it. Do not restyle, redraw, relabel or substitute the product. Add no new packaging text, no new claims, no invented logos. No typography anywhere else in the scene, and no watermarks.",
+          "durationMs": 23954,
+          "requestId": "v1_ChZJUHVSYXR1eEt2SF9qckVQOS1lZktREhZJUHVSYXR1eEt2SF9qckVQOS1lZktR"
         }
       },
       "creatives": [
@@ -814,7 +814,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/en-gb.png",
-          "bytes": 221183,
+          "bytes": 205674,
           "validation": {
             "status": "pass",
             "checks": [
@@ -826,7 +826,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.066% ink coverage)"
+                "message": "Campaign message rasterized (2.558% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -855,7 +855,7 @@
               }
             ]
           },
-          "durationMs": 404
+          "durationMs": 871
         },
         {
           "ratio": "1x1",
@@ -863,7 +863,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/de-de.png",
-          "bytes": 222135,
+          "bytes": 205319,
           "validation": {
             "status": "pass",
             "checks": [
@@ -875,7 +875,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.169% ink coverage)"
+                "message": "Campaign message rasterized (2.672% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -904,7 +904,7 @@
               }
             ]
           },
-          "durationMs": 384
+          "durationMs": 544
         },
         {
           "ratio": "1x1",
@@ -912,7 +912,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/fr-fr.png",
-          "bytes": 224585,
+          "bytes": 204841,
           "validation": {
             "status": "pass",
             "checks": [
@@ -924,7 +924,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.166% ink coverage)"
+                "message": "Campaign message rasterized (2.984% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -953,7 +953,7 @@
               }
             ]
           },
-          "durationMs": 385
+          "durationMs": 563
         },
         {
           "ratio": "4x5",
@@ -961,7 +961,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/en-gb.png",
-          "bytes": 264535,
+          "bytes": 253135,
           "validation": {
             "status": "pass",
             "checks": [
@@ -973,7 +973,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.245% ink coverage)"
+                "message": "Campaign message rasterized (2.039% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1002,7 +1002,7 @@
               }
             ]
           },
-          "durationMs": 450
+          "durationMs": 653
         },
         {
           "ratio": "4x5",
@@ -1010,7 +1010,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/de-de.png",
-          "bytes": 267756,
+          "bytes": 254401,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1022,7 +1022,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.475% ink coverage)"
+                "message": "Campaign message rasterized (2.278% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1051,7 +1051,7 @@
               }
             ]
           },
-          "durationMs": 275
+          "durationMs": 476
         },
         {
           "ratio": "4x5",
@@ -1059,7 +1059,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png",
-          "bytes": 268360,
+          "bytes": 256418,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1071,7 +1071,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.478% ink coverage)"
+                "message": "Campaign message rasterized (2.532% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1100,7 +1100,7 @@
               }
             ]
           },
-          "durationMs": 425
+          "durationMs": 489
         },
         {
           "ratio": "9x16",
@@ -1108,7 +1108,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png",
-          "bytes": 333737,
+          "bytes": 291242,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1120,7 +1120,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.096% ink coverage)"
+                "message": "Campaign message rasterized (1.987% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1154,7 +1154,7 @@
               }
             ]
           },
-          "durationMs": 335
+          "durationMs": 387
         },
         {
           "ratio": "9x16",
@@ -1162,7 +1162,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png",
-          "bytes": 336183,
+          "bytes": 288810,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1174,7 +1174,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.943% ink coverage)"
+                "message": "Campaign message rasterized (2.631% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1208,7 +1208,7 @@
               }
             ]
           },
-          "durationMs": 336
+          "durationMs": 518
         },
         {
           "ratio": "9x16",
@@ -1216,7 +1216,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png",
-          "bytes": 342461,
+          "bytes": 297024,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1228,7 +1228,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (4.263% ink coverage)"
+                "message": "Campaign message rasterized (3.346% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1262,7 +1262,7 @@
               }
             ]
           },
-          "durationMs": 321
+          "durationMs": 509
         },
         {
           "ratio": "16x9",
@@ -1270,7 +1270,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png",
-          "bytes": 271879,
+          "bytes": 238970,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1282,7 +1282,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.150% ink coverage)"
+                "message": "Campaign message rasterized (1.356% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1316,7 +1316,7 @@
               }
             ]
           },
-          "durationMs": 222
+          "durationMs": 256
         },
         {
           "ratio": "16x9",
@@ -1324,7 +1324,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png",
-          "bytes": 276486,
+          "bytes": 230647,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1336,7 +1336,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.724% ink coverage)"
+                "message": "Campaign message rasterized (1.786% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1370,7 +1370,7 @@
               }
             ]
           },
-          "durationMs": 219
+          "durationMs": 246
         },
         {
           "ratio": "16x9",
@@ -1378,7 +1378,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png",
-          "bytes": 272180,
+          "bytes": 234220,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1390,7 +1390,7 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (3.103% ink coverage)"
+                "message": "Campaign message rasterized (2.381% headline ink)"
               },
               {
                 "id": "message.legible",
@@ -1424,7 +1424,7 @@
               }
             ]
           },
-          "durationMs": 225
+          "durationMs": 254
         }
       ]
     }
@@ -1440,8 +1440,8 @@
   "estimatedTimeSaved": {
     "baselineMinutesPerCreative": 25,
     "manualMinutes": 600,
-    "pipelineMinutes": 0.563,
-    "savedMinutes": 599.44,
+    "pipelineMinutes": 0.605,
+    "savedMinutes": 599.39,
     "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
   }
 }

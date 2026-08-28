@@ -165,6 +165,23 @@ describe("asset resolution", () => {
     expect(await findApprovedHero(undefined)).toBeUndefined();
   });
 
+  it("art-directs differently when an approved packshot anchors the product", async () => {
+    const brief = parseBrief(briefYaml());
+    const withRef = buildHeroPrompt(brief.products[1], brief, true);
+    const withoutRef = buildHeroPrompt(brief.products[1], brief, false);
+
+    // No reference: the model is inventing the packaging, so any lettering it
+    // draws is a fabricated claim on a regulated cosmetic.
+    expect(withoutRef).toMatch(/no logos/i);
+    expect(withoutRef).not.toMatch(/preserve the supplied product/i);
+
+    // With a reference: preserving the real product is the entire point, so
+    // telling it "no logos" would erase the packaging we supplied.
+    expect(withRef).toMatch(/preserve the supplied product/i);
+    expect(withRef).toMatch(/add no new packaging text/i);
+    expect(withRef).not.toMatch(/no logos, no watermarks/i);
+  });
+
   it("builds a deterministic prompt that bans baked-in typography", () => {
     const brief = parseBrief(briefYaml());
     const prompt = buildHeroPrompt(brief.products[1], brief);
@@ -766,6 +783,37 @@ describe("end-to-end campaign run", () => {
         expect(creative.validation.status).not.toBe("fail");
       }
     }
+  });
+
+  it("measures the headline separately, so CTA ink cannot vouch for it", async () => {
+    // The campaign message is the requirement the exercise is most explicit
+    // about. Measured against the combined text layer, a creative that drew
+    // only its CTA and disclaimer would pass a check claiming the message is
+    // present. These must therefore be two different measurements.
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-ink-"));
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir,
+      mode: "dev",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
+    });
+
+    const creative = report.products[0].creatives[0];
+    const rendered = creative.validation.checks.find((c) => c.id === "message.rendered");
+    expect(rendered?.status).toBe("pass");
+    expect(rendered?.message).toMatch(/headline ink/);
+
+    // The disclaimer is proven by its own ink now, not by the brief having
+    // contained the string. This brief sets no callToAction, so that check
+    // correctly reports nothing at all rather than a vacuous pass.
+    expect(creative.validation.checks.find((c) => c.id === "legal.disclaimer")?.status).toBe(
+      "pass",
+    );
+    expect(
+      creative.validation.checks.find((c) => c.id === "creative.callToAction"),
+    ).toBeUndefined();
+
+    await rm(dir, { recursive: true, force: true });
   });
 
   it("proves the message was rasterized into pixels, not just declared", async () => {
