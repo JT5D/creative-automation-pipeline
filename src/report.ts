@@ -1,12 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
-import type {
-  CampaignBrief,
-  CanonicalHeroAsset,
-  RatioKey,
-  ValidationResult,
-} from "./schema.js";
+import type { CampaignBrief, CanonicalHeroAsset, RatioKey, ValidationResult } from "./schema.js";
 
 export type CreativeRecord = {
   ratio: RatioKey;
@@ -60,7 +55,12 @@ export type CampaignReport = {
    * the model used. Omitted when no verified price is known for that model.
    * An estimate from published pricing, not a billed amount.
    */
-  estimatedCostUsd?: { generations: number; unitPriceUsd: number; totalUsd: number; source: string };
+  estimatedCostUsd?: {
+    generations: number;
+    unitPriceUsd: number;
+    totalUsd: number;
+    source: string;
+  };
   /**
    * Only present when the brief supplies manualMinutesPerCreative. It is an
    * estimate derived from that stated baseline, not a measured figure, and it
@@ -106,11 +106,11 @@ export function createReport(args: {
     preflight,
     metrics: {
       productsProcessed: products.length,
-    marketsProcessed: markets.length,
+      marketsProcessed: markets.length,
       approvedAssetsReused: products.filter((p) => p.hero.source === "reused").length,
       heroesGenerated: products.filter((p) => p.hero.source === "generated").length,
       heroesFromCache: products.filter((p) => p.hero.source === "generated_cached").length,
-    heroesPlaceholder: products.filter((p) => p.hero.source === "placeholder").length,
+      heroesPlaceholder: products.filter((p) => p.hero.source === "placeholder").length,
       variantsCreated: creatives.length,
       validationPassed: creatives.filter((c) => c.validation.status === "pass").length,
       validationWarnings: creatives.filter((c) => c.validation.status === "warning").length,
@@ -132,11 +132,7 @@ export function createReport(args: {
   };
 }
 
-
-export async function writeReport(
-  report: CampaignReport,
-  outputRoot: string,
-): Promise<string> {
+export async function writeReport(report: CampaignReport, outputRoot: string): Promise<string> {
   const dir = path.join(outputRoot, sanitizeId(report.campaignId));
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, "report.json");

@@ -1,7 +1,7 @@
 import { FireflyHeroGenerator } from "./firefly.js";
 import { GeminiHeroGenerator } from "./gemini.js";
 import { PlaceholderHeroGenerator } from "./placeholder.js";
-import { type HeroGenerator } from "./types.js";
+import type { HeroGenerator } from "./types.js";
 
 export type ProviderStatus = {
   provider: string;
@@ -26,10 +26,7 @@ export function selectGenerator(
   const { FIREFLY_SERVICES_CLIENT_ID, FIREFLY_SERVICES_CLIENT_SECRET, GEMINI_API_KEY } = env;
 
   if (FIREFLY_SERVICES_CLIENT_ID && FIREFLY_SERVICES_CLIENT_SECRET) {
-    return new FireflyHeroGenerator(
-      FIREFLY_SERVICES_CLIENT_ID,
-      FIREFLY_SERVICES_CLIENT_SECRET,
-    );
+    return new FireflyHeroGenerator(FIREFLY_SERVICES_CLIENT_ID, FIREFLY_SERVICES_CLIENT_SECRET);
   }
 
   if (GEMINI_API_KEY) {

@@ -1,8 +1,4 @@
-import type {
-  BriefSummary,
-  CampaignEstimate,
-  FormatOption,
-} from "../types.js";
+import type { BriefSummary, CampaignEstimate, FormatOption } from "../types.js";
 
 type Props = {
   library: BriefSummary[];
@@ -29,10 +25,22 @@ type Props = {
  */
 export function BriefPanel(props: Props) {
   const {
-    library, active, onSelect, brief, onBriefChange,
-    formats, selectedFormats, onToggleFormat,
-    locales, selectedLocales, onToggleLocale,
-    estimate, onEstimate, onRun, busy, running,
+    library,
+    active,
+    onSelect,
+    brief,
+    onBriefChange,
+    formats,
+    selectedFormats,
+    onToggleFormat,
+    locales,
+    selectedLocales,
+    onToggleLocale,
+    estimate,
+    onEstimate,
+    onRun,
+    busy,
+    running,
   } = props;
 
   const current = library.find((b) => b.file === active);
@@ -46,6 +54,7 @@ export function BriefPanel(props: Props) {
           <div className="briefs">
             {library.map((b) => (
               <button
+                type="button"
                 key={b.file}
                 className={active === b.file ? "on" : ""}
                 onClick={() => onSelect(b.file)}
@@ -73,6 +82,7 @@ export function BriefPanel(props: Props) {
           <div className="chips">
             {formats.map((f) => (
               <button
+                type="button"
                 key={f.key}
                 className={selectedFormats.includes(f.key) ? "on" : ""}
                 onClick={() => onToggleFormat(f.key)}
@@ -90,6 +100,7 @@ export function BriefPanel(props: Props) {
             <div className="chips">
               {locales.map((l) => (
                 <button
+                  type="button"
                   key={l}
                   className={selectedLocales.includes(l) ? "on" : ""}
                   onClick={() => onToggleLocale(l)}
@@ -103,10 +114,10 @@ export function BriefPanel(props: Props) {
       </div>
 
       <div className="actions">
-        <button className="ghost" onClick={onEstimate} disabled={busy}>
+        <button type="button" className="ghost" onClick={onEstimate} disabled={busy}>
           Estimate
         </button>
-        <button className="run" onClick={onRun} disabled={busy || !brief.trim()}>
+        <button type="button" className="run" onClick={onRun} disabled={busy || !brief.trim()}>
           {running ? "Running…" : "Run campaign"}
         </button>
       </div>
@@ -145,9 +156,7 @@ function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
               <span>generations</span>
             </div>
             <div>
-              <b>
-                {e.estimatedCostUsd ? `$${e.estimatedCostUsd.totalUsd.toFixed(3)}` : "—"}
-              </b>
+              <b>{e.estimatedCostUsd ? `$${e.estimatedCostUsd.totalUsd.toFixed(3)}` : "—"}</b>
               <span>est. spend</span>
             </div>
           </div>
@@ -172,9 +181,9 @@ function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
 
           {e.estimatedTimeSaved && (
             <p className="est-note">
-              ≈{Math.round(e.estimatedTimeSaved.savedMinutes)} min saved — illustrative,
-              against a {e.estimatedTimeSaved.baselineMinutesPerCreative} min/creative
-              baseline stated in the brief.
+              ≈{Math.round(e.estimatedTimeSaved.savedMinutes)} min saved — illustrative, against a{" "}
+              {e.estimatedTimeSaved.baselineMinutesPerCreative} min/creative baseline stated in the
+              brief.
             </p>
           )}
         </>

@@ -65,7 +65,13 @@ export function fitText(
 /** WCAG relative luminance, used to pick readable text over any brand colour. */
 export function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "");
-  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
   const [r, g, b] = [0, 2, 4].map((i) => {
     const v = parseInt(full.slice(i, i + 2), 16) / 255;
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;

@@ -37,12 +37,21 @@ export function App() {
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refreshInsights = useCallback(() => {
-    fetch("/api/insights").then((r) => r.json()).then(setInsights).catch(() => {});
+    fetch("/api/insights")
+      .then((r) => r.json())
+      .then(setInsights)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    fetch("/api/briefs").then((r) => r.json()).then(setLibrary).catch(() => {});
-    fetch("/api/provider").then((r) => r.json()).then(setProvider).catch(() => {});
+    fetch("/api/briefs")
+      .then((r) => r.json())
+      .then(setLibrary)
+      .catch(() => {});
+    fetch("/api/provider")
+      .then((r) => r.json())
+      .then(setProvider)
+      .catch(() => {});
     fetch("/api/formats")
       .then((r) => r.json())
       .then((f: FormatOption[]) => {
@@ -58,7 +67,9 @@ export function App() {
       })
       .catch(() => {});
     refreshInsights();
-    return () => { if (timer.current) clearInterval(timer.current); };
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
   }, [refreshInsights]);
 
   /** Locales come from the brief text, so the toggles track what you typed. */
@@ -67,17 +78,24 @@ export function App() {
     return [...new Set(found)];
   }, [brief]);
 
-  useEffect(() => { setSelectedLocales(locales); }, [locales]);
+  useEffect(() => {
+    setSelectedLocales(locales);
+  }, [locales]);
 
   const loadBrief = useCallback((file: string) => {
     setActive(file);
     setRun(null);
     setEstimate(null);
     setError(null);
-    fetch(`/api/briefs/${file}`).then((r) => r.text()).then(setBrief).catch(() => {});
+    fetch(`/api/briefs/${file}`)
+      .then((r) => r.text())
+      .then(setBrief)
+      .catch(() => {});
   }, []);
 
-  useEffect(() => { loadBrief("campaign.yaml"); }, [loadBrief]);
+  useEffect(() => {
+    loadBrief("campaign.yaml");
+  }, [loadBrief]);
 
   const body = useCallback(
     () => ({

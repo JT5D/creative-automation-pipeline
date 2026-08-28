@@ -2,16 +2,21 @@ import { createHash } from "node:crypto";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import type { CampaignBrief, CanonicalHeroAsset, Product } from "./schema.js";
 import type { HeroGenerator } from "./providers/index.js";
-
-const CACHE_DIR = path.resolve(".cache");
+import type { CampaignBrief, CanonicalHeroAsset, Product } from "./schema.js";
 
 export type ResolveContext = {
   brief: CampaignBrief;
   generator: HeroGenerator;
   /** dev caches a successful generation; final always spends. */
   mode: "dev" | "final";
+  /**
+   * Where cached heroes live. Derived from the output root so a test run and a
+   * real run can never share one -- the test suite was previously writing its
+   * stand-in renders into the project cache, where a later real run picked them
+   * up and reported them as generated.
+   */
+  cacheDir: string;
   emit: (event: string, detail?: Record<string, unknown>) => void;
 };
 
@@ -49,15 +54,24 @@ export async function resolveHero(
   // In dev, an already-paid-for hero is reused so that iterating on layout or
   // UI never costs another generation. It is labelled GENERATED · CACHED
   // everywhere it surfaces -- it is never presented as a fresh call.
-  const cacheKey = hashKey(product.id, prompt, reference ?? "");
+  const cacheKey = hashKey(
+    ctx.generator.provider,
+    ctx.generator.model,
+    product.id,
+    prompt,
+    reference ?? "",
+  );
   if (ctx.mode === "dev") {
-    const cached = await readCache(cacheKey);
+    const cached = await readCache(ctx.cacheDir, cacheKey);
     if (cached) {
       ctx.emit("asset_generated_cached", { productId: product.id });
       const meta = await sharp(cached.path).metadata();
+      // A cached placeholder stays a placeholder. Only a cached real
+      // generation may be reported as one.
+      const cachedPlaceholder = cached.generation?.provider === "offline-placeholder";
       return {
         productId: product.id,
-        source: "generated_cached",
+        source: cachedPlaceholder ? "placeholder" : "generated_cached",
         localPath: cached.path,
         mimeType: "image/png",
         width: meta.width ?? 0,
@@ -86,8 +100,8 @@ export async function resolveHero(
     referenceAssetPath: reference,
   });
 
-  const outPath = path.join(CACHE_DIR, `${cacheKey}.png`);
-  await mkdir(CACHE_DIR, { recursive: true });
+  const outPath = path.join(ctx.cacheDir, `${cacheKey}.png`);
+  await mkdir(ctx.cacheDir, { recursive: true });
   await writeFile(outPath, generated.bytes);
 
   const generation = {
@@ -98,10 +112,7 @@ export async function resolveHero(
     durationMs: generated.durationMs,
     requestId: generated.requestId,
   };
-  await writeFile(
-    path.join(CACHE_DIR, `${cacheKey}.json`),
-    JSON.stringify(generation, null, 2),
-  );
+  await writeFile(path.join(ctx.cacheDir, `${cacheKey}.json`), JSON.stringify(generation, null, 2));
 
   const meta = await sharp(outPath).metadata();
   ctx.emit("asset_generated", { productId: product.id, durationMs: generated.durationMs });
@@ -172,10 +183,11 @@ function hashKey(...parts: string[]): string {
 }
 
 async function readCache(
+  cacheDir: string,
   key: string,
 ): Promise<{ path: string; generation: CanonicalHeroAsset["generation"] } | null> {
-  const imgPath = path.join(CACHE_DIR, `${key}.png`);
-  const metaPath = path.join(CACHE_DIR, `${key}.json`);
+  const imgPath = path.join(cacheDir, `${key}.png`);
+  const metaPath = path.join(cacheDir, `${key}.json`);
   try {
     await access(imgPath);
     const generation = JSON.parse(await readFile(metaPath, "utf8"));

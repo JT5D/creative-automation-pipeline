@@ -4,21 +4,21 @@ import { parse as parseYaml } from "yaml";
 import { resolveHero } from "./assetResolver.js";
 import { composeVariant } from "./composer.js";
 import { recordRun } from "./history.js";
-import { selectGenerator, type HeroGenerator } from "./providers/index.js";
+import { type HeroGenerator, selectGenerator } from "./providers/index.js";
 import {
-  createReport,
-  sanitizeId,
-  writeReport,
   type CampaignReport,
   type CreativeRecord,
+  createReport,
   type ProductRecord,
+  sanitizeId,
+  writeReport,
 } from "./report.js";
 import {
+  type CampaignBrief,
   CampaignBriefSchema,
   RATIOS,
-  resolveMarkets,
-  type CampaignBrief,
   type RatioKey,
+  resolveMarkets,
 } from "./schema.js";
 import { preflight, preflightOrThrow, validateCreative } from "./validation.js";
 
@@ -77,12 +77,12 @@ export async function runCampaign(
     typeof rawBrief === "string" ? parseBrief(rawBrief) : CampaignBriefSchema.parse(rawBrief);
   const allMarkets = resolveMarkets(brief);
   const markets = options.locales?.length
-    ? allMarkets.filter((m) => options.locales!.includes(m.locale))
+    ? allMarkets.filter((m) => options.locales?.includes(m.locale))
     : allMarkets;
 
   const allRatios = Object.keys(RATIOS) as RatioKey[];
   const ratios = options.ratios?.length
-    ? allRatios.filter((r) => options.ratios!.includes(r))
+    ? allRatios.filter((r) => options.ratios?.includes(r))
     : allRatios;
 
   if (markets.length === 0) throw new Error("No markets selected");
@@ -106,20 +106,22 @@ export async function runCampaign(
   const generator = options.generator ?? selectGenerator(process.env, options.model);
   emit("provider_selected", { provider: generator.provider, model: generator.model });
 
+  // Cache sits under the output root, so every run's cache is scoped to it and
+  // a test can never write into the project's.
+  const cacheDir = path.join(outputRoot, ".cache");
   const campaignDir = path.join(outputRoot, sanitizeId(brief.id));
   const products: ProductRecord[] = [];
 
   for (const product of brief.products) {
     emit("asset_resolving", { productId: product.id });
 
-    const hero = await resolveHero(product, { brief, generator, mode, emit });
+    const hero = await resolveHero(product, { brief, generator, mode, cacheDir, emit });
 
     // Persist the canonical hero next to its outputs so the provenance chain
     // is inspectable on disk, not just in the report.
     const productDir = path.join(campaignDir, sanitizeId(product.id));
     await mkdir(path.join(productDir, "source"), { recursive: true });
-    const heroCopyName =
-      hero.source === "reused" ? "approved-hero" : "generated-hero";
+    const heroCopyName = hero.source === "reused" ? "approved-hero" : "generated-hero";
     const heroCopy = path.join(
       productDir,
       "source",
@@ -137,7 +139,7 @@ export async function runCampaign(
         emit("variant_composing", { productId: product.id, ratio, locale: market.locale });
 
         const rendered = await composeVariant({ brief, product, hero, ratio, market });
-        const validation = validateCreative({ brief, product, rendered, ratio, market });
+        const validation = validateCreative({ brief, rendered, ratio, market });
 
         const dir = path.join(productDir, ratio);
         await mkdir(dir, { recursive: true });

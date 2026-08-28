@@ -16,13 +16,19 @@ async function main() {
     process.exit(1);
   }
 
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.log("\n  GEMINI_API_KEY is not set.\n");
+    process.exit(1);
+  }
+
   if (status.provider !== "google-gemini") {
     console.log("  (live model check implemented for Gemini only)\n");
     return;
   }
 
   const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
-    headers: { "x-goog-api-key": process.env.GEMINI_API_KEY! },
+    headers: { "x-goog-api-key": apiKey },
   });
   if (!res.ok) {
     console.error(`\n✗ Gemini rejected the key (HTTP ${res.status})\n`);

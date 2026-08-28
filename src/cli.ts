@@ -34,7 +34,14 @@ DRY RUN  ${e.campaignName}
         : `GENERATE  ${p.usingReference ? "from packshot reference" : "text-to-image"}`;
     console.log(`  ${p.productName.padEnd(30)} ${how}`);
   }
-  console.log(e.blocked ? `\n  ✗ ${e.preflight.checks.filter((c) => c.status === "fail").map((c) => c.message).join("; ")}\n` : "\n  Nothing was generated. Re-run without --dry-run to produce these.\n");
+  console.log(
+    e.blocked
+      ? `\n  ✗ ${e.preflight.checks
+          .filter((c) => c.status === "fail")
+          .map((c) => c.message)
+          .join("; ")}\n`
+      : "\n  Nothing was generated. Re-run without --dry-run to produce these.\n",
+  );
   process.exit(e.blocked ? 2 : 0);
 }
 

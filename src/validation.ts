@@ -1,17 +1,16 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
+import type { ComposedCreative } from "./composer.js";
+import { safeBoundsFor } from "./composer.js";
 import type {
   CampaignBrief,
   Market,
-  Product,
   RatioKey,
   ValidationCheck,
   ValidationResult,
 } from "./schema.js";
 import { RATIOS } from "./schema.js";
-import type { ComposedCreative } from "./composer.js";
 import { contrastRatio } from "./textLayout.js";
-import { safeBoundsFor } from "./composer.js";
 
 /** Minimum opaque fraction of the text layer that counts as "copy rendered". */
 const MIN_INK_RATIO = 0.0004;
@@ -109,9 +108,7 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
 
   checks.push({
     id: "brand.colors",
-    status: isHex(brief.brand.primaryColor) && isHex(brief.brand.secondaryColor)
-      ? "pass"
-      : "fail",
+    status: isHex(brief.brand.primaryColor) && isHex(brief.brand.secondaryColor) ? "pass" : "fail",
     message: "Brand colours are valid hex values",
   });
 
@@ -122,124 +119,162 @@ export function preflightOrThrow(result: ValidationResult): void {
   if (result.status === "fail") {
     const failed = result.checks.filter((c) => c.status === "fail");
     throw new PreflightError(
-      `Preflight failed before any generation spend: ${failed
-        .map((c) => c.message)
-        .join("; ")}`,
+      `Preflight failed before any generation spend: ${failed.map((c) => c.message).join("; ")}`,
       result.checks,
     );
   }
 }
 
 /**
- * Post-render checks. Every one of these is measured off the actual pixels or
- * the actual file we just wrote -- none of them are asserted from intent.
+ * Post-render checks.
+ *
+ * Each one is a small pure function of the rendered result, registered in a
+ * list. Returning null means the check does not apply to this creative -- no
+ * logo configured, or a format with no platform safe zone. Adding a rule is a
+ * function plus a line in the registry, and every rule can be tested alone.
+ *
+ * Every check is measured off the actual pixels or the actual file we just
+ * wrote. None of them are asserted from intent.
  */
-export function validateCreative(args: {
+type CheckContext = {
   brief: CampaignBrief;
-  product: Product;
   rendered: ComposedCreative;
   ratio: RatioKey;
   market: Market;
-}): ValidationResult {
-  const { brief, rendered, ratio, market } = args;
+};
+
+type CreativeCheck = (ctx: CheckContext) => ValidationCheck | null;
+
+const dimensionsCheck: CreativeCheck = ({ rendered, ratio }) => {
   const expected = RATIOS[ratio];
-  const checks: ValidationCheck[] = [];
-
-  const dimsOk = rendered.width === expected.width && rendered.height === expected.height;
-  checks.push({
+  const ok = rendered.width === expected.width && rendered.height === expected.height;
+  return {
     id: "output.dimensions",
-    status: dimsOk ? "pass" : "fail",
+    status: ok ? "pass" : "fail",
     message: `${rendered.width}×${rendered.height} (expected ${expected.width}×${expected.height})`,
-  });
+  };
+};
 
-  checks.push({
+/** The one that makes "message rendered" a fact: it counts ink, not intent. */
+const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
+  const ok = rendered.textInkRatio >= MIN_INK_RATIO;
+  return {
     id: "message.rendered",
-    status: rendered.textInkRatio >= MIN_INK_RATIO ? "pass" : "fail",
-    message:
-      rendered.textInkRatio >= MIN_INK_RATIO
-        ? `Campaign message rasterized (${(rendered.textInkRatio * 100).toFixed(3)}% ink coverage)`
-        : `No glyphs detected in the text layer (${(rendered.textInkRatio * 100).toFixed(4)}%) — copy did not render`,
-  });
+    status: ok ? "pass" : "fail",
+    message: ok
+      ? `Campaign message rasterized (${(rendered.textInkRatio * 100).toFixed(3)}% ink coverage)`
+      : `No glyphs detected in the text layer (${(rendered.textInkRatio * 100).toFixed(4)}%) — copy did not render`,
+  };
+};
 
-  checks.push({
-    id: "message.legible",
-    status: rendered.copyFits ? "pass" : "warning",
-    message: rendered.copyFits
-      ? `Copy fits in ${rendered.lines.length} line(s) at ${rendered.fontSize}px`
-      : `Copy exceeds the copy zone; truncated at the ${rendered.fontSize}px legibility floor rather than shrunk further`,
-  });
+const legibilityCheck: CreativeCheck = ({ rendered }) => ({
+  id: "message.legible",
+  status: rendered.copyFits ? "pass" : "warning",
+  message: rendered.copyFits
+    ? `Copy fits in ${rendered.lines.length} line(s) at ${rendered.fontSize}px`
+    : `Copy exceeds the copy zone; truncated at the ${rendered.fontSize}px legibility floor rather than shrunk further`,
+});
 
-  // WCAG 2.2 AA: 4.5:1 for normal text, 3:1 for large text (>=18.66px bold or
-  // >=24px regular). Campaign headlines are far above that, so holding them to
-  // the small-text bar would report a failure the standard does not require.
-  const ratioContrast = contrastRatio(rendered.textColor, brief.brand.primaryColor);
+/**
+ * WCAG 2.2 AA wants 4.5:1 for normal text but only 3:1 for large text
+ * (>=18.66px bold, or >=24px regular). Campaign headlines are far into the
+ * large band, so holding them to the small-text bar would report a failure the
+ * standard does not require.
+ */
+const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
+  const ratio = contrastRatio(rendered.textColor, brief.brand.primaryColor);
   const isLargeText = rendered.fontSize >= 24;
   const threshold = isLargeText ? 3 : 4.5;
-  checks.push({
+  return {
     id: "brand.contrast",
-    status: ratioContrast >= threshold ? "pass" : "warning",
-    message: `Text/background contrast ${ratioContrast.toFixed(2)}:1 (WCAG 2.2 AA needs ${threshold}:1 for ${isLargeText ? "large" : "normal"} text at ${rendered.fontSize}px)`,
-  });
+    status: ratio >= threshold ? "pass" : "warning",
+    message: `Text/background contrast ${ratio.toFixed(2)}:1 (WCAG 2.2 AA needs ${threshold}:1 for ${isLargeText ? "large" : "normal"} text at ${rendered.fontSize}px)`,
+  };
+};
 
-  if (brief.brand.logoPath) {
-    checks.push({
-      id: "brand.logo",
-      status: rendered.logoRendered ? "pass" : "warning",
-      message: rendered.logoRendered
-        ? "Brand logo composited"
-        : "Logo configured but could not be composited",
-    });
-  }
+const logoCheck: CreativeCheck = ({ brief, rendered }) =>
+  brief.brand.logoPath
+    ? {
+        id: "brand.logo",
+        status: rendered.logoRendered ? "pass" : "warning",
+        message: rendered.logoRendered
+          ? "Brand logo composited"
+          : "Logo configured but could not be composited",
+      }
+    : null;
 
-  // Meta reserves the top 14% / bottom 35% / outer 6% of a 9:16 placement for
-  // its own UI. Copy that strays into it gets covered in the real feed, so
-  // this is measured against where the text actually landed.
-  if (rendered.enforceSafeZone) {
-    const safe = safeBoundsFor(rendered.width, rendered.height);
-    const b = rendered.textBounds;
-    const inside =
-      b.top >= safe.top && b.bottom <= safe.bottom &&
-      b.left >= safe.left && b.right <= safe.right;
-    checks.push({
-      id: "channel.safeZone",
-      status: inside ? "pass" : "fail",
-      message: inside
-        ? `Copy inside the Meta 9:16 safe zone (y ${b.top}–${b.bottom} within ${safe.top}–${safe.bottom})`
-        : `Copy breaks the Meta 9:16 safe zone (y ${b.top}–${b.bottom}, allowed ${safe.top}–${safe.bottom}) — the platform overlay would cover it`,
-    });
-  }
+/**
+ * Meta reserves the top 14% / bottom 35% / outer 6% of a 9:16 placement for its
+ * own UI. Copy that strays into it gets covered in the real feed, so this is
+ * measured against where the text actually landed.
+ */
+const safeZoneCheck: CreativeCheck = ({ rendered }) => {
+  if (!rendered.enforceSafeZone) return null;
+  const safe = safeBoundsFor(rendered.width, rendered.height);
+  const b = rendered.textBounds;
+  const inside =
+    b.top >= safe.top && b.bottom <= safe.bottom && b.left >= safe.left && b.right <= safe.right;
+  return {
+    id: "channel.safeZone",
+    status: inside ? "pass" : "fail",
+    message: inside
+      ? `Copy inside the Meta 9:16 safe zone (y ${b.top}–${b.bottom} within ${safe.top}–${safe.bottom})`
+      : `Copy breaks the Meta 9:16 safe zone (y ${b.top}–${b.bottom}, allowed ${safe.top}–${safe.bottom}) — the platform overlay would cover it`,
+  };
+};
 
-  const expectedCta = market.callToAction ?? brief.callToAction;
-  if (expectedCta) {
-    checks.push({
-      id: "creative.callToAction",
-      status: rendered.ctaRendered ? "pass" : "fail",
-      message: rendered.ctaRendered
-        ? `Call to action rendered ("${expectedCta}")`
-        : "Call to action in brief but absent from the creative",
-    });
-  }
+const callToActionCheck: CreativeCheck = ({ brief, rendered, market }) => {
+  const expected = market.callToAction ?? brief.callToAction;
+  if (!expected) return null;
+  return {
+    id: "creative.callToAction",
+    status: rendered.ctaRendered ? "pass" : "fail",
+    message: rendered.ctaRendered
+      ? `Call to action rendered ("${expected}")`
+      : "Call to action in brief but absent from the creative",
+  };
+};
 
-  if (market.disclaimer ?? brief.brand.disclaimer) {
-    checks.push({
-      id: "legal.disclaimer",
-      status: rendered.disclaimerRendered ? "pass" : "fail",
-      message: rendered.disclaimerRendered
-        ? "Legal disclaimer rendered"
-        : "Disclaimer configured but absent from the creative",
-    });
-  }
+const disclaimerCheck: CreativeCheck = ({ brief, rendered, market }) =>
+  (market.disclaimer ?? brief.brand.disclaimer)
+    ? {
+        id: "legal.disclaimer",
+        status: rendered.disclaimerRendered ? "pass" : "fail",
+        message: rendered.disclaimerRendered
+          ? "Legal disclaimer rendered"
+          : "Disclaimer configured but absent from the creative",
+      }
+    : null;
 
+const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered }) => {
   const hits = findProhibited(rendered.renderedMessage, brief.brand.prohibitedWords);
-  checks.push({
+  return {
     id: "legal.prohibitedWords",
     status: hits.length === 0 ? "pass" : "fail",
     message:
       hits.length === 0
         ? "Rendered copy is clear of prohibited terms"
         : `Prohibited term(s) rendered into the image: ${hits.join(", ")}`,
-  });
+  };
+};
 
+/** Order here is the order a reviewer reads them in. */
+export const CREATIVE_CHECKS: CreativeCheck[] = [
+  dimensionsCheck,
+  messageRenderedCheck,
+  legibilityCheck,
+  contrastCheck,
+  logoCheck,
+  safeZoneCheck,
+  callToActionCheck,
+  disclaimerCheck,
+  prohibitedTermsCheck,
+];
+
+export function validateCreative(ctx: CheckContext): ValidationResult {
+  const checks = CREATIVE_CHECKS.map((check) => check(ctx)).filter(
+    (c): c is ValidationCheck => c !== null,
+  );
   return rollup(checks);
 }
 

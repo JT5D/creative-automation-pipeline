@@ -7,6 +7,7 @@ import { FONT_FAMILY, measureText } from "./fonts.js";
  * type namespace, which moved in 0.35. This cannot drift from the library.
  */
 type Layer = Parameters<ReturnType<typeof sharp>["composite"]>[0][number];
+
 import type {
   Brand,
   CampaignBrief,
@@ -112,9 +113,9 @@ export function templateFor(ratio: RatioKey): Template {
     const margin = 72;
     return {
       hero: { left: 0, top: 0, width, height },
-      copy: { left: margin, top: 610, width: width - margin * 2, height: 250 },
+      copy: { left: margin, top: 610, width: Math.round(width * 0.6), height: 250 },
       // Top-left lockup, the conventional brand position on a full-bleed post.
-      logo: { left: margin, top: margin, maxWidth: 240 },
+      logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
       enforceSafeZone: false,
@@ -131,8 +132,8 @@ export function templateFor(ratio: RatioKey): Template {
     const margin = 76;
     return {
       hero: { left: 0, top: 0, width, height },
-      copy: { left: margin, top: 850, width: width - margin * 2, height: 260 },
-      logo: { left: margin, top: margin, maxWidth: 240 },
+      copy: { left: margin, top: 850, width: Math.round(width * 0.62), height: 260 },
+      logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
       enforceSafeZone: false,
@@ -185,6 +186,39 @@ export function templateFor(ratio: RatioKey): Template {
   };
 }
 
+/**
+ * Mean luminance (0–1) of a horizontal band of the hero.
+ *
+ * A fixed scrim opacity is a guess: over a dark photo it is wasted, and over a
+ * bright one the copy still fails. Sampling the band the copy will actually sit
+ * on lets the scrim be exactly as strong as that image needs -- which is what
+ * kept a gold wordmark legible over a sunlit wall.
+ */
+async function bandLuminance(
+  hero: Buffer,
+  top: number,
+  height: number,
+  width: number,
+): Promise<number> {
+  const safeTop = Math.max(0, Math.round(top));
+  const safeHeight = Math.max(1, Math.round(height));
+  try {
+    const stats = await sharp(hero)
+      .extract({ left: 0, top: safeTop, width, height: safeHeight })
+      .greyscale()
+      .stats();
+    return (stats.channels[0]?.mean ?? 128) / 255;
+  } catch {
+    // Out-of-bounds band: assume mid grey rather than fail the render.
+    return 0.5;
+  }
+}
+
+/** Brighter backgrounds need a stronger scrim; dark ones need almost none. */
+function scrimOpacity(luminance: number, floor: number, ceiling: number): number {
+  return Number((floor + (ceiling - floor) * luminance).toFixed(3));
+}
+
 export async function composeVariant(input: ComposeInput): Promise<ComposedCreative> {
   const { brief, hero, ratio, market } = input;
   const brand = brief.brand;
@@ -216,38 +250,46 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
 
   // 3. Copy zone treatment. On the full-bleed 1:1 the copy sits over the photo,
   //    so it needs a gradient scrim to stay readable; the panel formats do not.
-  const copyBackground = tpl.scrim ? "#000000" : brand.primaryColor;
   const textColor = tpl.scrim ? "#FFFFFF" : readableTextColor(brand.primaryColor);
 
   if (tpl.scrim === "bottom") {
     const scrimTop = Math.max(0, tpl.copy.top - 180);
+    const copyLum = await bandLuminance(heroBuffer, scrimTop, height - scrimTop, width);
+    const topLum = await bandLuminance(heroBuffer, 0, 300, width);
+    const copyPeak = scrimOpacity(copyLum, 0.62, 0.9);
+    const copyMid = scrimOpacity(copyLum, 0.34, 0.66);
+    const topPeak = scrimOpacity(topLum, 0.34, 0.78);
     const scrimSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height - scrimTop}">
       <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
-        <stop offset="45%" stop-color="#000000" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="#000000" stop-opacity="0.82"/>
+        <stop offset="45%" stop-color="#000000" stop-opacity="${copyMid}"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="${copyPeak}"/>
       </linearGradient></defs>
       <rect width="${width}" height="${height - scrimTop}" fill="url(#g)"/>
     </svg>`;
     layers.push({ input: Buffer.from(scrimSvg), left: 0, top: scrimTop });
 
     // A short top scrim so the corner lockup stays legible over a bright hero.
-    const topSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="300">
+    const topSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${scrimTop}">
       <defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="0.55"/>
+        <stop offset="0%" stop-color="#000000" stop-opacity="${topPeak}"/>
+        <stop offset="55%" stop-color="#000000" stop-opacity="${scrimOpacity(topLum, 0.06, 0.2)}"/>
         <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
       </linearGradient></defs>
-      <rect width="${width}" height="300" fill="url(#t)"/>
+      <rect width="${width}" height="${scrimTop}" fill="url(#t)"/>
     </svg>`;
     layers.push({ input: Buffer.from(topSvg), left: 0, top: 0 });
   } else if (tpl.scrim === "top") {
     // 9:16 puts its copy in the upper safe band, so the scrim is strongest
     // there and clears the lower frame where the product sits.
     const fade = Math.min(height, tpl.disclaimerY + 260);
+    const bandLum = await bandLuminance(heroBuffer, 0, fade, width);
+    const peak = scrimOpacity(bandLum, 0.5, 0.82);
+    const mid = scrimOpacity(bandLum, 0.4, 0.72);
     const scrimSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${fade}">
       <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="0.68"/>
-        <stop offset="55%" stop-color="#000000" stop-opacity="0.58"/>
+        <stop offset="0%" stop-color="#000000" stop-opacity="${peak}"/>
+        <stop offset="55%" stop-color="#000000" stop-opacity="${mid}"/>
         <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
       </linearGradient></defs>
       <rect width="${width}" height="${fade}" fill="url(#g)"/>
@@ -266,17 +308,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   }
 
   // 4. Text layer, rendered in isolation so we can prove ink actually landed.
-  const fit = fitText(
-    message,
-    tpl.copy.width,
-    tpl.maxLines,
-    tpl.maxFontSize,
-    tpl.minFontSize,
-  );
+  const fit = fitText(message, tpl.copy.width, tpl.maxLines, tpl.maxFontSize, tpl.minFontSize);
 
   const logoBuffer = await loadLogo(brand, tpl.logo.maxWidth);
   const textLayer = buildTextLayer({
-    brand,
     width,
     height,
     tpl,
@@ -341,7 +376,6 @@ export function textBlockBottom(
 }
 
 function buildTextLayer(args: {
-  brand: Brand;
   width: number;
   height: number;
   tpl: Template;
@@ -351,7 +385,7 @@ function buildTextLayer(args: {
   callToAction?: string;
   disclaimer?: string;
 }): string {
-  const { brand, width, height, tpl, fit, textColor, accent, callToAction, disclaimer } = args;
+  const { width, height, tpl, fit, textColor, accent, callToAction, disclaimer } = args;
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
     tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;

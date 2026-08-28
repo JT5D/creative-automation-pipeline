@@ -1,11 +1,11 @@
 import { findApprovedHero } from "./assetResolver.js";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
 import {
+  type CampaignBrief,
   CampaignBriefSchema,
   RATIOS,
-  resolveMarkets,
-  type CampaignBrief,
   type RatioKey,
+  resolveMarkets,
   type ValidationResult,
 } from "./schema.js";
 import { preflight } from "./validation.js";
@@ -64,12 +64,12 @@ export async function estimateCampaign(
 
   const allRatios = Object.keys(RATIOS) as RatioKey[];
   const ratios = options.ratios?.length
-    ? allRatios.filter((r) => options.ratios!.includes(r))
+    ? allRatios.filter((r) => options.ratios?.includes(r))
     : allRatios;
 
   const markets = resolveMarkets(brief);
   const locales = options.locales?.length
-    ? markets.filter((m) => options.locales!.includes(m.locale)).map((m) => m.locale)
+    ? markets.filter((m) => options.locales?.includes(m.locale)).map((m) => m.locale)
     : markets.map((m) => m.locale);
 
   const products: PlannedProduct[] = [];
@@ -104,10 +104,6 @@ export async function estimateCampaign(
     variants,
     generations,
     estimatedCostUsd: costEstimate(model, generations),
-    estimatedTimeSaved: timeSavedEstimate(
-      brief.manualMinutesPerCreative,
-      variants,
-      projectedMs,
-    ),
+    estimatedTimeSaved: timeSavedEstimate(brief.manualMinutesPerCreative, variants, projectedMs),
   };
 }

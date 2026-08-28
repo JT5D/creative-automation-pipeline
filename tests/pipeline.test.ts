@@ -1,21 +1,21 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import { mkdir, mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js";
-import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
-import { selectGenerator } from "../src/providers/index.js";
-import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
+import { selectGenerator } from "../src/providers/index.js";
+import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
+import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
 import { sanitizeId } from "../src/report.js";
 import { RATIOS } from "../src/schema.js";
-import { findProhibited, preflight } from "../src/validation.js";
 import { fitText, wrapText } from "../src/textLayout.js";
+import { findProhibited, preflight } from "../src/validation.js";
 
 /**
  * Reports as a real provider so the pipeline takes the "generated" path.
@@ -152,7 +152,9 @@ describe("text layout", () => {
   it("wraps deterministically and never exceeds the line budget", () => {
     const lines = wrapText("Wake up to visibly brighter skin every single morning", 400, 60);
     expect(lines.length).toBeGreaterThan(1);
-    expect(wrapText("Wake up to visibly brighter skin every single morning", 400, 60)).toEqual(lines);
+    expect(wrapText("Wake up to visibly brighter skin every single morning", 400, 60)).toEqual(
+      lines,
+    );
   });
 
   it("reports failure instead of shrinking copy below the legibility floor", () => {
@@ -269,7 +271,9 @@ markets:
       const abs = path.join(outputs, creative.outputPath);
       expect(creative.outputPath).toContain(creative.locale.toLowerCase());
       expect((await stat(abs)).size).toBeGreaterThan(1000);
-      expect(creative.validation.checks.find((c) => c.id === "message.rendered")?.status).toBe("pass");
+      expect(creative.validation.checks.find((c) => c.id === "message.rendered")?.status).toBe(
+        "pass",
+      );
     }
   });
 
@@ -295,9 +299,11 @@ describe("the sample brief library", () => {
    * description the library becomes a sales pitch, so the claims are asserted
    * against real runs.
    */
-  const manifest = JSON.parse(
-    readFileSync(path.resolve("samples/briefs.json"), "utf8"),
-  ) as { file: string; label: string; expect: string }[];
+  const manifest = JSON.parse(readFileSync(path.resolve("samples/briefs.json"), "utf8")) as {
+    file: string;
+    label: string;
+    expect: string;
+  }[];
 
   it("lists every brief that exists, and every listed brief exists", async () => {
     const listed = manifest.map((m) => m.file).sort();
@@ -423,6 +429,64 @@ describe("selective production", () => {
   });
 });
 
+describe("generation cache integrity", () => {
+  it("never serves one provider's cached hero to another", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-cache-"));
+
+    // Populate the cache with the offline renderer.
+    const first = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir,
+      mode: "dev",
+      generator: new TestDoubleHeroGenerator(),
+      ratios: ["1x1"],
+    });
+    expect(first.products[1].hero.source).toBe("placeholder");
+
+    // A different provider must NOT pick that entry up.
+    const api = new FakeApiGenerator();
+    const second = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir,
+      mode: "dev",
+      generator: api,
+      ratios: ["1x1"],
+    });
+    expect(api.calls).toBe(1);
+    expect(second.products[1].hero.source).toBe("generated");
+    expect(second.products[1].hero.generation?.provider).toBe("test-api");
+
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("keeps a cached placeholder labelled as a placeholder", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-cache2-"));
+    for (let i = 0; i < 2; i++) {
+      const r = await runCampaign(parseBrief(briefYaml()), {
+        outputRoot: dir,
+        mode: "dev",
+        generator: new TestDoubleHeroGenerator(),
+        ratios: ["1x1"],
+      });
+      expect(r.products[1].hero.source).toBe("placeholder");
+      expect(r.metrics.generationRequests).toBe(0);
+    }
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("scopes the cache to the output root so runs cannot pollute each other", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-cache3-"));
+    const api = new FakeApiGenerator();
+    await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir,
+      mode: "dev",
+      generator: api,
+      ratios: ["1x1"],
+    });
+    const entries = await readdir(path.join(dir, ".cache"));
+    expect(entries.length).toBeGreaterThan(0);
+    await rm(dir, { recursive: true, force: true });
+  });
+});
+
 describe("provider selection", () => {
   it("applies a per-run model override without touching global state", async () => {
     const before = process.env.GEMINI_IMAGE_MODEL;
@@ -454,10 +518,16 @@ describe("run history", () => {
     const dir = await mkdtemp(path.join(tmpdir(), "cap-history-"));
 
     await runCampaign(parseBrief(briefYaml()), {
-      outputRoot: dir, mode: "final", generator: new FakeApiGenerator(), ratios: ["1x1"],
+      outputRoot: dir,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
     });
     await runCampaign(parseBrief(briefYaml()), {
-      outputRoot: dir, mode: "final", generator: new FakeApiGenerator(), ratios: ["1x1"],
+      outputRoot: dir,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
     });
 
     const insights = await readInsights(dir);

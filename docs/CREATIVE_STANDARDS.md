@@ -20,7 +20,7 @@ Mapped onto `CampaignBriefSchema`:
 | WHO | `audience` | yes |
 | WHAT | `message` — the single-minded proposition | yes |
 | WHY | `objective` | optional |
-| WHERE | `region`, plus the three channel formats | yes |
+| WHERE | `region`, plus the four channel formats | yes |
 | SUCCESS | `manualMinutesPerCreative` → time-saved figure in `report.json` | optional |
 
 **Corrected.** The first version of the schema had who / what / where only. Why
@@ -124,7 +124,35 @@ consistency failure, not just a budget one.
 
 ---
 
-## 5. Aspect ratios
+## 5. Cache integrity — a bug this project shipped and then fixed
+
+The generation cache was keyed on `(productId, prompt, referenceAsset)` and
+written to a single project-level `.cache/`. Two consequences, both caught by
+looking at an output rather than a report:
+
+1. The **test suite wrote into the same cache**. Its stand-in renders landed in
+   the project cache, where a later real run picked one up and served it.
+2. The key **did not include the provider or model**, so an entry produced by
+   one generator could be returned for another.
+
+The result was a creative rendered from an offline placeholder while
+`report.json` named `gemini-3-pro-image` as the provider. The per-hero
+provenance record was still truthful — it said `test-api` — but the headline
+provider field was not, and the image was fake. That is precisely the failure
+mode the no-theatre rule exists to prevent, and it survived 41 passing tests.
+
+Three fixes, each with a regression test:
+
+- the cache key now includes provider and model;
+- the cache lives under the run's output root, so a test run and a real run can
+  never share one;
+- a cached placeholder stays `source: "placeholder"` and is never promoted to
+  `generated_cached`.
+
+The lesson worth carrying: **a passing test suite is not evidence that the
+output is real.** The bug was only visible by opening the PNG.
+
+## 6. Aspect ratios
 
 1:1 (1080²), 9:16 (1080 × 1920) and 16:9 (1920 × 1080), as the assessment FAQ
 specifies: "Standard social media formats (e.g., Instagram 1:1, Stories 9:16,

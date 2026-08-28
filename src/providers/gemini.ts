@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
-  GenerationUnavailableError,
   type GeneratedHero,
+  GenerationUnavailableError,
   type HeroGenerator,
   type HeroRequest,
 } from "./types.js";
@@ -29,8 +29,6 @@ const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"
  */
 const DEFAULT_MODEL = "gemini-3-pro-image";
 
-
-
 const MIME_BY_EXT: Record<string, string> = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
@@ -42,7 +40,10 @@ export class GeminiHeroGenerator implements HeroGenerator {
   readonly provider = "google-gemini";
   readonly model: string;
 
-  constructor(private readonly apiKey: string, model?: string) {
+  constructor(
+    private readonly apiKey: string,
+    model?: string,
+  ) {
     if (!apiKey) throw new GenerationUnavailableError("GEMINI_API_KEY is not set");
     this.model = model || DEFAULT_MODEL;
   }
@@ -93,9 +94,7 @@ export class GeminiHeroGenerator implements HeroGenerator {
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(
-        `Gemini generation failed (HTTP ${res.status}): ${body.slice(0, 400)}`,
-      );
+      throw new Error(`Gemini generation failed (HTTP ${res.status}): ${body.slice(0, 400)}`);
     }
 
     const json = (await res.json()) as Record<string, unknown>;

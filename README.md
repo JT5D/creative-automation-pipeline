@@ -1,7 +1,8 @@
 # Creative Automation Pipeline
 
-Turns one campaign brief into ready-to-ship social creatives across three
-channel formats — Turns one campaign brief into ready-to-ship social creatives across four
+[![CI](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml)
+
+Turns one campaign brief into ready-to-ship social creatives across four
 channel formats and every target market — reusing brand-approved assets
 wherever they exist, and calling a GenAI image model only for what is
 genuinely missing.
@@ -95,7 +96,7 @@ npm run dev                                   # UI + API
 npm run campaign -- samples/campaign.yaml     # same pipeline, CLI
 npm run campaign -- samples/campaign.json     # identical brief, JSON form
 npm run campaign -- samples/campaign.yaml --dry-run   # what it costs, spending nothing
-npm run verify                                # typecheck + tests + build
+npm run check                                 # the release gate
 ```
 
 ---
@@ -619,7 +620,7 @@ src/
   cli.ts             thin wrapper over the same runCampaign()
   providers/         HeroGenerator: gemini · firefly · test double
   app/               one-screen React console
-tests/               20 tests, no network calls
+tests/               44 tests, no network calls
 samples/             campaign briefs + input assets
 docs/
   API_NOTES.md         verified API contracts, including one the docs omit

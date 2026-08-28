@@ -220,6 +220,24 @@
         </p>
       </div>
       <div class="card">
+        <h3>The bill, before you spend it</h3>
+        <p>
+          A dry run resolves exactly the way a real run does — same filesystem,
+          same rules — then stops. It reports what will be reused, what will be
+          generated, and what it will cost. A test asserts the estimate matches
+          the run that follows.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Cost that bends with reuse</h3>
+        <p>
+          Every run appends to a history file, and the console tracks reuse rate
+          across all of them. That is the number that matters: the same brief
+          costs less each quarter, because more of the catalogue is already
+          approved. Spend tracks what a brand owns, not what it wants.
+        </p>
+      </div>
+      <div class="card">
         <h3>Adobe-native by default</h3>
         <p>
           Firefly is the default provider and is selected automatically when
@@ -251,6 +269,7 @@
       <tr><td>Legal checks <em>(bonus)</em></td><td><span class="tick">✓</span> Prohibited-claim scan, run before any spend</td></tr>
       <tr><td>Logging / reporting <em>(bonus)</em></td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
       <tr><td>Comprehensive README</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
+      <tr><td>Engineering</td><td><span class="tick">✓</span> 44 tests, CI on Node 20 and 22, a fresh-clone job that produces creatives with no API key, and a release gate</td></tr>
     </table>
   </div>
 </section>

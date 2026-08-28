@@ -8,17 +8,48 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["20", "22"]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      # Types, lint, tests and build. No API key is configured on purpose:
+      # the pipeline renders through the offline provider, so CI never touches
+      # a paid endpoint.
+      - run: npm run verify
 
+  # The experience a reviewer actually has: clone, install, run, get creatives.
+  fresh-clone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
-
       - run: npm ci
-
-      # typecheck + tests + production build.
-      # No API key is configured here on purpose: the pipeline renders through
-      # the offline provider, so CI never touches a paid endpoint.
-      - run: npm run verify
+      - name: Produce a campaign with no API key at all
+        run: npm run campaign -- samples/campaign.yaml
+      - name: Every advertised creative must exist at its declared size
+        run: |
+          node --input-type=module -e "
+            import { readFile } from 'node:fs/promises';
+            import path from 'node:path';
+            import sharp from 'sharp';
+            const report = JSON.parse(await readFile('outputs/lumen-autumn-glow-de/report.json','utf8'));
+            let n = 0;
+            for (const p of report.products) for (const c of p.creatives) {
+              const meta = await sharp(path.join('outputs', c.outputPath)).metadata();
+              if (meta.width !== c.width || meta.height !== c.height) {
+                throw new Error(\`\${c.outputPath}: \${meta.width}x\${meta.height} != \${c.width}x\${c.height}\`);
+              }
+              n++;
+            }
+            if (n !== report.metrics.variantsCreated) throw new Error('creative count mismatch');
+            console.log(\`verified \${n} creatives at their declared dimensions\`);
+          "
