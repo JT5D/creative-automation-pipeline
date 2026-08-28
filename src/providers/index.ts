@@ -33,7 +33,7 @@ const CHOOSE =
 /**
  * Picks the generator, explicitly.
  *
- * An earlier version let Firefly win simply because two environment variables
+ * Selection is explicit. Letting Firefly win because two environment variables
  * happened to be present. That is the wrong default for an adapter this repo
  * has never executed against a live endpoint: the run that matters would have
  * silently changed provider. So selection is stated, not inferred:

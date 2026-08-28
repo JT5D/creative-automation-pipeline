@@ -150,21 +150,9 @@ export const CampaignBriefSchema = z
     /**
      * Art direction, overriding individual slots of the look.
      *
-     * A bare string is the SET, which is all this field has ever meant, so every
-     * brief written before looks existed still says what it said. The object form
-     * reaches the rest: light, grade, optics, materials, integrity.
-     *
-     * This grain exists because the old one caused a defect. The fragrance brief
-     * asked for "a single low raking light and soft falloff into black" and the
-     * pipeline silently prepended "soft natural window daylight, warm, with open
-     * bounce fill" - two contradictory lighting instructions in one prompt,
-     * because the only hatch that existed reached the set and nothing else.
-     *
-     * Composition and typography are absent on purpose and cannot be overridden.
-     * Composition is derived from the crop arithmetic rather than from taste, and
-     * overriding it slices the product in half. Typography is the rule that stops
-     * a blank jar coming back printed with invented claims on a regulated
-     * cosmetic, which has already happened once.
+     * A bare string is the SET. The object form reaches light, grade, optics,
+     * materials and integrity. Composition and typography are absent on purpose:
+     * see src/artDirection.ts for why neither is overridable.
      */
     artDirection: z
       .union([
@@ -195,18 +183,10 @@ export const CampaignBriefSchema = z
     manualMinutesPerCreative: z.number().positive().optional(),
 
     /**
-     * The same baseline, itemised.
-     *
-     * "25 minutes per creative" is one opaque number carrying the entire time-
-     * saved claim, and the first thing anyone senior asks is what is in it. The
-     * honest answer is that a human has to state it either way -- so let them
-     * state the steps instead of the total, and derive the total by adding up.
-     * Nothing here is measured by this pipeline and nothing is invented by it;
-     * the line items are the client's assumption, and now they are visible and
-     * arguable rather than folded into a single figure.
-     *
-     * When both forms are present preflight requires them to agree, so the total
-     * cannot drift away from the work it claims to represent.
+     * The same baseline, itemised, so the time-saved claim is arguable line by
+     * line rather than resting on one opaque number. Client assumption, never
+     * measured here. Preflight requires the itemised list and the total to
+     * agree.
      */
     manualBaseline: z
       .array(z.object({ task: z.string().min(1), minutes: z.number().positive() }))
@@ -233,18 +213,12 @@ export const CampaignBriefSchema = z
     products: z.array(ProductSchema).min(2, "A campaign needs at least 2 products"),
   })
   /**
-   * "at least two DIFFERENT products" is the exercise's wording, and until this
-   * existed only the count was enforced. Two products sharing an id - or two
-   * whose ids merely sanitize to the same directory, like "Product A!" and
-   * "Product A?" - wrote into the same folder, and the second silently
-   * overwrote the first. The run then reported 8 creatives with 4 files on
-   * disk, every validation green, and the assignment proof passing.
-   *
-   * The same hazard exists one level down: two markets sharing a locale write
-   * the same <locale>.png.
-   *
-   * Refusing it here makes the collision unrepresentable and costs nothing,
-   * rather than detecting the damage after it is done.
+   * "at least two DIFFERENT products" is the exercise's wording, so identity is
+   * enforced, not just the count. Two ids that sanitize to the same directory
+   * ("Product A!" and "Product A?") write to the same folder and the second
+   * overwrites the first: 8 creatives reported over 4 files, every validation
+   * green, proof passing. Two markets sharing a locale collide the same way.
+   * Refusing it here makes the collision unrepresentable.
    */
   .superRefine((brief, ctx) => {
     const product = firstCollision(brief.products, (p) => sanitizeId(p.id));

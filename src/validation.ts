@@ -183,21 +183,15 @@ function baselineCheck(brief: CampaignBrief): ValidationCheck | null {
 /**
  * Every market's copy, checked against the glyphs actually bundled.
  *
- * Localization is the exercise's bonus and the font files are its honest limit:
- * Rubik and Cormorant cover Latin and its accents, so a market written in
- * Japanese or Arabic rasterizes as .notdef boxes. Nothing downstream would
- * notice - the ink check counts opaque pixels, and a row of tofu is opaque - so
- * the creative ships looking broken with every check green.
+ * The bundled faces cover Latin and its accents, so a market written in
+ * Japanese or Arabic rasterizes as .notdef boxes. Nothing downstream notices:
+ * the ink check counts opaque pixels and a row of tofu is opaque, so the
+ * creative would ship looking broken with every check green.
  *
- * A failure, not a warning, for the same reason a truncated headline is: the
- * exercise requires the campaign message ON the post, and a row of .notdef
- * boxes is not that message. Producing the covered markets and quietly shipping
- * empty boxes for the rest would be worse than refusing - the boxes look like a
- * bug in the brand's ad, and nobody would find out until it was live. It costs
- * nothing to refuse, because this runs before any generation.
- *
- * It names the market and the characters so the fix is obvious: add the face to
- * assets/fonts and set brand.headlineFont.
+ * A failure rather than a warning, because the exercise requires the campaign
+ * message ON the post and a row of boxes is not that message. Runs before any
+ * generation, so refusing costs nothing. Names the market and the characters,
+ * so the fix is to add the face to assets/fonts and set brand.headlineFont.
  */
 function glyphCoverageCheck(brief: CampaignBrief): ValidationCheck {
   const gaps: string[] = [];
@@ -323,19 +317,14 @@ const legibilityCheck: CreativeCheck = ({ rendered, tpl }) => ({
 /**
  * Text/background contrast, but only where "background" is a colour we can name.
  *
- * WCAG 2.2 AA wants 4.5:1 for normal text and 3:1 for large text (>=18.66px
- * bold, or >=24px regular); campaign headlines sit far into the large band, so
- * holding them to the small-text bar would report a failure the standard does
- * not require.
+ * WCAG 2.2 AA wants 4.5:1 for normal text and 3:1 for large (>=18.66px bold or
+ * >=24px regular). Campaign headlines sit far into the large band.
  *
- * It returns null on the full-bleed formats, and that is the honest answer
- * rather than a missing one. There the copy sits on a photograph, not on
+ * Returns null on the full-bleed formats, which is the honest answer rather
+ * than a missing one: there the copy sits on a photograph, not on
  * brand.primaryColor, so comparing the two measures a background that is not
- * behind the copy -- it would pass over a white image. Legibility there is
- * guaranteed differently and earlier: composer.ts samples the luminance of the
- * band the copy will occupy and sizes the scrim to that specific photograph.
- * Measuring it after the fact is worth doing and is noted as a limitation; a
- * check that cannot go red is worse than an absent one.
+ * behind the copy. Legibility there is handled earlier - composer.ts samples
+ * the luminance of the band the copy will occupy and sizes the scrim to it.
  */
 const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
   if (rendered.scrimmed) return null;
@@ -352,12 +341,10 @@ const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
 /**
  * Presence of logo, which is the exercise's own example of a brand check.
  *
- * It never returns null. It used to, whenever the brief named no logoPath --
- * so the two brands that shipped without one produced creatives reporting
- * 16 of 16 checks passed, from a brand suite that had silently dropped the
- * brand's most visible asset. An absent check reads as a passed check in every
- * count that matters, which is the same defect as a label broader than its
- * measurement, one level up: the measurement was not there at all.
+ * Never returns null. A check that disappears when a brief names no logoPath
+ * reads as a passed check in every count that matters: 16 of 16, from a suite
+ * that silently dropped the brand's most visible asset. An absent measurement
+ * is the same defect as a label broader than its measurement, one level up.
  *
  * Not configured is a warning, not a failure. The brief is the authority on
  * what this brand's identity contains, and a campaign can legitimately run

@@ -1,13 +1,8 @@
 /**
  * What the console renders, imported from the modules that produce it.
  *
- * This file used to redeclare the report, the creative, the hero, the estimate
- * and the insights by hand -- about 170 lines of structural copies of types
- * that already existed three directories up. They had already drifted: the
- * browser's CampaignReport was missing startedAt and completedAt, and its
- * estimatedTimeSaved had three of the six fields the server sends. A copy of a
- * type is a type that will be wrong later, and nothing would have failed when
- * it was.
+ * Re-exported, never redeclared. A hand-written copy of a server type is a
+ * type that will be wrong later, and nothing fails when it is.
  *
  * Re-exporting is safe in the bundle because every line here is `export type`,
  * which is erased before the browser sees it -- no server module is pulled in.

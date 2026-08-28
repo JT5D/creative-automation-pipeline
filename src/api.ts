@@ -5,14 +5,10 @@ import type { RatioKey } from "./schema.js";
 /**
  * The wire contract between the local server and the console.
  *
- * These are the only shapes that exist because of HTTP rather than because of
- * the pipeline. Everything else the console renders is a pipeline type it
- * imports directly, so the browser and the server cannot disagree about what a
- * report or a validation check contains.
- *
- * Both ends import this file. They used to declare these three independently,
- * which is how src/app/types.ts ended up with a CampaignReport missing two
- * fields the server had been sending for weeks.
+ * The only shapes that exist because of HTTP rather than because of the
+ * pipeline. Everything else the console renders is a pipeline type it imports
+ * directly, and both ends import this file, so a hand-written copy cannot drift
+ * on one side only.
  */
 
 /** GET/POST /api/runs and /api/runs/:runId. In memory; the files are durable. */
@@ -27,12 +23,10 @@ export type RunState = {
    * True when this run was read back off disk rather than produced by this
    * server process.
    *
-   * The console used to say "no creatives yet" on load while a finished
-   * campaign sat in outputs/, because runs live in memory and memory does not
-   * survive a restart. The files do. Flagged rather than silently presented as
-   * fresh: a banner reading "production complete" about a run that happened
-   * yesterday, with no way to tell, is exactly the kind of quiet lie this
-   * project keeps finding in its own status.
+   * Runs live in memory; the files on disk outlive it. Flagged rather than
+   * presented as fresh, because a banner reading "production complete" about
+   * yesterday's run, with no way to tell, is a status that cannot report the
+   * truth.
    */
   restored?: boolean;
 };

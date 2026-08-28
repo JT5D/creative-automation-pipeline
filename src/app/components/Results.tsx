@@ -242,11 +242,10 @@ function ShootPanel({ productId, brief }: { productId: string; brief: string }) 
  *
  * A creative is not a post. Whoever schedules it still needs a caption, a tag
  * set and alt text for every product in every market, which is the same
- * per-market, per-product multiplication the images used to cost - so producing
- * the image and stopping is stopping one step short of the thing being
- * automated. It was written to disk and shown one creative at a time in the
- * inspector; it belongs under the images, where the person copying it is
- * looking.
+ * per-market, per-product multiplication the images cost before this pipeline.
+ * Producing the image and stopping is stopping one step short of the thing
+ * being automated, so the post sits under the images, where the person copying
+ * it is looking.
  *
  * Assembled, never generated. Every line is a string the brief already carries
  * and a human already signed off, and the whole post - caption, tags and alt

@@ -72,25 +72,18 @@ export type ComposedCreative = {
  *   16:9  hero right, brand copy panel left                  (landscape)
  *
  * 9:16 is the demanding one: fitting a square hero to it costs about 41% of the
- * image's width. That is exactly why the crop is centred and why the art
- * direction insists on negative space on all sides -- the product has to
- * survive that crop, and one generation has to serve every format.
+ * width, which is why the crop is centred and why the art direction insists on
+ * negative space. One generation has to survive every format.
  */
 /**
- * Meta's UNIFIED 9:16 safe zone: 14% top (~270px), 6% each side (~65px) and up
- * to 35% bottom (~672px) kept free of text, logos and other key elements, so
- * nothing important sits under the profile icon, caption tray or the
- * platform's own call-to-action.
+ * Meta's unified 9:16 safe zone: 14% top, 6% sides, 35% bottom kept clear of
+ * text and logos, so nothing important sits under the profile icon, caption
+ * tray or the platform's own call to action. Checked 2026-08-28.
  *
- * In March 2026 Meta consolidated Facebook Stories, Facebook Reels, Instagram
- * Stories and Instagram Reels into this single spec, taking the most
- * restrictive bottom (Reels, 35%) rather than the older Stories-only 20%.
- * Designing to it means ONE 9:16 export is safe across all four vertical
- * placements -- which is the whole point of generating the hero once.
- * Checked 2026-08-28.
- *
- * The photograph itself is full-bleed -- the restriction is on text and logos,
- * not on the image.
+ * Unified in March 2026 across Facebook and Instagram Stories and Reels, taking
+ * the most restrictive bottom rather than the older Stories-only 20%, so ONE
+ * 9:16 export is safe across all four vertical placements. The photograph is
+ * still full-bleed; the restriction is on text.
  */
 const STORY_SAFE_ZONE = { top: 0.14, bottom: 0.35, sides: 0.06 } as const;
 
@@ -329,11 +322,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   if (tpl.scrim) {
     // The scrim ends just past the copy, not at the bottom of the frame.
     //
-    // It used to fade to `disclaimerY + 260`, which is mid-frame on a 9:16 and
-    // the very bottom on a 1:1 -- so when the square formats moved their copy to
-    // the top band, their scrim stretched over the whole image and went thin
-    // everywhere. White copy then sat on a sunlit plaster wall at almost no
-    // contrast.
+    // Anchored to `scrimBottom`, not a fixed offset: a constant that is
+    // mid-frame on 9:16 is the very bottom on 1:1, so a square format would
+    // stretch one gradient over the whole image and go thin everywhere,
+    // leaving white copy on a sunlit wall at almost no contrast.
     //
     // It is `scrimBottom`, not the bottom of the whole text block. Where the
     // legal line is bottom-anchored it has its own foot scrim below, so
@@ -381,8 +373,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     // Solid brand panel fills the column beside the hero. 16:9 is the only
     // format that takes this branch: the hero is inset from the right edge and
     // everything left of it is panel. The other three are full-bleed and
-    // scrimmed, so this used to carry a `ratio === "9x16"` case that nothing
-    // could reach.
+    // scrimmed, so there is no other case to handle here.
     const panelWidth = width - tpl.hero.width;
     const panelSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="${height}">
       <rect width="${panelWidth}" height="${height}" fill="${brand.primaryColor}"/>
@@ -412,10 +403,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   //
   // One combined layer could not prove the campaign message rendered: the CTA
   // pill and the disclaimer draw into the same layer, so their ink alone would
-  // satisfy the check while the headline was missing. And `ctaRendered` used to
-  // be Boolean(callToAction), which proves the brief had a CTA, not that one
-  // reached the pixels. Measuring each separately is the only version of these
-  // checks that can actually go red.
+  // satisfy the check while the headline was missing. And `ctaRendered` measures ink
+  // too: Boolean(callToAction) would prove the brief had a CTA, not that one
+  // reached the pixels. Measuring each element separately is the only version
+  // of these checks that can go red.
   const inkOf = async (svg: string) => inkRatio(await sharp(Buffer.from(svg)).png().toBuffer());
   const headlineInkRatio = await inkOf(textLayer.headlineSvg);
   const textInkRatio = await inkRatio(textPng);
@@ -498,13 +489,11 @@ export type TextGeometry = {
 /**
  * Where every text element lands, computed once.
  *
- * This used to be two functions: buildTextLayer positioned the elements, and
- * textBlockBottom re-derived the same coordinates for the safe-zone check with
- * a comment saying it "has to mirror buildTextLayer exactly". It did not quite
- * -- the CTA height rounded its font size before taking the padding in one and
- * after it in the other, so the two agreed on the sample by arithmetic luck and
- * would have drifted on a different headline size. A check computed from a
- * second copy of the layout is a check on the copy.
+ * One source for both the render and the safe-zone check. Two functions
+ * deriving the same coordinates drift: rounding the CTA font size before the
+ * padding in one and after it in the other agrees by arithmetic luck on one
+ * headline size and not the next. A check computed from a second copy of the
+ * layout is a check on the copy.
  */
 export function textGeometry(
   tpl: Template,

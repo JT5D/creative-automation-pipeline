@@ -185,21 +185,13 @@ export function useCampaign({
   /**
    * Keep the dry run current without anyone asking for it.
    *
-   * The estimate is the only place the console says what the products are, which
-   * of them reuses an approved asset, which one is about to cost money, and
-   * where to hand it an asset instead. All of that sat behind a button, so a
-   * reviewer opening the console saw four filter panels and no product - and
-   * someone looking straight at the screen asked whether there was an upload at
-   * all. The answer was yes, two clicks away, which is the same as no.
+   * The estimate is the only place the console names the products, says which
+   * reuses an approved asset, which is about to cost money, and where to hand
+   * it one instead. Behind a button, all of that is invisible on load.
    *
-   * Safe to run on its own because a dry run is exactly that: it validates the
-   * brief, resolves what each product would do, and constructs no provider and
-   * spends nothing. The Estimate button stays, because re-checking on demand is
-   * still a thing people want, and because a control that vanishes when it
-   * starts happening automatically is worse than one that agrees with itself.
-   *
-   * Debounced, since the brief is a live textarea and this fires per keystroke
-   * otherwise. Not run while the source editor is open, for the same reason.
+   * Safe to run unasked because a dry run constructs no provider and spends
+   * nothing. Debounced, since the brief is a live textarea. The Estimate button
+   * stays for re-checking on demand.
    */
   useEffect(() => {
     if (!brief.trim() || selectedBriefs.length > 1) return;
@@ -265,8 +257,8 @@ export function useCampaign({
     // completely empty stage, recoverable only by reloading the page.
 
     // Every exit from here has to clear `busy`, including the ones that throw.
-    // A dropped connection used to leave the button spinning forever with no
-    // way back except a reload.
+    // A dropped connection must not leave the button spinning with no way back
+    // except a reload.
     const stop = () => {
       if (timer.current) clearInterval(timer.current);
       timer.current = null;

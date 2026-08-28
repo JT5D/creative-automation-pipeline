@@ -29,11 +29,9 @@ type Props = {
    * Supply an approved hero for a product the run would otherwise pay to
    * generate.
    *
-   * The same write the Inspector offers, moved to where the decision is
-   * actually visible. It used to live only behind "run a campaign, click a
-   * generated creative, read the review panel", which is three steps past the
-   * moment a person can see that this product is about to cost money. A
-   * capability nobody can find is not a capability.
+   * The same write the Inspector offers, placed where the decision is visible
+   * rather than three steps past the moment a person can see that this product
+   * is about to cost money. A capability nobody can find is not a capability.
    */
   onApproveAsset: (productId: string, file: File) => Promise<void>;
 };

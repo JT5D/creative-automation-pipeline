@@ -23,9 +23,9 @@ export type PlannedProduct = {
    * The exact prompt this product would be generated from, assembled the way
    * the run assembles it. Present only when the action is "generate".
    *
-   * Here so the thing being paid for can be read before it is paid for. It was
-   * previously only visible by adding a console.log, which meant the one
-   * decision with a real cost attached was the least inspectable in the system.
+   * Here so the thing being paid for can be read before it is paid for. The
+   * one decision with a real cost attached should not be the least inspectable
+   * thing in the system.
    */
   prompt?: string;
 };

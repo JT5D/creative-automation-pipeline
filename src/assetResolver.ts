@@ -16,9 +16,9 @@ export type ResolveContext = {
   imageSize?: "1K" | "2K";
   /**
    * Where cached heroes live. Derived from the output root so a test run and a
-   * real run can never share one -- the test suite was previously writing its
-   * stand-in renders into the project cache, where a later real run picked them
-   * up and reported them as generated.
+   * real run can never share one: a suite writing stand-in renders into the
+   * project cache means a later real run picks them up and reports them as
+   * generated.
    */
   cacheDir: string;
   emit: (event: string, detail?: Record<string, unknown>) => void;
@@ -180,59 +180,23 @@ export async function findApprovedHero(maybePath?: string): Promise<string | und
 }
 
 /**
- * One camera set-up in a shoot, described as a framing rather than an angle.
+ * One camera set-up, described as a framing rather than an angle.
  *
- * The campaign path generates ONE hero and crops it, because a crop is free and
- * a generation is not. That buys consistency and costs coverage: every format
- * is the same photograph. A real shoot covers a product from several set-ups.
+ * The campaign path generates ONE hero and crops it, so every format is the
+ * same photograph. Coverage is what that gives up, and this is what buying it
+ * back costs: one paid generation per set-up, only when a person asks.
  *
- * An earlier version of this shipped and did not work. It appended
- * `Camera: <description>` as the eighth clause of the four-hundred-word
- * campaign brief below, which also dictates optics, light, set, materials,
- * composition and retouching - so the camera instruction competed with a dozen
- * other constraints and lost. All four "distinct framings" came back as the
- * same eye-level three-quarter view. It also passed the PACKSHOT as the
- * reference, so the model was re-inventing the scene each time.
+ * The prompt is short, leads with "keep everything, change only the camera",
+ * and is anchored on THE HERO rather than the packshot, so set, light and grade
+ * are inherited from the image instead of re-described. One degree of freedom.
  *
- * Both were the wrong shape. The prompt below is short, it leads with "keep
- * everything, change only the camera", and it is anchored on THE HERO ITSELF -
- * the scene that already exists - so style, set and light are inherited from
- * the image instead of re-described, and the model has exactly one degree of
- * freedom. Framings are radically distinct by construction, not angle nudges.
- *
- * There is a boundary, and it is worth knowing before promising a client this.
- * The model is EDITING one reference frame, so it can reframe what is already
- * in view - crop it, close in, pull back, tilt, occlude it, look down on it -
- * but it cannot orbit the camera to reveal geometry the reference never showed.
- * A "from behind" set-up was written, generated, and came back as the reference
- * frame almost unchanged (visual drift 0.14 against 1.3 to 4.9 for the ones
- * that work), so it was removed rather than shipped as a framing that silently
- * returns the original. Turning a product around is a 3D or multi-reference
- * job, not a prompt.
- *
- * The set below therefore varies two things: where the camera is, and what the
- * frame is ABOUT - the light, the surface, the foreground. That second axis is
- * what gives a real shoot its variety.
- *
- * Two set-ups were written, generated and then deleted, and both failed the
- * same way: they came back as the reference frame. "From behind" asked the
- * model to orbit and reveal a side the reference never showed; "focus pulled"
- * asked it to move the plane of focus. Measured drift 0.14 and 0.15, against
- * 1.6 to 5.0 for the nine that work.
- *
- * So the boundary is sharper than "it varies the camera": this model
- * RECOMPOSES. It can crop, close in, pull back, tilt, occlude, look down, and
- * change what the frame is about - all of which are decisions about what to
- * include. It cannot synthesise unseen geometry or change the optics. Both of
- * those are a 3D or multi-reference job, not a prompt.
- *
- * That sentence names the production extension precisely, and the extension is
- * closer than it reads: the model this pipeline already calls, Nano Banana Pro
- * / gemini-3-pro-image, accepts multiple reference images in one request. A
- * product photographed from two or three sides would give the orbit set-ups the
- * geometry they need, which is a brief-and-assets change rather than a
- * different architecture. Not built here, because the sample products have one
- * packshot each and an unexercised path is not a feature.
+ * Boundary worth knowing before promising it to a client: this model
+ * RECOMPOSES. It can crop, close in, pull back, tilt, occlude and change what
+ * the frame is about. It cannot orbit to reveal geometry the reference never
+ * showed - "from behind" and "focus pulled" both returned the reference frame
+ * (drift 0.14 and 0.15, against 1.6 to 5.0 for the nine that work) and were
+ * deleted. Orbiting needs several reference images, which this model accepts,
+ * so it is a brief-and-assets change rather than a different architecture.
  */
 export type Shot = { id: string; label: string; framing: string };
 
@@ -373,11 +337,10 @@ export function buildHeroPrompt(
 ): string {
   // The widest hatch, and it no longer bypasses the locks.
   //
-  // It used to return early with the brief's string and nothing else, which
-  // meant a product could opt out of the typography rule entirely - and that
-  // rule is the only thing standing between a blank jar and invented claims
-  // printed on a regulated cosmetic. A custom prompt replaces the art
-  // direction, not the two constraints that are not art direction.
+  // A custom prompt replaces the art direction, not the two constraints that
+  // are not art direction. Returning the brief's string alone would let a
+  // product opt out of the typography rule, which is the only thing between a
+  // blank jar and invented claims on a regulated cosmetic.
   if (product.generationPrompt) {
     return [product.generationPrompt.trim(), COMPOSITION, TYPOGRAPHY_RULE].join(" ");
   }
@@ -421,12 +384,10 @@ export function buildHeroPrompt(
     // inside a centred square of 56%, and nothing whatsoever is gained by
     // making it smaller than that.
     //
-    // An earlier version said "SMALL and distant", "only the central third",
-    // and "most of this picture is background". It was written to stop the 9:16
-    // crop slicing the product in half, and it did - but it over-corrected by
-    // nearly half, aiming at 33% when the safe area is 56%, and every hero came
-    // back looking photographed from across the room. Say the real number once,
-    // as a positive instruction, and do not let a brief override it.
+    // Stated once, as the real number, as a positive instruction. Aiming at a
+    // third when the safe area is 56% stops the 9:16 crop slicing the product
+    // in half and pays for it by photographing everything from across the
+    // room.
     COMPOSITION,
 
     // Retouch standard, stated rather than implied.

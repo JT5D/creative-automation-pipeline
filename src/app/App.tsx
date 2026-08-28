@@ -85,8 +85,8 @@ export function App() {
     ratios: selectedFormats,
     locales: selectedLocales,
     // Filters and the open inspector belong to the run being replaced. A second
-    // run used to land filtered to a market it no longer contained, and since
-    // the filter row only appears for multi-market runs there was then no
+    // a run can otherwise land filtered to a market it no longer contains, and
+    // the filter row only appears for multi-market runs, so there would be no
     // control on screen to clear it.
     onReset: useCallback(() => {
       setSelected(null);
@@ -266,20 +266,14 @@ export function App() {
   /**
    * Stale-state guards, and the reason they are guards rather than more setters.
    *
-   * loadBrief cleared the run, the estimate and the error by hand, and the list
-   * was incomplete: a creative selected from campaign A stayed open in the
-   * inspector after switching to campaign B, showing A's image, A's provenance
-   * and A's checks beside B's brief. A market filter chosen on a three-market
-   * run survived into a one-market run, where nothing matched it and the stage
-   * read "0 of 8 creatives" with no way to see why.
+   * Clearing dependent state by hand on every brief switch is a list that goes
+   * out of date: a creative selected from one campaign stays open over another,
+   * and a market filter survives into a run that has no such market, leaving
+   * "0 of 8 creatives" with no control on screen to clear it.
    *
-   * Both are the defect that put one campaign's results under another's
-   * estimate, and adding two more setters to loadBrief would fix these two
-   * instances and leave the next one to be found by opening the app. So the
-   * check happens where the value is USED: a selection that does not belong to
-   * the run on screen cannot render, and a filter the run has no market for
-   * behaves as "all". Forgetting to clear something is no longer possible,
-   * because nothing depends on remembering.
+   * So the check happens where the value is USED. A selection that does not
+   * belong to the run on screen cannot render, and a filter the run has no
+   * market or ratio for behaves as "all". Nothing depends on remembering.
    */
   const shownSelection =
     selected &&

@@ -52,10 +52,9 @@ configureFontconfig();
 /**
  * A face, not a weight.
  *
- * This used to be `400 | 700`, which could only ever select between two
- * weights of one family -- so the moment the headline moved to a different
- * typeface, the measurement and the rendering would have disagreed and line
- * breaking would have been computed against the wrong glyphs.
+ * A numeric weight can only select between two weights of one family, so the
+ * moment a headline moves to a different typeface the measurement and the
+ * rendering disagree and line breaking is computed against the wrong glyphs.
  */
 export type Face = "display" | "bold" | "regular";
 
@@ -63,14 +62,6 @@ const FACE_FILES: Record<Face, string> = {
   display: "CormorantGaramond-SemiBold.ttf",
   bold: "Rubik-Bold.ttf",
   regular: "Rubik-Regular.ttf",
-};
-
-/** The SVG font-family each face must be rendered with, so measurement and
-    rasterization can never drift apart. */
-export const FACE_FAMILY: Record<Face, string> = {
-  display: DISPLAY_FAMILY,
-  bold: FONT_FAMILY,
-  regular: FONT_FAMILY,
 };
 
 const cache = new Map<Face, opentype.Font>();
@@ -120,18 +111,14 @@ export function measureText(text: string, fontSize: number, face: Face = "displa
 /**
  * Characters in `text` the bundled faces have no glyph for.
  *
- * Localization is the exercise's stated bonus, and the honest limit of it here
- * is the font files: Rubik and Cormorant Garamond cover Latin and its accents,
- * so a market written in Japanese, Arabic or Devanagari would rasterize as
- * .notdef boxes. Nothing would fail - the ink check counts opaque pixels and a
- * row of tofu is opaque - so the creative would ship looking broken with every
- * check green.
+ * The bundled faces cover Latin and its accents, so Japanese, Arabic or
+ * Devanagari rasterizes as .notdef boxes and nothing downstream fails: the ink
+ * check counts opaque pixels and tofu is opaque.
  *
- * fontconfig will not save it either: its answer to a missing glyph is a
- * substitution from somewhere else on the machine, so the same brief renders
- * differently on the evaluator's laptop than on mine.
- *
- * Returns the distinct offending characters, so preflight can name them.
+ * fontconfig does not save it either - its answer to a missing glyph is a
+ * substitution from elsewhere on the machine, so the same brief renders
+ * differently on another laptop. Returns the distinct offending characters so
+ * preflight can name them.
  */
 export function missingGlyphs(text: string, face: Face): string[] {
   const font = loadFont(face);

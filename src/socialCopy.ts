@@ -8,12 +8,9 @@ export type SocialCopy = {
   /**
    * Alt text for the post.
    *
-   * Not a nicety: every social platform takes one, screen readers depend on it,
-   * and it is the one field of a published post that is routinely left empty
-   * because it is written last. It is derivable honestly here, because both
-   * halves are verified rather than guessed - the product is the one the hero
-   * resolved to, and the message is measured present in the pixels of every
-   * creative by the campaign_message_rasterized check.
+   * Derivable honestly because both halves are verified rather than guessed:
+   * the product is the one the hero resolved to, and the message is measured
+   * present in the pixels by the campaign_message_rasterized check.
    */
   altText: string;
 };
@@ -21,22 +18,17 @@ export type SocialCopy = {
 /**
  * The words that go beside the picture.
  *
- * A creative is not a post. Whoever schedules it still has to write a caption
- * and a tag set for every product in every market, which is the same
- * per-market, per-product multiplication the images were costing before this
- * pipeline existed -- so producing the image and leaving the copy is stopping
- * one step short of the thing being automated.
+ * A creative is not a post. Producing the image and leaving the copy stops one
+ * step short of the thing being automated.
  *
- * It is assembled, not generated. Every line is a string the brief already
- * carries and a human already signed off: the market's own message, its call
- * to action, its disclaimer, the product name, the brand name. No model runs,
- * nothing is translated at runtime, and no claim appears that was not already
- * approved for that market -- which is the only version of this that a
- * regulated category could use. It costs nothing and it cannot hallucinate.
+ * Assembled, not generated. Every line is a string the brief already carries
+ * and a human already signed off: the market's message, call to action,
+ * disclaimer, product and brand. No model runs and nothing is translated at
+ * runtime, so no claim appears that was not approved for that market - the only
+ * version of this a regulated category could use.
  *
- * The result is screened by the same prohibited-term scan as the rendered copy,
- * in preflight, before any spend. A caption is published copy; it would be
- * strange to gate the pixels on the legal list and not the words under them.
+ * Screened by the same prohibited-term scan as the rendered copy, in preflight,
+ * before any spend. A caption is published copy.
  */
 export function socialCopy(brief: CampaignBrief, product: Product, market: Market): SocialCopy {
   const cta = market.callToAction ?? brief.callToAction;

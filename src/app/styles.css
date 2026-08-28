@@ -861,13 +861,16 @@ body {
   color: var(--text-2);
   line-height: 1.45;
 }
+/* Grid, not wrapping flex. A flex row grows the last cell to fill whatever is
+   left on the final line, so an eighth metric arrives alone and stretched, and
+   its number and its label stop reading as one thing. A grid keeps every cell
+   the same width whatever the count. */
 .dmetrics {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   flex: 3 1 480px;
 }
 .dcell {
-  flex: 1 1 108px;
   padding: 18px 20px;
   display: flex;
   flex-direction: column;

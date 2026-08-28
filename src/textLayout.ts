@@ -5,8 +5,8 @@ import { type Face, measureText } from "./fonts.js";
  *
  * SVG gives no text-measurement API, so wrapping has to be computed before the
  * markup is written. Measurements come from the bundled font's own advance
- * widths (see fonts.ts) -- this used to be a per-character width table tuned by
- * eye, which was wrong often enough to clip a CTA label.
+ * widths (see fonts.ts), not a per-character table tuned by eye, which is
+ * wrong often enough to clip a CTA label.
  */
 export type FitResult = {
   lines: string[];

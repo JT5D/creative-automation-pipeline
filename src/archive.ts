@@ -5,26 +5,17 @@ import { crc32 } from "node:zlib";
 /**
  * The campaign as one download.
  *
- * The console could only hand back one PNG at a time, which is not how a
- * producer collects a campaign. Zip is the only container a reviewer on any of
- * the three desktop platforms can open by double-clicking, so it is worth the
- * fifty lines it takes to write one, and worth NOT taking a dependency plus a
- * licence plus a supply-chain question to save them.
+ * A producer collects a campaign, not one PNG at a time. Zip is the only
+ * container a reviewer on any desktop platform opens by double-clicking, and
+ * it is worth fifty lines rather than a dependency plus a licence plus a
+ * supply-chain question.
  *
- * Stored (method 0), not deflated: the payload is PNGs and a JSON report, and
- * PNG is already deflate-compressed internally. Re-compressing buys a few
- * percent for real CPU on every download, and storing means there is no
- * compression state machine here - just headers wrapped around bytes.
+ * Stored (method 0), not deflated: the payload is PNGs, already
+ * deflate-compressed internally. Re-compressing costs CPU on every download
+ * for a few percent, and storing means no compression state machine here.
  *
- * Format is APPNOTE 6.3.2, the subset every unzip implementation has supported
- * for decades: a local header per file, then the central directory, then the
- * end-of-central-directory record.
- *
- * The checksum comes from `node:zlib`, which has had `crc32` since Node 20.15.
- * This file used to carry its own IEEE 802.3 lookup table and the loop to drive
- * it, which was the one piece of this repo that made a reader stop and ask what
- * it was doing in a creative pipeline. The platform grew the primitive; the
- * table went.
+ * Format is APPNOTE 6.3.2, the subset every unzip has supported for decades.
+ * The checksum is `node:zlib`'s `crc32`, available since Node 20.15.
  */
 
 /** Every file under `dir`, relative to it, depth first and sorted. */

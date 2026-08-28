@@ -9,7 +9,7 @@ and calling a GenAI image model only for what is genuinely missing.
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one hero reused, one
 generated, one live generation.** Select every format and market and that same
-single generation produces **24 creatives in 34.0s for $0.134** - because a
+single generation produces **24 creatives in 33.1s for $0.134** - because a
 model is called once per missing hero, not once per output.
 
 Every number on this page comes from the run committed in
@@ -43,11 +43,9 @@ it.
 
 Most of what came after was not features. It was verification, and it kept
 finding the same defect: **a check whose label was broader than its
-measurement.** It kept turning up, each one invisible to a passing test suite
-and obvious the moment I opened the file it was meant to be guarding. The count
-used to be written here as a number, which drifted the moment the next one was
-found, so it is a pattern now rather than a tally. The last one is the
-one I would lead with in a review: twenty-four committed visual baselines, every
+measurement.** Each one was invisible to a passing test suite and obvious on
+opening the file it was meant to be guarding. The one I would lead with in a
+review: twenty-four committed visual baselines, every
 test named *"matches its committed appearance"*, every one of them greyscaling
 the image before measuring it. The worst rendering bug this project had was a
 colour bug.
@@ -86,6 +84,22 @@ model list:
 ```bash
 npm run doctor
 ```
+
+### What the console shows
+
+It opens on a dry run of the selected brief, which spends nothing: the products,
+which one reuses an approved hero and which one costs money, the resolved art
+direction and the exact prompt, and the price with its arithmetic
+(`1 x $0.134 per image`). From there:
+
+- **Supply approved hero** on a GENERATE row - the next run reuses it, and the
+  estimate drops to $0.00.
+- **Preview / Ship** - preview renders the hero at 1K on the cheapest model,
+  $0.0336 against $0.134.
+- **Shoot camera variations** under a product, priced before the button.
+- The post body, tags and alt text under the creatives, ready to paste.
+
+The last finished campaign on disk is restored on load, labelled as such.
 
 **With no key at all it still runs**, rendering a labelled offline preview.
 That preview deliberately cannot satisfy the "generate missing assets with a
@@ -330,9 +344,12 @@ the row says which gate stopped it and the batch keeps going.
 
 ### 9. Art direction is slots, with two of them locked
 
-The prompt is named slots - `standard · optics · light · set · grade ·
-materials · integrity` - each with a default. Control comes in three widening
-steps, and most briefs never leave the first:
+The prompt is named slots - `standard · optics · light · set · moment · grade ·
+materials · integrity` - each with a default. `moment` is what Google's own
+prompting guide calls action: without it every hero is a lit object sitting
+still, which is packshot photography rather than campaign photography.
+
+Control comes in three widening steps, and most briefs never leave the first:
 
 ```yaml
 look: nocturne                    # one word. light, set and grade together
@@ -577,7 +594,7 @@ director.
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Campaign velocity | One brief → 24 validated creatives in 34.0s | **Delivered** |
+| 1 · Campaign velocity | One brief → 24 validated creatives in 33.1s | **Delivered** |
 | 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
 | 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
 | 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
@@ -585,7 +602,7 @@ director.
 
 | Pain point | What this does about it |
 |---|---|
-| 1 · Manual production overload | One brief → 24 finished creatives, 1.42s each |
+| 1 · Manual production overload | One brief → 24 finished creatives, 1.38s each |
 | 2 · Inconsistent quality | Brand rules are code, not a style guide someone remembers |
 | 3 · Approval bottlenecks | Prohibited claims stop the run before production; a human only reviews what a model touched |
 | 4 · Analysis at scale | Every run writes provenance and per-check results as data |

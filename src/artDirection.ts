@@ -3,27 +3,21 @@ import type { CampaignBrief } from "./schema.js";
 /**
  * The art direction, as named slots rather than one paragraph.
  *
- * The prompt used to be a flat 400-word string with three escape hatches bolted
- * on at three different grains: `styleBar` replaced the whole quality standard,
- * `artDirection` replaced the set and nothing else, and `generationPrompt`
- * replaced everything. None of them was the grain an art director works at, and
- * the middle one caused a real defect - the fragrance brief asked for "a single
- * low raking light and soft falloff into black" and the pipeline silently
- * prepended "soft natural window daylight, warm, with open bounce fill". Two
- * contradictory lighting instructions in one prompt, and the model split the
- * difference. That is what "generic" looks like from the inside.
+ * A brief replaces any slot by name, which is the grain an art director works
+ * at. A single flat prompt with a partial override is not: asking for "a low
+ * raking light and falloff into black" while the pipeline prepends "warm window
+ * daylight with bounce fill" puts two lighting instructions in one prompt and
+ * the model splits the difference. That is what generic looks like from inside.
  *
- * So the prompt is slots with defaults, and a brief may replace any of them by
- * name. Two slots are deliberately NOT overridable, and they are exactly the two
- * that have caused shipped defects:
+ * Two slots are NOT overridable, and they are the two whose override causes
+ * a shipped defect:
  *
- *   composition  derived from the crop arithmetic, not from taste. Every format
- *                is a centre crop of one square hero; 9:16 keeps 9/16 of the
- *                width, so the product has to sit inside a centred 56% box.
- *                Override it and the product gets sliced in half.
+ *   composition  derived from the crop arithmetic, not taste. Every format is a
+ *                centre crop of one square hero and 9:16 keeps 9/16 of the
+ *                width, so the product must sit inside a centred 56% box.
+ *                Override it and the product is sliced in half.
  *   typography   the absolute no-lettering rule. Override it and a blank jar
- *                comes back printed with invented claims on a regulated
- *                cosmetic. This one already happened.
+ *                returns printed with invented claims on a regulated cosmetic.
  */
 export type Slot =
   | "standard"
@@ -74,10 +68,10 @@ const CINEMATIC_BAR =
 /**
  * Optics, shared by every look.
  *
- * The product stays critically sharp and the set falls away. An earlier version
- * stacked focus across the WHOLE frame at f/9, which is catalogue lighting:
- * technically clean, flat, and the reason the output read as stock. Depth is
- * what separates an advertisement from a packshot.
+ * The product stays critically sharp and the set falls away. Stacking focus
+ * across the whole frame at f/9 is catalogue lighting: technically clean, flat,
+ * and the reason such output reads as stock. Depth is what separates an
+ * advertisement from a packshot.
  */
 const OPTICS =
   "Shot on a 100mm macro lens at f/4, focus stacked across the product itself " +
@@ -101,22 +95,15 @@ const INTEGRITY =
   "any substance inside or on the vessel.";
 
 /**
- * The moment. Google's own prompting guide lists the essential elements of an
- * image prompt as subject, composition, ACTION, location and style, and this
- * prompt had every one of those except action.
+ * The moment. Google's prompting guide names the essential elements of an image
+ * prompt as subject, composition, ACTION, location and style
  * (cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-nano-banana,
- * verified 2026-08-29.)
+ * verified 2026-08-29), and without this the prompt has every one except action.
  *
- * It showed. Every hero was a correctly lit object sitting still on a ledge:
- * excellent packshot photography, and not campaign photography. The reference
- * workflow this project studied had motion in every generated prompt - an arm
- * mid-stroke, water splashing - because a frame with something happening in it
- * reads as a photograph taken at a moment rather than an object recorded.
- *
- * The constraint is that the subject is a sealed cosmetic that must stay sealed
- * and unlabelled, so the action cannot be the product doing something. It is
- * the air and the light doing something around it, which is exactly what a
- * still-life photographer actually waits for.
+ * It shows: a correctly lit object sitting still is packshot photography, not
+ * campaign photography. The subject is a sealed cosmetic that must stay sealed
+ * and unlabelled, so the action is the air and the light doing something around
+ * it - which is what a still-life photographer waits for.
  */
 export const LOOKS: Record<LookName, SlotValues> = {
   daylight: {
@@ -234,21 +221,17 @@ export const TYPOGRAPHY_RULE =
 /**
  * Where a second, third or fourth product in the same campaign is placed.
  *
- * `artDirection` is brief-level, so every product in a campaign resolved to the
- * identical `set` clause: two products, one travertine ledge, two nearly
- * interchangeable photographs. A real shoot does not move to a different
- * country for the second product, but it does move the camera to another corner
- * of the same location, and the campaign reads as a set of pictures rather than
- * one picture taken twice.
+ * `artDirection` is brief-level, so without this every product resolves to the
+ * identical set and a campaign reads as one picture taken twice. A real shoot
+ * moves the camera to another corner of the same location.
  *
- * Deliberately NOT new schema. A per-product artDirection field would be a
- * fourth escape hatch on a system that already has three, to solve a problem a
- * brief never has to think about. This rotates within the resolved look, so the
- * light, the grade and the materials stay identical - which is what holds a
- * campaign together - and only the placement moves.
+ * Not new schema: a per-product field would be a fourth escape hatch on a
+ * system with three, for a problem a brief never has to think about. Rotating
+ * within the look keeps light, grade and materials identical - which is what
+ * holds a campaign together - and moves only the placement.
  *
- * Index-keyed rather than random, because the same brief must produce the same
- * prompt on every run or the cache key changes and the evidence stops matching.
+ * Index-keyed rather than random, so the same brief produces the same prompt
+ * and the cache key holds.
  */
 const SET_VARIATIONS: Record<LookName, string[]> = {
   daylight: [

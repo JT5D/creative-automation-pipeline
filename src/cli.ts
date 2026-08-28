@@ -15,7 +15,7 @@ import type { CampaignReport } from "./report.js";
  */
 const args = process.argv.slice(2);
 
-// An unrecognised flag used to fall through to a full campaign against the live
+// An unrecognised flag must not fall through to a full campaign against the live
 // key, so `--help` spent real money. Anything this does not understand stops
 // here instead. `--help` is itself a documented flag and belongs in the set:
 // left out, asking for help printed the help, then reported "Unrecognised:
@@ -177,11 +177,11 @@ function total<T>(rows: T[], pick: (row: T) => number | undefined): number {
 /**
  * Every brief in the library, back to back.
  *
- * The exit code used to count any refused brief as a failure, and the manifest
- * always contains one brief whose whole purpose is to be refused -- so this
- * could never return 0. A status that cannot report success is as useless as
- * one that cannot report failure: nobody looks at it, and the day a real
- * failure arrives the 2 is indistinguishable from the 2 that was always there.
+ * The manifest deliberately contains briefs whose purpose is to be refused, so
+ * counting any refusal as a failure would mean this could never return 0. A
+ * status that cannot report success is as useless as one that cannot report
+ * failure: nobody looks at it, and a real failure is indistinguishable from the
+ * one that was always there.
  *
  * Each entry already declares what it expects, so that is what gets checked. A
  * brief that should be refused and is refused passes. One that should be

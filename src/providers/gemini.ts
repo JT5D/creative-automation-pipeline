@@ -39,19 +39,15 @@ const DEFAULT_MODEL = "gemini-3-pro-image";
 /**
  * Ceiling on a single generation request.
  *
- * The retry policy handles a request that FAILS. It does nothing for one that
- * never answers, and this is the only call in the pipeline that costs money and
- * the only one that reaches the network: without a deadline, a half-open
- * connection hangs the run forever, with no output, no error and no way to know
- * whether the generation was billed. 2K generations here measure around 23
- * seconds, so 120 is roughly five times the observed worst case - long enough
- * that a slow-but-working call is never cut off, short enough that a hung one
- * surfaces while somebody is still watching.
+ * Retries handle a request that FAILS, not one that never answers. This is the
+ * only call that costs money and the only one that reaches the network, so
+ * without a deadline a half-open connection hangs the run with no output, no
+ * error, and no way to know whether the generation was billed. 2K generations
+ * measure around 23s, so 120 is about five times the observed worst case.
  *
  * A timeout is a ProviderError with no status, which withRetry treats as not
- * retryable. That is deliberate: a request that hung may well have been
- * accepted and billed upstream, and firing another is the wrong default when
- * the failure mode is "no answer" rather than "refused".
+ * retryable: a request that hung may already have been billed, and firing
+ * another is the wrong default when the failure mode is "no answer".
  */
 const REQUEST_TIMEOUT_MS = 120_000;
 

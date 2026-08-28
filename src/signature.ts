@@ -31,31 +31,25 @@ export async function visualSignature(image: Buffer | string): Promise<number[]>
 /**
  * What the luminance grid above cannot see: colour.
  *
- * `visualSignature` greyscales before it measures, so it is blind to every
- * colour defect by construction -- a creative rendered in the wrong brand
- * palette at the same luminance drifts by exactly zero and passes a test named
- * "matches its committed appearance". That is the same shape as every false
- * green in this repo: a label broader than the measurement under it.
+ * `visualSignature` greyscales before it measures, so a creative rendered in
+ * the wrong palette at the same luminance drifts by zero and passes a test
+ * named "matches its committed appearance".
  *
- * It is not theoretical. The worst rendering defect this project has had was
- * `.png({ quality: 95 })` quantising every export to a 256-colour palette. It
- * survived the whole suite, including 24 committed visual baselines, and was
- * found by opening a file. `distinctColours` is the number that would have
- * caught it: a truecolor export of a photographic hero carries tens of
- * thousands of colours, and a palette-mode one carries at most 256.
+ * The worst rendering defect this project had was `.png({ quality: 95 })`
+ * quantising every export to 256 colours. It survived the whole suite and 24
+ * visual baselines, and was found by opening a file. `distinctColours` is the
+ * number that catches it: a truecolor photographic hero carries tens of
+ * thousands, a palette-mode one at most 256.
  *
- * Sampled at 256x256 rather than full size, which costs milliseconds. The two
- * measurements need different sampling and get it:
+ * The two measurements need different sampling, at 256x256:
  *
- *   distinctColours  NEAREST NEIGHBOUR, which returns real source pixels. The
- *                    first version of this used the default (lanczos) and was
- *                    itself a false green -- interpolation manufactures colours
- *                    between the palette entries, so a 256-colour file measured
- *                    8,534 and sailed past. Measured on this repo's own 1:1
- *                    creative: 11,102 truecolor, exactly 256 after
- *                    `.png({ quality: 95 })`, and 8,534 if you resize it wrong.
+ *   distinctColours  NEAREST NEIGHBOUR, which returns real source pixels.
+ *                    Interpolation manufactures colours between palette
+ *                    entries: this repo's 1:1 creative measures 11,102
+ *                    truecolor, exactly 256 after the palette bug, and 8,534
+ *                    if resized with the default filter.
  *   rgb              lanczos, because a mean wants the smooth resample and is
- *                    then stable enough across platforms to compare directly.
+ *                    then stable across platforms.
  */
 export type ColourSignature = {
   /** Mean R, G, B across the whole creative, 0-255. */

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import express from "express";
 import sharp from "sharp";
 import type { BatchCampaign, BatchState, FormatOption, RunState } from "./api.js";
@@ -188,10 +189,9 @@ app.get("/api/looks", (_req, res) => {
 /**
  * The most recent campaign still on disk, as a completed run.
  *
- * Runs are held in memory, so restarting the server used to leave the console
- * saying "no creatives yet" over a directory full of finished creatives. The
- * report and the PNGs are durable and /outputs already serves them, so the only
- * thing missing was reading them back.
+ * Runs are held in memory; the report and the PNGs are durable and /outputs
+ * already serves them. Without this a restart leaves the console saying "no
+ * creatives yet" over a directory full of finished creatives.
  *
  * Picked by completedAt from the report itself, not by file mtime: copying a
  * directory changes mtime and does not change which run finished last.
@@ -512,9 +512,22 @@ app.get("/api/runs/:runId", (req, res) => {
  * proportional hardening for a local take-home is one argument, not an auth
  * system. (The FAQ is explicit that deployment security is not required.)
  */
-app.listen(PORT, "127.0.0.1", () => {
-  const status = providerStatus();
-  console.log(`Creative pipeline server  →  http://127.0.0.1:${PORT}`);
-  console.log(`Provider: ${status.label}`);
-  console.log(`Outputs:  ${OUTPUT_ROOT}`);
-});
+/**
+ * Exported so the routes can be driven without a port, and listening only when
+ * this file is what was run. Seventeen routes and four that spend money or
+ * write files had no test at all, because there was no way to reach them
+ * without starting the real thing.
+ */
+export { app };
+
+const startedDirectly =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (startedDirectly) {
+  app.listen(PORT, "127.0.0.1", () => {
+    const status = providerStatus();
+    console.log(`Creative pipeline server  →  http://127.0.0.1:${PORT}`);
+    console.log(`Provider: ${status.label}`);
+    console.log(`Outputs:  ${OUTPUT_ROOT}`);
+  });
+}
