@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import type { HeroGenerator } from "./providers/index.js";
+import { GenerationUnavailableError, type HeroGenerator } from "./providers/index.js";
 import { withRetry } from "./retry.js";
 import type { CampaignBrief, CanonicalHeroAsset, Product } from "./schema.js";
 
@@ -81,6 +81,18 @@ export async function resolveHero(
         generation: cached.generation,
       };
     }
+  }
+
+  // The assignment's hard requirement is that a MISSING asset is produced by a
+  // real GenAI image model. The offline renderer exists so a fresh clone runs
+  // without an account -- it is not a generator, and letting it serve this
+  // branch in `final` would produce a run that looks compliant and is not.
+  // Reused approved assets still need no provider at all; only this branch does.
+  if (ctx.mode === "final" && ctx.generator.provider === "offline-placeholder") {
+    throw new GenerationUnavailableError(
+      "Final mode requires a real GenAI provider for missing assets. Configure a " +
+        "billing-enabled Gemini API key or an entitled Adobe Firefly Services project.",
+    );
   }
 
   ctx.emit("generation_submitted", {

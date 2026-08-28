@@ -49,9 +49,13 @@ let signatures: Record<string, number[]>;
 
 beforeAll(async () => {
   outputs = await mkdtemp(path.join(tmpdir(), "cap-visual-"));
+  // dev, deliberately: this suite compares LAYOUT, so it wants the
+  // deterministic offline renderer as its hero. `final` now refuses that
+  // renderer for a missing asset -- which is the point of the guard, and
+  // exactly why this fixture must not run in final mode.
   const report = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
     outputRoot: outputs,
-    mode: "final",
+    mode: "dev",
     generator: new TestDoubleHeroGenerator(),
   });
 
