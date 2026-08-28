@@ -15,9 +15,14 @@ toneOfVoice: Restrained, nocturnal, confident. No superlatives.
 manualMinutesPerCreative: 30
 manualHourlyRateUsd: 110
 
-artDirection: >-
-  on a dark polished stone plinth against a deep shadowed wall, with a single
-  low raking light and soft falloff into black
+# One word sets the light, the set and the grade together.
+#
+# This brief used to say the set here as a string, which is all `artDirection`
+# could reach - so it asked for "a single low raking light and soft falloff into
+# black" while the pipeline silently prepended "soft natural window daylight,
+# warm, with open bounce fill". Two contradictory lighting instructions in one
+# prompt, and the model split the difference.
+look: nocturne
 
 markets:
   - locale: en-GB

@@ -7,6 +7,7 @@ import {
   type CanonicalHeroAsset,
   type RatioKey,
   REQUIRED_RATIOS,
+  sanitizeId,
   type ValidationResult,
 } from "./schema.js";
 import type { SocialCopy } from "./socialCopy.js";
@@ -54,7 +55,7 @@ export type CampaignReport = {
   audience: string;
   message: string;
   markets: { locale: string; message: string }[];
-  mode: "dev" | "final";
+  mode: "dev" | "final" | "preview";
   provider: { provider: string; model: string };
   startedAt: string;
   completedAt: string;
@@ -155,7 +156,7 @@ export function createReport(args: {
   products: ProductRecord[];
   failures: ProductFailure[];
   preflight: ValidationResult;
-  mode: "dev" | "final";
+  mode: "dev" | "final" | "preview";
   provider: { provider: string; model: string };
   startedAt: number;
   completedAt: number;
@@ -236,7 +237,7 @@ export function createReport(args: {
         ),
       },
     },
-    assignmentProof: proveAssignment(products, brief.products.length),
+    assignmentProof: proveAssignment(products, brief.products.length, mode),
     products,
     failures,
     warnings: args.warnings,
@@ -261,6 +262,7 @@ export function createReport(args: {
 function proveAssignment(
   products: ProductRecord[],
   requested: number,
+  mode: "dev" | "final" | "preview",
 ): {
   passed: boolean;
   checks: AssignmentCheck[];
@@ -306,6 +308,19 @@ function proveAssignment(
       };
     }),
     {
+      id: "ships_at_full_resolution",
+      // A preview generates its hero at 1K to reach the cheap models, and every
+      // format is a centre crop of that one square image - 9:16 needs 1080x1920
+      // out of it, so the source is upscaled about 1.9x and goes soft. Cheap
+      // iteration is the point of preview mode; pretending its output is the
+      // deliverable is not.
+      passed: mode !== "preview",
+      message:
+        mode === "preview"
+          ? "preview run: hero generated at 1K to reach the cheap tier, so the exports are upscaled - re-run without --preview to ship"
+          : "hero generated at the full 2K every format is cut from",
+    },
+    {
       id: "real_genai_demonstrated",
       passed: generated.length > 0,
       message: generated.length
@@ -325,6 +340,17 @@ function proveAssignment(
       id: "campaign_message_rasterized",
       passed: creatives.length > 0 && messageComplete.length === creatives.length,
       message: `campaign message measured complete in the pixels of ${messageComplete.length}/${creatives.length} creatives`,
+    },
+    {
+      id: "distinct_output_files",
+      // The schema refuses the two collisions that exist today. This counts the
+      // damage rather than the cause, so a future axis - a new format key, a
+      // second locale field - cannot quietly halve the output while every other
+      // number here keeps reporting what was produced instead of what survived.
+      passed:
+        creatives.length > 0 &&
+        new Set(creatives.map((c) => c.outputPath)).size === creatives.length,
+      message: `${new Set(creatives.map((c) => c.outputPath)).size}/${creatives.length} creatives wrote to a distinct file`,
     },
     {
       id: "no_failed_creative_validation",
@@ -347,6 +373,8 @@ function proveAssignment(
  * the repo. Anything inside the project becomes project-relative; anything
  * outside it is reduced to a filename rather than leaking a home directory.
  */
+export { sanitizeId };
+
 export function portablePath(absolute: string): string {
   const rel = path.relative(process.cwd(), absolute);
   return rel.startsWith("..") ? path.basename(absolute) : rel;
@@ -358,15 +386,4 @@ export async function writeReport(report: CampaignReport, outputRoot: string): P
   const file = path.join(dir, "report.json");
   await writeFile(file, JSON.stringify(report, null, 2));
   return file;
-}
-
-/** Brief ids come from user input and become directory names. */
-export function sanitizeId(id: string): string {
-  const cleaned = id
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^[-.]+|[-.]+$/g, "")
-    .slice(0, 64);
-  return cleaned || "campaign";
 }

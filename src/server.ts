@@ -4,11 +4,12 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import sharp from "sharp";
-import type { FormatOption, RunState } from "./api.js";
+import type { BatchCampaign, BatchState, FormatOption, RunState } from "./api.js";
 import { zipDirectory } from "./archive.js";
+import { DEFAULT_LOOK, LOOK_OPTIONS } from "./artDirection.js";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
-import { runCampaign } from "./pipeline.js";
+import { loadBriefFile, runCampaign } from "./pipeline.js";
 import { MODEL_OPTIONS, PRICING_SOURCE } from "./pricing.js";
 import { providerStatus } from "./providers/index.js";
 import { sanitizeId } from "./report.js";
@@ -20,6 +21,7 @@ const SAMPLES_DIR = path.resolve("samples");
 
 /** In-memory only. Runs are ephemeral; the outputs on disk are the artifact. */
 const runs = new Map<string, RunState>();
+const batches = new Map<string, BatchState>();
 
 const app = express();
 app.use(express.json({ limit: "12mb" })); // a 2K packshot is a few MB
@@ -170,6 +172,17 @@ app.get("/api/formats", (_req, res) => {
   res.json(formats);
 });
 
+/**
+ * The art-direction looks the console may choose from.
+ *
+ * Served rather than hard-coded in the browser for the same reason the formats
+ * are: adding a look to LOOK_OPTIONS should put it in the picker, and a copy of
+ * the list in the bundle is a copy that goes stale.
+ */
+app.get("/api/looks", (_req, res) => {
+  res.json({ looks: LOOK_OPTIONS, default: DEFAULT_LOOK });
+});
+
 /** Cross-run learning: reuse rate, spend and time saved over every run so far. */
 app.get("/api/insights", async (_req, res) => {
   res.json(await readInsights(OUTPUT_ROOT));
@@ -219,6 +232,7 @@ app.post("/api/runs", async (req, res) => {
     ratios: req.body?.ratios,
     locales: req.body?.locales,
     model: typeof req.body?.model === "string" ? req.body.model : undefined,
+    look: LOOK_OPTIONS.some((l) => l.id === req.body?.look) ? req.body.look : undefined,
     onEvent: (event) => state.events.push(event),
   })
     .then((report) => {
@@ -234,6 +248,80 @@ app.post("/api/runs", async (req, res) => {
         detail: { message: state.error },
       });
     });
+});
+
+/**
+ * Run several campaigns as one job.
+ *
+ * The exercise opens with a client "launching hundreds of localized social ad
+ * campaigns monthly", and its first pain point is producing those variants at
+ * that volume. A console that runs one campaign at a time does not show the
+ * shape of that problem, so this takes a list.
+ *
+ * Sequential, deliberately. Each campaign can spend money, and running them
+ * concurrently would multiply rate-limit exposure and make the spend
+ * impossible to watch. It is the same loop `npm run portfolio` has always been.
+ */
+app.post("/api/batches", async (req, res) => {
+  const files: unknown = req.body?.files;
+  if (!Array.isArray(files) || files.length === 0 || !files.every((f) => typeof f === "string")) {
+    res.status(400).json({ error: "Body must be { files: string[] }" });
+    return;
+  }
+
+  const library: { file: string; label: string }[] = await readFile(
+    path.join(SAMPLES_DIR, "briefs.json"),
+    "utf8",
+  )
+    .then(JSON.parse)
+    .catch(() => []);
+
+  const batchId = randomUUID();
+  const state: BatchState = {
+    batchId,
+    status: "running",
+    startedAt: new Date().toISOString(),
+    campaigns: (files as string[]).map((file) => ({
+      file,
+      label: library.find((b) => b.file === file)?.label ?? file,
+      status: "queued" as const,
+    })),
+  };
+  batches.set(batchId, state);
+  res.status(202).json({ batchId });
+
+  void (async () => {
+    for (const campaign of state.campaigns) {
+      campaign.status = "running";
+      try {
+        // The filename decides a path, so it is confined to samples/ exactly
+        // the way the single-brief route confines it.
+        const name = path.basename(campaign.file);
+        const report = await runCampaign(await loadBriefFile(path.join(SAMPLES_DIR, name)), {
+          outputRoot: OUTPUT_ROOT,
+          ratios: req.body?.ratios,
+          locales: req.body?.locales,
+        });
+        campaign.report = report;
+        campaign.status = "complete";
+      } catch (error) {
+        // A refused brief is a correct outcome, not a crash. Two of the samples
+        // exist to be refused, and the batch must not stop for them.
+        campaign.error = error instanceof Error ? error.message : String(error);
+        campaign.status = "refused";
+      }
+    }
+    state.status = "complete";
+  })();
+});
+
+app.get("/api/batches/:batchId", (req, res) => {
+  const state = batches.get(req.params.batchId);
+  if (!state) {
+    res.status(404).json({ error: "Unknown batch" });
+    return;
+  }
+  res.json(state);
 });
 
 app.get("/api/runs/:runId", (req, res) => {

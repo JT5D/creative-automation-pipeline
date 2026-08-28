@@ -9,7 +9,7 @@ and calling a GenAI image model only for what is genuinely missing.
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one hero reused, one
 generated, one live generation.** Select every format and market and that same
-single generation produces **24 creatives in 31.5s for $0.134** - because a
+single generation produces **24 creatives in 34.0s for $0.134** - because a
 model is called once per missing hero, not once per output.
 
 Every number on this page comes from the run committed in
@@ -33,6 +33,29 @@ A working proof-of-concept: it runs locally, calls a real image model, writes
 real files. It is not a deployed system - storage is local, there is no queue,
 and [Production extension](#production-extension) names what a customer's stack
 would replace.
+
+### On scope
+
+The exercise suggests two to three hours. The pipeline that satisfies every
+requirement it lists is small, and it is the part I would want reviewed:
+`src/pipeline.ts` is one screen, and everything the brief asks for happens in
+it.
+
+Most of what came after was not features. It was verification, and it kept
+finding the same defect: **a check whose label was broader than its
+measurement.** Eight of them, each invisible to a passing test suite and obvious
+the moment I opened the file it was meant to be guarding. The last one is the
+one I would lead with in a review: twenty-four committed visual baselines, every
+test named *"matches its committed appearance"*, every one of them greyscaling
+the image before measuring it. The worst rendering bug this project had was a
+colour bug.
+
+I kept going because a creative pipeline that quietly ships the wrong pixels is
+worse than one that does not run at all, and because finding out which of your
+own checks are lying is the interesting part of this job. If that reads as more
+than the exercise asked for, that is a fair reading;
+[Checks that can actually fail](#11-checks-that-can-actually-fail) is the
+argument for it.
 
 ---
 
@@ -85,6 +108,9 @@ npm run dev                                            # console + API
 npm run campaign -- samples/campaign.yaml              # same pipeline, CLI
 npm run campaign -- samples/campaign.yaml --dry-run    # what it costs, spending nothing
 npm run portfolio                                      # every brief in samples/, one command
+npm run shots -- samples/campaign.yaml radiance-serum --prompts   # camera set-ups, spending nothing
+npm run look -- samples/campaign.yaml nocturne         # one hero, one look, about 3 cents
+npm run campaign -- samples/campaign.yaml --preview    # the whole campaign for about 7 cents
 npm run check                                          # the release gate
 ```
 
@@ -140,11 +166,13 @@ outputs/lumen-autumn-glow-de/
 └── report.json
 ```
 
-Seven sample briefs ship with the repo and the console loads any of them in a
+Ten sample briefs ship with the repo and the console loads any of them in a
 click: the canonical run, the same brief in JSON, a restock where nothing is
 generated at all, a cold start for a different brand with no approved assets,
-two other brands in other categories, and one carrying a prohibited claim that
-is stopped at preflight before a credit is spent.
+two other brands in other categories, and two that are refused for different
+reasons - one carrying a prohibited claim, stopped by the legal scan before a
+credit is spent, and one that never reaches preflight because it does not
+satisfy the brief contract at all.
 
 Committed evidence without running anything:
 [`docs/sample-output/`](docs/sample-output/) - the report, the file tree, and
@@ -252,7 +280,151 @@ A caption is published copy; gating the image on the legal list and not the
 words underneath it would be a strange place to stop. That scan now sees one
 thing it could not before: a banned claim inside a **product name**.
 
-### 8. Checks that can actually fail
+### 8. One campaign, or a hundred
+
+The exercise opens with a client *"launching hundreds of localized social ad
+campaigns monthly"*, and its first pain point is producing those variants at
+that volume. A console that runs one campaign at a time does not show the shape
+of that problem, so the brief selector is a **multi-select** and the run button
+counts what it will run.
+
+![Batch run](docs/images/ui-batch.png)
+
+Selecting more than one campaign runs them as a batch: one row each, collapsed
+to a line, expanding into the same banner and gallery a single run uses. There
+is no second gallery to keep in step with the first.
+
+Three things it does deliberately:
+
+- **Sequential, not concurrent.** Every campaign in a batch can spend money.
+  Running them at once would multiply rate-limit exposure and make the spend
+  impossible to watch as it happens. It is the same loop `npm run portfolio`
+  has always been: scale here is a loop, not an architecture.
+- **Each brief runs at its own scope.** Format and market chips belong to the
+  brief being previewed; applying one brief's locales to another would silently
+  produce markets that brief never asked for.
+- **Estimate first.** Eight campaigns can carry eight paid generations, and
+  nobody should discover that afterwards. The dry run costs each brief through
+  the same estimator a single run uses and sums it, so there is no second
+  costing path that could disagree with the first.
+
+A brief that is refused is a normal outcome in a batch, not a failure of it:
+the row says which gate stopped it and the batch keeps going.
+
+### 9. Art direction is slots, with two of them locked
+
+The prompt is named slots - `standard · optics · light · set · grade ·
+materials · integrity` - each with a default. Control comes in three widening
+steps, and most briefs never leave the first:
+
+```yaml
+look: nocturne                    # one word. light, set and grade together
+
+artDirection:                     # or change one slot, keep the rest
+  set: on a mirrored black plinth
+```
+
+**Two slots are locked and unreachable from a brief**, and they are exactly the
+two whose override has already shipped a defect here. `composition` is derived
+from the crop arithmetic rather than from taste - 9:16 keeps 9/16 of the width,
+so a brief that could override it would slice its own product in half.
+`typography` is the rule that stops a blank jar coming back printed with
+invented claims on a regulated cosmetic. Even `generationPrompt`, which replaces
+all of the art direction, still gets both appended.
+
+This grain exists because the old one caused a real defect. The fragrance brief
+asked for *"a single low raking light and soft falloff into black"* and the
+pipeline silently prepended *"soft natural window daylight, warm, with open
+bounce fill"* - two contradictory lighting instructions in one prompt, because
+the only hatch that existed reached the set and nothing else. The model split
+the difference, which is what "generic" looks like from the inside.
+
+`npm run campaign -- <brief> --dry-run --prompts` prints which slots a brief
+changed and what it inherited, for nothing. Control you cannot see is not
+control - which is also why the console has a look picker rather than leaving
+the cascade reachable only from a YAML field. A run may override the look; a
+slot the brief names by hand still outranks it, because the brief is the
+campaign's stated intent and the picker is someone trying something.
+
+### 10. Prompts are written in code, not by a model
+
+There is a well-known way to build this half, and it is worth saying why this
+repo does not use it. The pattern is to hand an LLM a reference image and ask
+it to author the variant prompts: *"create 10 high-quality image prompts, each
+beginning exactly with `<fixed prefix>`, describing radically distinct
+framings"*, emit them delimited, split on the delimiter, and fan each one out to
+its own image call. It works, it is fast to assemble in a node-graph tool, and
+it produces genuinely varied output.
+
+This pipeline writes the same prompts as data in `SHOT_SET` and composes them
+through the slot cascade instead. Three reasons, in order:
+
+1. **A prompt written by a model is a prompt nobody reviewed.** These are ads
+   for a regulated cosmetic. The clause that stops a blank jar coming back
+   printed with invented claims is only load-bearing if it cannot be paraphrased
+   away by a generator working from its own summary of the brief.
+2. **It removes a paid, non-deterministic call from every run.** The authoring
+   step is an LLM call whose output changes the images. Two runs of the same
+   brief would no longer be the same campaign, and `assignmentProof` would be
+   asserting over a moving target.
+3. **The variation was never the hard part.** Nine set-ups written once cover
+   the same ground, and because they are data they can be measured: two of them
+   were generated, scored for visual drift against the reference, found to
+   return the source frame almost unchanged, and deleted. You cannot delete a
+   set-up a model invents at runtime.
+
+The trade is real and worth stating: an LLM would adapt its framings to the
+subject, and `SHOT_SET` cannot. The two set-ups deleted here failed on a jar on
+a plinth, and would likely have worked on a person. `HeroGenerator` is where a
+prompt-authoring step would attach if a client wanted that trade the other way.
+
+### 11. One hero, or a shoot
+
+A campaign generates one hero and crops it, because a crop is free and a
+generation is not. That buys consistency and costs coverage: every format is
+the same photograph, and a real shoot covers a product from several set-ups.
+
+`npm run shots` buys that coverage back at one paid generation per set-up,
+opt-in, never part of a campaign run. The reference image is **the hero
+itself**, and the prompt is short:
+
+> Using the provided image, keep the style and subject details similar and
+> modify the camera to match this: *a wide establishing shot with the product
+> small in the frame and the set and its light doing the work.*
+
+![Camera set-ups](docs/images/shot-variants.png)
+
+*Reference, then cropped, macro, wide establishing, overhead, low angle, canted,
+through a foreground element, a light study and a surface study. One paid
+generation each. The set varies two things: where the camera is, and what the
+frame is about.*
+
+There is a boundary, and it is worth knowing before promising a client this. The
+model is **editing one reference frame**, so it can reframe what is already in
+view but cannot orbit the camera to reveal geometry the reference never showed.
+Two set-ups were written, generated and then deleted, and both failed the same
+way: they came back as the reference frame. *From behind* asked the model to
+orbit and reveal a side the reference never showed; *focus pulled* asked it to
+move the plane of focus. Measured drift **0.14 and 0.15**, against 1.6 to 5.0
+for the nine that work.
+
+So the boundary is sharper than "it varies the camera". This model
+**recomposes**: it can crop, close in, pull back, tilt, occlude, look down, and
+change what the frame is about, all of which are decisions about what to
+include. It cannot synthesise unseen geometry or change the optics. Both of
+those are a 3D or multi-reference job, not a prompt. Shipping either as a
+framing that silently returns the original would have been the same defect this
+repo keeps deleting.
+
+The first version of this did not work, and the reason is the interesting part.
+It appended `Camera: ...` as the eighth clause of the four-hundred-word campaign
+brief, which also dictates optics, light, set, materials, composition and
+retouching, and it passed the **packshot** as the reference. The camera
+instruction competed with a dozen other constraints and lost: all four framings
+came back as the same eye-level three-quarter view. Anchoring on the finished
+scene and leaving exactly one degree of freedom is what made it work.
+
+### 12. Checks that can actually fail
 
 A validation rule earns its place only if it can go red on real input. Four
 checks in this repo could not, and each was fixed only after the defect was
@@ -272,7 +444,8 @@ ships with a test verified to fail against the old code.
 
 ## Brand and legal checks
 
-**Preflight**, before any spend: ≥2 products · required campaign fields ·
+**Preflight**, before any spend: ≥2 products, all of them different · required
+campaign fields ·
 prohibited-claim scan across all copy and all markets · logo file resolves ·
 declared asset paths resolve · brand colours are valid hex · a named headline
 typeface is actually bundled.
@@ -387,7 +560,7 @@ director.
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Campaign velocity | One brief → 24 validated creatives in 31.5s | **Delivered** |
+| 1 · Campaign velocity | One brief → 24 validated creatives in 34.0s | **Delivered** |
 | 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
 | 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
 | 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
@@ -395,7 +568,7 @@ director.
 
 | Pain point | What this does about it |
 |---|---|
-| 1 · Manual production overload | One brief → 24 finished creatives, 1.31s each |
+| 1 · Manual production overload | One brief → 24 finished creatives, 1.42s each |
 | 2 · Inconsistent quality | Brand rules are code, not a style guide someone remembers |
 | 3 · Approval bottlenecks | Prohibited claims stop the run before production; a human only reviews what a model touched |
 | 4 · Analysis at scale | Every run writes provenance and per-check results as data |
@@ -520,16 +693,16 @@ for.
 | Real model, not a stand-in | `MVP_MODE=final` refuses the offline renderer | test: *refuses to fabricate a missing hero in final mode* |
 | ≥ 3 aspect ratios | `RATIOS` + `templateFor()` | **4 delivered**, asserted per run by `assignmentProof` |
 | Campaign message on final posts | `buildTextLayer()` → Sharp raster | ink **and** fit checked per creative |
-| Localization (bonus) | `markets[]` | en-GB · de-DE · fr-FR at zero extra generation |
+| Localization (bonus) | `markets[]` | en-GB · de-DE · fr-FR at zero extra generation; the Nordics brief runs all four markets it names, for the same two generations |
 | Runs locally | Vite console + Express, or CLI | `npm run dev` · `npm run campaign` |
 | Outputs organized by product + ratio | `outputs/<campaign>/<product>/<ratio>/<locale>.png` | tree above |
-| Brand compliance checks (bonus) | `src/validation.ts` | logo ink, brand colour, contrast, disclaimer, safe zone |
+| Brand compliance checks (bonus) | `src/validation.ts` | both of the exercise's examples measured in pixels: logo ink, and brand accent coverage in the finished creative |
 | Legal content checks (bonus) | word-boundary prohibited scan | `samples/campaign-legal-fail.yaml` fails preflight |
 | Logging / reporting (bonus) | `src/report.ts` | `report.json`, live event stream, `runs.jsonl` |
 | Caption + hashtags per post | `src/socialCopy.ts` - assembled from approved copy, no model call | `copy/<locale>.txt` per product, and `socialCopy` in report.json |
 
 `report.json → assignmentProof` answers the exercise's minimum from the run's
-own records - nine facts counted off the files on disk, every coverage figure
+own records - eleven facts counted off the files on disk, every coverage figure
 measured against the products the *brief* asked for rather than the ones that
 finished. An offline preview produces real, correctly-sized, validated files
 and still reports `false`, because it has not demonstrated the one thing the

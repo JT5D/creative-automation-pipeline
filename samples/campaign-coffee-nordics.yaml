@@ -17,11 +17,10 @@ toneOfVoice: Quiet, precise, Scandinavian. Craft without ceremony.
 manualMinutesPerCreative: 20
 manualHourlyRateUsd: 85
 
-# Overrides the default campaign set. Every hero in this campaign is
-# photographed here, so two products read as one shoot.
-artDirection: >-
-  on a pale ash wood counter beside a linen cloth, with morning window light
-  and a soft steam haze in the air
+# One word. `nordic` sets the light flat and cool, the set to pale ash wood, and
+# the grade to cool neutrals - which is what this brief was reaching for by
+# describing the set and hoping the light would follow.
+look: nordic
 
 markets:
   - locale: en-GB
@@ -35,6 +34,22 @@ markets:
     message: Rostat samma morgon som det skickas
     callToAction: Börja prenumerera
     disclaimer: Prenumerationen förnyas månadsvis. Avbryt när som helst.
+
+  # The brief says Nordics (SE/DK/NO) and shipped Sweden only, which made the
+  # region field a claim the campaign did not honour. Each market costs nothing
+  # extra: the hero is generated once and localized copy is composited per
+  # market, so this is four markets for the same two generations.
+  - locale: da-DK
+    name: Denmark
+    message: Ristet samme morgen som den sendes
+    callToAction: Start abonnementet
+    disclaimer: Abonnementet fornys månedligt. Opsig når som helst.
+
+  - locale: nb-NO
+    name: Norway
+    message: Brent samme morgen som den sendes
+    callToAction: Start abonnementet
+    disclaimer: Abonnementet fornyes månedlig. Si opp når som helst.
 
 brand:
   name: Nordisk Brew

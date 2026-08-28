@@ -1,10 +1,18 @@
 import { readFileSync } from "node:fs";
-import { mkdir, mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { crc32 } from "node:zlib";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
+import { zipDirectory } from "../src/archive.js";
+import { LOOK_OPTIONS, SLOTS } from "../src/artDirection.js";
+import {
+  buildHeroPrompt,
+  buildShotPrompt,
+  findApprovedHero,
+  SHOT_SET,
+} from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textGeometry } from "../src/composer.js";
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
@@ -13,6 +21,7 @@ import { MODEL_OPTIONS, priceFor, REQUESTED_IMAGE_SIZE } from "../src/pricing.js
 import { selectGenerator } from "../src/providers/index.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
 import {
+  fetchWithDeadline,
   type HeroGenerator,
   type HeroRequest,
   ProviderError,
@@ -147,6 +156,45 @@ products:
     }
   });
 
+  it("refuses two products that would write into the same folder", () => {
+    // "at least two DIFFERENT products" is the exercise's wording, and only the
+    // count was enforced. Two products sharing an id wrote into one folder and
+    // the second overwrote the first: the run reported 8 creatives with 4 files
+    // on disk, every validation green, and the assignment proof passing.
+    expect(() => parseBrief(briefYaml().replace("- id: product-b", "- id: product-a"))).toThrow(
+      /two products share the output folder "product-a"/,
+    );
+
+    // Including ids that only collide once they are made filesystem-safe.
+    const punned = briefYaml()
+      .replace("- id: product-a", '- id: "Product A!"')
+      .replace("- id: product-b", '- id: "Product A?"');
+    expect(() => parseBrief(punned)).toThrow(/two products share the output folder/);
+  });
+
+  it("refuses two markets that would write the same file", () => {
+    expect(() =>
+      parseBrief(`${briefYaml()}
+markets:
+  - { locale: en-GB, message: One }
+  - { locale: en-GB, message: Two }
+`),
+    ).toThrow(/two markets share the locale "en-gb"/);
+  });
+
+  it("says a required field is missing in words, not in Zod's", () => {
+    // Zod says "expected string, received undefined", which is a sentence for a
+    // developer reading a stack trace, not for whoever is editing the brief.
+    try {
+      parseBrief(briefYaml().replace(/^audience:.*$/m, ""));
+      throw new Error("should have rejected");
+    } catch (e) {
+      const message = (e as Error).message;
+      expect(message).toContain("audience is required and is missing");
+      expect(message).not.toContain("undefined");
+    }
+  });
+
   it("says so plainly when the brief is empty", () => {
     expect(() => parseBrief("   ")).toThrow(/brief is empty/i);
   });
@@ -226,6 +274,35 @@ describe("asset resolution", () => {
     // colour is a claim nothing in this repo measures.
     expect(withRef).toMatch(/hue/i);
     expect(withRef).not.toMatch(/EXACTLY as it appears/i);
+  });
+
+  it("varies the camera by changing one thing, not by re-describing the scene", () => {
+    // The first version of this appended `Camera: ...` as the eighth clause of
+    // the four-hundred-word campaign brief, which also dictates optics, light,
+    // set, materials and composition. The camera instruction competed with a
+    // dozen constraints and lost: all four "distinct framings" came back as the
+    // same eye-level three-quarter view.
+    //
+    // A shot prompt is short, opens by telling the model everything it can see
+    // is correct, and leaves exactly one degree of freedom.
+    for (const shot of SHOT_SET) {
+      const prompt = buildShotPrompt(shot);
+      expect(prompt.startsWith("Using the provided image, keep the style and subject")).toBe(true);
+      expect(prompt).toMatch(/modify the camera to match this:/);
+      expect(prompt).toContain(shot.framing);
+      expect(prompt).toMatch(/Change only the camera/);
+
+      // It must NOT carry the campaign brief's scene direction, or it is the
+      // old version again under a new name.
+      expect(prompt).not.toMatch(/100mm macro lens|window daylight|travertine|LOWER HALF/);
+
+      // And it still ends with the rule that stops a blank product being
+      // lettered, because that failure does not care how short the prompt is.
+      expect(prompt.trimEnd().endsWith("image can have.")).toBe(true);
+    }
+
+    // Framings have to be distinct from each other, which is the entire point.
+    expect(new Set(SHOT_SET.map((s) => s.framing)).size).toBe(SHOT_SET.length);
   });
 
   it("builds a deterministic prompt that bans baked-in typography", () => {
@@ -751,6 +828,80 @@ describe("provider selection", () => {
     expect(priceFor("gemini-3.1-flash-lite-image")).toBe(0.0336);
   });
 
+  it("refuses a market the bundled typefaces cannot render", async () => {
+    // Localization is the exercise's bonus and the font files are its honest
+    // limit. Japanese has no glyphs in Rubik or Cormorant, so the copy would
+    // rasterize as .notdef boxes - and nothing downstream would notice, because
+    // the ink check counts opaque pixels and a row of tofu is opaque.
+    const japanese = await preflight(
+      parseBrief(`${briefYaml()}
+markets:
+  - { locale: en-GB, message: Wake up to visibly brighter skin }
+  - { locale: ja-JP, message: 朝、明るい肌へ }
+`),
+    );
+    expect(japanese.status).toBe("fail");
+    const check = japanese.checks.find((c) => c.id === "brand.glyphCoverage");
+    expect(check?.message).toMatch(/no glyphs for ja-JP/);
+    expect(check?.message).toMatch(/assets\/fonts/);
+
+    // And it passes for the accented Latin markets that ARE covered, so it is
+    // not just refusing anything with a non-ASCII character in it.
+    const european = await preflight(
+      parseBrief(`${briefYaml()}
+markets:
+  - { locale: fr-FR, message: Réveillez-vous avec une peau plus éclatante }
+  - { locale: es-ES, message: Despierta con una piel más luminosa }
+`),
+    );
+    expect(european.checks.find((c) => c.id === "brand.glyphCoverage")?.status).toBe("pass");
+  });
+
+  it("measures the brand accent in the finished creative, not in the brief", async () => {
+    // The exercise names two brand checks: presence of logo, and use of brand
+    // colors. The second was `isHex()` on the brief, which proves a marketer
+    // typed a colour and nothing about whether it reached a pixel.
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+    });
+
+    for (const creative of report.products.flatMap((p) => p.creatives)) {
+      const check = creative.validation.checks.find((c) => c.id === "brand.colors");
+      expect(check?.status).toBe("pass");
+      expect(check?.message).toContain("#C9A227");
+    }
+
+    // And the preflight check is named for what it actually measures.
+    const pre = report.preflight.checks.find((c) => c.id === "brand.colorFormat");
+    expect(pre?.message).toMatch(/valid hex/i);
+    expect(report.preflight.checks.find((c) => c.id === "brand.colors")).toBeUndefined();
+  });
+
+  it("gives up on a provider that never answers, and does not retry it", async () => {
+    // withRetry handles a request that FAILS. It did nothing for one that never
+    // answers, and this is the only call that costs money and the only one that
+    // reaches the network: a half-open connection hung the run forever, with no
+    // output and no way to know whether the generation had been billed.
+    // 10.255.255.1 is non-routable, so the connection hangs rather than refusing.
+    let attempts = 0;
+    const failure = await withRetry(
+      async () => {
+        attempts++;
+        return await fetchWithDeadline("TestProvider", "http://10.255.255.1/hang", {}, 700);
+      },
+      { sleep: async () => {} },
+    ).catch((e: unknown) => e as ProviderError);
+
+    expect(failure).toBeInstanceOf(ProviderError);
+    expect((failure as ProviderError).retryable).toBe(false);
+    expect((failure as ProviderError).message).toMatch(/did not answer within/i);
+    // A hung request may already have been accepted and billed upstream, so
+    // firing another is the wrong default. Exactly one attempt.
+    expect(attempts).toBe(1);
+  }, 20_000);
+
   it("redacts a provider body before it can reach the browser", () => {
     // Assembled rather than written out: a literal credential-shaped string in
     // a tracked file is exactly what the release gate's secret scan exists to
@@ -813,6 +964,48 @@ describe("run history", () => {
  * shaped `Boolean(someInput)`, proving the brief said so rather than proving
  * the pixels did.
  */
+describe("campaign archive", () => {
+  it("produces a zip the operating system can actually open", async () => {
+    // The only coverage this had was `unzip -t` in CI, which proves the bytes
+    // parse and nothing about whether the right files are inside them.
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-zip-"));
+    await mkdir(path.join(dir, "1x1"), { recursive: true });
+    await writeFile(path.join(dir, "1x1", "en-gb.png"), Buffer.from("not really a png"));
+    await writeFile(path.join(dir, "report.json"), '{"ok":true}');
+
+    const zip = await zipDirectory(dir, "campaign");
+
+    // Signatures, in order: local header, central directory, end of central.
+    expect(zip.readUInt32LE(0)).toBe(0x04034b50);
+    const eocd = zip.length - 22;
+    expect(zip.readUInt32LE(eocd)).toBe(0x06054b50);
+    expect(zip.readUInt16LE(eocd + 10)).toBe(2); // two entries
+
+    // Names are prefixed and use forward slashes on every host.
+    expect(zip.toString("latin1")).toContain("campaign/1x1/en-gb.png");
+    expect(zip.toString("latin1")).toContain("campaign/report.json");
+
+    // And the checksum is a real CRC-32 of the real bytes, which is the field
+    // an unzip implementation refuses the archive over.
+    const expected = crc32(Buffer.from("not really a png"));
+    expect(zip.readUInt32LE(14)).toBe(expected);
+
+    // And a real modification date. Omitting these is legal and `unzip -t` is
+    // happy, which is why it went unnoticed - but every file in the campaign
+    // then lists as 00-00-1980 the moment a producer opens the folder.
+    const dosDate = zip.readUInt16LE(12);
+    expect(dosDate >> 9).toBeGreaterThan(40); // years since 1980
+    expect((dosDate >> 5) & 0x0f).toBeGreaterThanOrEqual(1); // month
+    expect(dosDate & 0x1f).toBeGreaterThanOrEqual(1); // day
+
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("refuses a campaign that does not exist rather than sending an empty zip", async () => {
+    await expect(zipDirectory(path.join(tmpdir(), "cap-zip-does-not-exist"))).rejects.toThrow();
+  });
+});
+
 describe("checks that can actually fail", () => {
   it("never lets the logo check go absent when a brief names no logo", async () => {
     // The two newest sample brands shipped without a lockup, and this rule
@@ -1181,24 +1374,137 @@ describe("end-to-end campaign run", () => {
     }
   });
 
-  it("lets a brief replace the art-direction standard, and defaults it otherwise", async () => {
-    // Three widening escape hatches, all optional: styleBar replaces the
-    // standard, artDirection replaces the set, generationPrompt replaces
-    // everything. The point of the default is that most briefs set none.
-    const base = parseBrief(briefYaml());
-    const product = base.products[1];
+  it("lets a run override the brief's look without touching the slots on top of it", () => {
+    // The cascade shipped reachable only from a YAML field, so the console --
+    // the surface this work is demonstrated on -- could not select a look at
+    // all. The override is applied to the validated brief, which means it has
+    // to behave exactly like writing `look:` in the file, including losing to
+    // a per-slot override the brief states explicitly.
+    const brief = parseBrief(briefYaml());
+    expect(buildHeroPrompt(brief.products[1], brief)).toMatch(/window daylight/i);
 
-    const fallback = buildHeroPrompt(product, base, false);
-    expect(fallback).toContain("Award-winning cinematic advertising photography");
+    // Same object the pipeline mutates before resolveArtDirection reads it.
+    const overridden = parseBrief(briefYaml());
+    overridden.look = "nocturne";
+    const dark = buildHeroPrompt(overridden.products[1], overridden);
+    expect(dark).toMatch(/single low raking light/i);
+    expect(dark).not.toMatch(/window daylight/i);
 
-    const styled = parseBrief(
-      `${briefYaml()}styleBar: Flat lay graphic poster, hard flash, no depth of field.\n`,
+    // A slot the brief set by name outranks the run's look, because the brief
+    // is the campaign's stated intent and the picker is someone trying
+    // something. Getting this backwards would silently discard art direction.
+    const tuned = parseBrief(`${briefYaml()}artDirection:\n  set: on a mirrored black plinth\n`);
+    tuned.look = "nocturne";
+    const tunedPrompt = buildHeroPrompt(tuned.products[1], tuned);
+    expect(tunedPrompt).toMatch(/on a mirrored black plinth/);
+    expect(tunedPrompt).toMatch(/single low raking light/i);
+    expect(tunedPrompt).not.toMatch(/dark polished stone plinth/i);
+
+    // Every look the console offers has to resolve. A picker listing a look
+    // that throws is worse than no picker.
+    for (const option of LOOK_OPTIONS) {
+      const candidate = parseBrief(briefYaml());
+      candidate.look = option.id;
+      expect(buildHeroPrompt(candidate.products[1], candidate).length).toBeGreaterThan(200);
+    }
+  });
+
+  it("carries the run's look all the way into the prompt the provider is sent", async () => {
+    // The test above proves the CASCADE responds to a brief field. It does not
+    // prove that `runCampaign({ look })` ever reaches it, and a check whose
+    // name is broader than its measurement is the defect this repo keeps
+    // finding. So this one reads the prompt off the request the generator
+    // actually received.
+    const captured: string[] = [];
+    class CapturingGenerator extends FakeApiGenerator {
+      override async generateHero(input: HeroRequest) {
+        captured.push(input.prompt);
+        return super.generateHero(input);
+      }
+    }
+
+    await runCampaign(briefYaml(), {
+      outputRoot: outputs,
+      generator: new CapturingGenerator(),
+      ratios: ["1x1"],
+      look: "nocturne",
+    });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).toMatch(/single low raking light/i);
+    expect(captured[0]).not.toMatch(/window daylight/i);
+  });
+
+  it("lets a brief change one slot of the look without rewriting the rest", () => {
+    // The old hatches were the wrong grain. `styleBar` replaced the whole
+    // quality standard, `artDirection` reached the set and nothing else, and
+    // `generationPrompt` replaced all four hundred words. The middle one caused
+    // a real defect: the fragrance brief asked for "a single low raking light
+    // and soft falloff into black" while the pipeline silently prepended "soft
+    // natural window daylight, warm, with open bounce fill".
+    const brief = parseBrief(briefYaml());
+    const base = buildHeroPrompt(brief.products[1], brief);
+    expect(base).toMatch(/window daylight/i);
+    expect(base).toMatch(/travertine/i);
+
+    // A look changes several slots at once, and REPLACES them rather than
+    // appending, so the contradiction cannot come back.
+    const dark = parseBrief(`${briefYaml()}look: nocturne\n`);
+    const darkPrompt = buildHeroPrompt(dark.products[1], dark);
+    expect(darkPrompt).toMatch(/single low raking light/i);
+    expect(darkPrompt).toMatch(/falls away into near black/i);
+    expect(darkPrompt).not.toMatch(/window daylight/i);
+    expect(darkPrompt).not.toMatch(/open bounce fill/i);
+    expect(darkPrompt).not.toMatch(/travertine/i);
+
+    // A bare string is still the SET, which is all it has ever meant, so every
+    // brief written before looks existed says exactly what it said.
+    const legacy = parseBrief(`${briefYaml()}artDirection: on a sheet of brushed steel\n`);
+    const legacyPrompt = buildHeroPrompt(legacy.products[1], legacy);
+    expect(legacyPrompt).toMatch(/on a sheet of brushed steel/);
+    expect(legacyPrompt).toMatch(/window daylight/i); // the look is untouched
+
+    // And one slot can be changed on top of a look.
+    const tuned = parseBrief(
+      `${briefYaml()}look: nocturne\nartDirection:\n  set: on a mirrored black plinth\n`,
     );
-    const overridden = buildHeroPrompt(product, styled, false);
-    expect(overridden).toContain("Flat lay graphic poster");
-    expect(overridden).not.toContain("Award-winning cinematic");
-    // Nothing downstream may re-assert a look the brief just replaced.
-    expect(overridden).not.toContain("Cinematic campaign photograph");
+    const tunedPrompt = buildHeroPrompt(tuned.products[1], tuned);
+    expect(tunedPrompt).toMatch(/on a mirrored black plinth/);
+    expect(tunedPrompt).toMatch(/single low raking light/i);
+  });
+
+  it("keeps the locks on even when a product replaces the whole prompt", () => {
+    // generationPrompt used to return early with the brief's string and nothing
+    // else, so a product could opt out of the typography rule - the only thing
+    // between a blank jar and invented claims on a regulated cosmetic.
+    const brief = parseBrief(
+      `${briefYaml()}`.replace(
+        "    name: Overnight Cream",
+        "    name: Overnight Cream\n    generationPrompt: A blue cube on a white table.",
+      ),
+    );
+    const prompt = buildHeroPrompt(brief.products[1], brief);
+    expect(prompt).toMatch(/^A blue cube on a white table\./);
+    expect(prompt).not.toMatch(/travertine|window daylight/i); // art direction is replaced
+    expect(prompt).toMatch(/LOWER HALF of the frame/); // composition is not
+    expect(prompt.trimEnd().endsWith("image can have.")).toBe(true); // nor typography
+  });
+
+  it("never lets a brief reach composition or typography", () => {
+    // The two locked slots, and they are locked because overriding each has
+    // already produced a shipped defect: a sliced product on 9:16, and a blank
+    // jar returned with invented claims printed on a regulated cosmetic.
+    const brief = parseBrief(
+      `${briefYaml()}artDirection:\n  set: on stone\n  light: hard from below\n`,
+    );
+    const prompt = buildHeroPrompt(brief.products[1], brief);
+    expect(prompt).toMatch(/LOWER HALF of the frame/);
+    expect(prompt).toMatch(/central 50% of the width/);
+    expect(prompt.trimEnd().endsWith("image can have.")).toBe(true);
+
+    // There is no slot name that reaches them.
+    expect(SLOTS).not.toContain("composition");
+    expect(SLOTS).not.toContain("typography");
   });
 
   it("cannot prove the assignment when a requested product never got produced", async () => {

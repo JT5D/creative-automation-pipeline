@@ -134,3 +134,131 @@ integrated. Adding direct adapters would mean more keys for an evaluator, more
 surface to defend, and no new capability the assignment asks for. The
 `HeroGenerator` interface is thirty lines; any of them is a one-file addition
 when a customer's governance actually calls for it.
+
+---
+
+## The model we run is the model that was recommended
+
+An advisor reviewing this project said the output "doesn't feel like the latest
+nano banana hotness". Worth checking rather than assuming, because it turns out
+to be the same model:
+
+> "Nano Banana Pro, or Gemini 3 Pro Image, is our most advanced image generation
+> and editing model."
+>
+> [Google, Nano Banana Pro announcement](https://blog.google/technology/ai/nano-banana-pro/)
+
+`gemini-3-pro-image` **is** Nano Banana Pro. The pipeline was already running
+the recommendation. The output was generic for a different reason, and it was
+ours: the camera instruction sat eighth in a four-hundred-word brief that also
+dictated optics, light, set, materials and composition, so it competed with a
+dozen constraints and lost. Restructuring the prompt fixed it; changing the
+model would not have.
+
+That is the general lesson and it is worth saying out loud in a model-strategy
+document: **before switching models, check whether the prompt is the variable.**
+Most of the quality complaints this project has had were prompt-shaped.
+
+---
+
+## The cost ladder
+
+Iterating on art direction is the expensive habit, not shipping. So the price of
+looking is separated from the price of delivering.
+
+| What you want to know | How | Cost |
+|---|---|---|
+| Layout, copy fit, safe zone, every validation check | offline renderer, no key needed | **$0** |
+| What my brief changed vs what it inherited | `--dry-run --prompts` slot diff | **$0** |
+| The same thing again | preview and dev cache the hero | **$0** |
+| Is this the right art direction | `npm run look` - one hero, 1K, cheapest model | **$0.0336** |
+| The whole campaign, roughly | `--preview` - 24 creatives, cost is per generation | **$0.067** |
+| The deliverable | `gemini-3-pro-image` at 2K | **$0.134** |
+
+2K is not optional for what ships. Every format is a centre crop of one square
+hero and 9:16 needs 1080x1920 out of it, so a 1K source is upscaled about 1.9x
+and goes soft. Preview mode does not pretend otherwise: the report says
+`preview` and `assignmentProof` fails on it, exactly as it does for the offline
+renderer.
+
+### Cheaper tiers that exist, and why they are not the default
+
+Verified 2026-08-29, from each vendor's own page:
+
+| Option | Price | Licence of the weights | Verified at |
+|---|---|---|---|
+| FLUX.1-schnell, self-hosted | **$0** after download | Apache-2.0, commercial use permitted | [model card](https://huggingface.co/black-forest-labs/FLUX.1-schnell) |
+| FLUX.1-schnell via fal.ai | **$0.003 / megapixel** | same | [fal.ai model page](https://fal.ai/models/fal-ai/flux-1/schnell) |
+| `gemini-3.1-flash-lite-image` | $0.0336 | hosted API | ai.google.dev pricing |
+| `gemini-3-pro-image` | $0.134 | hosted API | ai.google.dev pricing |
+
+FLUX.1-schnell is 12B parameters and reaches a usable image in 1 to 4 steps,
+which is what makes it cheap to host and fast to run locally on Apple Silicon.
+
+**It is the right tool for previews and the wrong tool for what ships**, and the
+reason is legal rather than technical.
+
+### Why no fourth adapter was built
+
+The preview tier has one hard requirement that price alone does not settle: it
+has to show the *whole shot*, product included, or it is not previewing the
+thing that ships. Products with an approved packshot hand that file to the model
+as an identity anchor, so the preview model must accept an image reference.
+
+FLUX.1-schnell is text-to-image. It cannot take the packshot, so its preview
+would show a plausible jar rather than *this* jar, which is the one question a
+preview exists to answer. `gemini-3.1-flash-lite-image` runs the same
+Interactions API with the same `input` parts array as production, so the
+reference path is the code that already ships.
+
+Verified 2026-08-29 by running `npm run look -- samples/campaign.yaml` against
+`overnight-recovery-cream`, which has a packshot. The 1K preview came back with
+the same frosted glass jar and the same green lacquered lid, closed and
+unlabelled, composited into the `daylight` set. One generation, $0.0336.
+
+So fal.ai and self-hosted FLUX stay in the table above as a **production
+extension with verified prices**, not as a shipped adapter. Adding one would
+double the repo's headline weakness, which is code paths that have never
+executed.
+
+---
+
+## Why the cheap model cannot be the shipping model
+
+The client in this exercise is a global consumer goods company. What a brand's
+legal team asks about generated imagery is not "how good is it" but "what
+happens if someone claims it infringes".
+
+- Adobe states Firefly's models are **trained on licensed content such as Adobe
+  Stock, plus openly licensed and public domain content**, and that enterprise
+  customers may purchase an entitlement carrying **contractual IP
+  indemnification** for Firefly outputs.
+  ([Adobe Firefly FAQ](https://helpx.adobe.com/firefly/web/get-started/learn-the-basics/adobe-firefly-faq.html),
+  [Firefly Legal FAQs for Enterprise Customers](https://www.adobe.com/content/dam/dx/us/en/products/sensei/sensei-genai/firefly-enterprise/Firefly_Legal_FAQs_Enterprise_Customers.pdf))
+- FLUX.1-schnell's **Apache-2.0 licence covers the weights**. It is not a
+  statement about training data provenance and it is not an indemnity.
+
+Those are different things, and conflating them is how a brand ends up exposed.
+So the tiering is by **exposure**, not only by price:
+
+- **Preview** is internal, never published, and discarded. An unindemnified
+  model is fine here, and this is where the 4x to 40x saving lives.
+- **Shipped brand assets** should come from a model whose provider will stand
+  behind the output. That is the Firefly argument in one sentence, and it is why
+  Firefly is the production target in this repo even though it has never run.
+
+This also answers the "why not just use the cheapest thing" question honestly:
+for previews we should, and the ladder above now does.
+
+---
+
+## Tiering is the architecture, not an optimisation
+
+A broader platform sketch for this workflow lists **"Tiered Models / via
+OpenRouter - Low Level: Qwen / Basic Convo, Mid Level: Kimi 2.5 or higher"**,
+with **Firefly API as the default** for both images and video and Nano Banana,
+GPT and Ideogram as alternates.
+
+That is the same shape as the ladder above, arrived at independently: route by
+what the job actually needs. The `HeroGenerator` interface is what makes it a
+one-file change here - a preview provider is another adapter, not a redesign.

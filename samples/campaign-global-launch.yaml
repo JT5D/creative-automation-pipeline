@@ -1,0 +1,80 @@
+# The shape the exercise actually describes: one brief, many markets.
+#
+# The client is "launching hundreds of localized social ad campaigns monthly",
+# and the cost argument only becomes obvious at that width. Three products
+# across five markets and four formats is 60 finished creatives from THREE
+# generations, because the model is called once per missing hero and never once
+# per output. Adding the fourth and fifth market cost nothing at all.
+#
+# Select it alongside the others in the console to see a batch run.
+id: lumen-radiance-global
+name: Lumen Botanicals - Radiance global launch
+
+region: Western Europe (UK/DE/FR/ES/IT)
+audience: Urban professionals 28-45 who buy dermatologist-tested, clean-formula skincare
+message: Wake up to visibly brighter skin
+objective: Launch the Radiance range across five European markets in one wave
+callToAction: Discover now
+toneOfVoice: Calm, clinical, warm. Understated luxury - never hype.
+
+manualMinutesPerCreative: 25
+
+markets:
+  - locale: en-GB
+    name: United Kingdom
+    message: Wake up to visibly brighter skin
+    callToAction: Discover now
+    disclaimer: Individual results may vary. Dermatologist tested.
+
+  - locale: de-DE
+    name: Germany
+    message: Wach auf mit sichtbar strahlenderer Haut
+    callToAction: Jetzt entdecken
+    disclaimer: Ergebnisse können variieren. Dermatologisch getestet.
+
+  - locale: fr-FR
+    name: France
+    message: Réveillez-vous avec une peau visiblement plus éclatante
+    callToAction: Découvrir
+    disclaimer: Les résultats peuvent varier. Testé sous contrôle dermatologique.
+
+  - locale: es-ES
+    name: Spain
+    message: Despierta con una piel visiblemente más luminosa
+    callToAction: Descúbrelo
+    disclaimer: Los resultados pueden variar. Probado dermatológicamente.
+
+  - locale: it-IT
+    name: Italy
+    message: Svegliati con una pelle visibilmente più luminosa
+    callToAction: Scopri di più
+    disclaimer: I risultati possono variare. Testato dermatologicamente.
+
+brand:
+  name: Lumen Botanicals
+  logoPath: samples/assets/lumen-logo.png
+  primaryColor: "#14322B"
+  secondaryColor: "#C9A227"
+  disclaimer: Individual results may vary. Dermatologist tested.
+  prohibitedWords:
+    - cure
+    - cures
+    - miracle
+    - clinically proven
+    - anti-aging
+    - guaranteed
+
+products:
+  # One approved hero, so this product costs nothing.
+  - id: radiance-serum
+    name: Radiance Vitamin C Serum
+    approvedHeroPath: samples/assets/radiance-serum-hero.png
+
+  # A packshot anchors the real jar into a new campaign scene.
+  - id: overnight-recovery-cream
+    name: Overnight Recovery Cream
+    referenceAssetPath: samples/assets/overnight-cream-packshot.png
+
+  # Nothing on disk at all, so this one is generated from the brief alone.
+  - id: radiance-eye-cream
+    name: Radiance Eye Cream

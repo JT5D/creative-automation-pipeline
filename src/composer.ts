@@ -41,6 +41,18 @@ export type ComposedCreative = {
   /** Opaque-pixel ratio of the HEADLINE alone -- proof the campaign message drew. */
   headlineInkRatio: number;
   logoRendered: boolean;
+  /**
+   * Share of the finished creative painted in the brand's accent colour.
+   *
+   * The exercise names "use of brand colors" as a brand check, and the only
+   * thing measuring it was `isHex()` on the brief - which proves the marketer
+   * typed a colour, not that the colour reached a pixel. Measured on the FINAL
+   * composite rather than the text layer on purpose: the accent is always
+   * drawn, so measuring the layer it is drawn into could never go red. Measured
+   * after compositing, it goes red if the element is occluded, moved out of
+   * frame, or dropped from a future template.
+   */
+  accentCoverage: number;
   disclaimerRendered: boolean;
   ctaRendered: boolean;
   /** Bounding box of all rendered text/logo/CTA, for the safe-zone check. */
@@ -413,6 +425,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   // visible on a soft background falloff, which is most of what the art
   // direction now produces. It also spent 4x the encode time to do it.
   const buffer = await canvas.composite(layers).png().toBuffer();
+  const accentCoverage = await colorCoverage(buffer, brand.secondaryColor);
 
   return {
     buffer,
@@ -425,6 +438,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     textInkRatio,
     headlineInkRatio,
     logoRendered: logoInkRatio > 0,
+    accentCoverage,
     disclaimerRendered: disclaimerInkRatio > 0,
     ctaRendered: ctaInkRatio > 0,
     enforceSafeZone: tpl.enforceSafeZone,
@@ -610,6 +624,40 @@ async function loadLogo(brand: Brand, maxWidth: number): Promise<Buffer | null> 
   } catch {
     return null;
   }
+}
+
+/**
+ * Fraction of a finished creative painted within a hair of one colour.
+ *
+ * Nearest-neighbour sampling, because the accent lives in small elements - an
+ * 88px rule and a CTA pill - and a smooth resample would blend their edges into
+ * neighbouring colours and undercount. Same reason the colour signature in
+ * src/signature.ts samples that way.
+ */
+async function colorCoverage(png: Buffer, hex: string): Promise<number> {
+  const value = hex.replace("#", "");
+  const full =
+    value.length === 3
+      ? value
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : value;
+  const target = [0, 2, 4].map((i) => Number.parseInt(full.slice(i, i + 2), 16));
+
+  const { data, info } = await sharp(png)
+    .resize(512, 512, { fit: "fill", kernel: "nearest" })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  let hits = 0;
+  for (let i = 0; i < data.length; i += info.channels) {
+    const d =
+      (data[i] - target[0]) ** 2 + (data[i + 1] - target[1]) ** 2 + (data[i + 2] - target[2]) ** 2;
+    if (d <= 144) hits++; // within about 12 levels, which survives PNG round-tripping
+  }
+  return hits / (info.width * info.height);
 }
 
 /**

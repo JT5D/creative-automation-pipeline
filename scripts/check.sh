@@ -21,6 +21,21 @@ if git ls-files -z | xargs -0 grep -lE 'AIza[A-Za-z0-9_-]{30,}|sk-[A-Za-z0-9]{30
 fi
 git check-ignore -q .env || fail ".env is not gitignored"
 
+step "Prose punctuation is ASCII"
+# The docs are read in four places that do not agree about typography: a
+# terminal, a GitHub diff, a rendered page and a printed PDF. Typographic dashes
+# and smart quotes survive some of those and not others, and a doc set that
+# mixes both looks careless in the one that mangles them. So the prose is ASCII,
+# and this is the check rather than a style note nobody rereads.
+#
+# -I skips binaries, whose bytes hit these sequences by coincidence.
+# The bundled font licence is third-party text and must not be edited.
+if git ls-files -z | xargs -0 grep -lI -e $'\xe2\x80\x94' -e $'\xe2\x80\x93' \
+     -e $'\xe2\x80\x9c' -e $'\xe2\x80\x9d' -e $'\xe2\x80\x99' 2>/dev/null \
+   | grep -v '^assets/fonts/LICENSE.md$' | grep -q .; then
+  fail "a tracked file uses typographic dashes or smart quotes; write them as ASCII"
+fi
+
 step "No stray build output tracked"
 # Named directories plus anything that looks generated. The first version of
 # this listed offenders by name and missed .baseline-run/, which then shipped.

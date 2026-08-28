@@ -1,0 +1,33 @@
+# A brief that is structurally incomplete, used to prove the contract refuses it.
+#
+# The other refusal sample carries prohibited CLAIMS and is stopped by the legal
+# scan. This one is refused earlier and for a different reason: it never reaches
+# preflight at all, because it does not satisfy the brief contract. It is
+# missing `audience` and `message`, and its two products are the same product.
+#
+#   npm run campaign -- samples/campaign-incomplete.yaml
+#
+# The error is written for whoever is editing the brief, not for a developer:
+# Zod's raw issue objects never reach the screen.
+id: lumen-incomplete
+name: Lumen Botanicals - Incomplete brief
+
+region: United Kingdom
+# audience: MISSING - the exercise names it as required
+# message: MISSING - there would be nothing to render onto the post
+
+brand:
+  name: Lumen Botanicals
+  logoPath: samples/assets/lumen-logo.png
+  primaryColor: "#14322B"
+  secondaryColor: "#C9A227"
+
+products:
+  # Two entries, but not two DIFFERENT products. Both resolve to the same output
+  # folder, so the second would overwrite the first. The missing fields above
+  # are reported first - the contract checks shape before it checks collisions -
+  # so fix those and this is what it refuses next.
+  - id: radiance-serum
+    name: Radiance Vitamin C Serum
+  - id: radiance-serum
+    name: Radiance Vitamin C Serum

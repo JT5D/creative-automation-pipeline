@@ -25,6 +25,38 @@ export type RunState = {
   error?: string;
 };
 
+/**
+ * One campaign inside a batch.
+ *
+ * A brief that is REFUSED is a normal outcome here, not a failure of the batch:
+ * the library ships two that exist to be refused. The row says which happened
+ * and why, and the batch keeps going.
+ */
+export type BatchCampaign = {
+  file: string;
+  label: string;
+  status: "queued" | "running" | "complete" | "refused";
+  report?: CampaignReport;
+  error?: string;
+};
+
+/**
+ * POST /api/batches, GET /api/batches/:id.
+ *
+ * The client in this exercise launches hundreds of localized campaigns a month,
+ * and a console that runs one campaign does not show that shape. This is the
+ * same runCampaign() in a loop - scale here is a loop, not an architecture -
+ * and it runs them SEQUENTIALLY on purpose: every campaign in a batch can spend
+ * money, and firing them concurrently would multiply the rate-limit exposure
+ * and make the spend impossible to watch as it happens.
+ */
+export type BatchState = {
+  batchId: string;
+  status: "running" | "complete";
+  startedAt: string;
+  campaigns: BatchCampaign[];
+};
+
 /** GET /api/briefs - the sample library, from samples/briefs.json. */
 export type BriefSummary = {
   file: string;
@@ -36,6 +68,19 @@ export type BriefSummary = {
 };
 
 /** GET /api/formats. */
+/**
+ * GET /api/looks. One art-direction look the console may run with.
+ *
+ * Structurally identical to what LOOK_OPTIONS holds, declared here because this
+ * is the file both ends import: the browser must not reach into artDirection.ts
+ * to learn the shape of an HTTP response.
+ */
+export type LookOption = {
+  id: string;
+  label: string;
+  description: string;
+};
+
 export type FormatOption = {
   key: RatioKey;
   label: string;

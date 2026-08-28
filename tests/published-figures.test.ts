@@ -31,6 +31,13 @@ const seconds = (report.durationMs / 1000).toFixed(1);
 const cost = report.estimatedCostUsd?.totalUsd.toFixed(3);
 const perCreative = report.successMetrics.efficiency.secondsPerCreative.toFixed(2);
 const creatives = String(report.metrics.variantsCreated);
+const passedChecks = report.assignmentProof.checks.filter((c) => c.passed).length;
+// Formats are not a field on the report. Every product is produced in every
+// format in every market, so the count divides out - and deriving it means the
+// strip cannot claim a format the run did not actually cut.
+const formats =
+  report.metrics.variantsCreated /
+  (report.metrics.productsProcessed * report.metrics.marketsProcessed);
 
 /**
  * Each claim names the document, the sentence it lives in, and the value the
@@ -97,6 +104,54 @@ const CLAIMS: { where: string; doc: string; pattern: RegExp; expected: string }[
     pattern: /<strong>\d+ creatives in [\d.]+ seconds for \$([\d.]+)<\/strong>/,
     expected: String(cost),
   },
+  // The stat strip is the first thing a reviewer reads and it carried none of
+  // this. One of its tiles said "24/24 checks passed", which is the creative
+  // validation rate wearing the word the assignment proof owns - the same
+  // label-broader-than-measurement defect this repo keeps finding. Both
+  // numbers are here now so neither can drift and neither can borrow the
+  // other's meaning.
+  {
+    where: "microsite stat strip - products",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)<\/span><span class="l">Products<\/span>/,
+    expected: String(report.metrics.productsProcessed),
+  },
+  {
+    where: "microsite stat strip - markets",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)<\/span><span class="l">Markets<\/span>/,
+    expected: String(report.metrics.marketsProcessed),
+  },
+  {
+    where: "microsite stat strip - formats",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)<\/span><span class="l">Formats<\/span>/,
+    expected: String(formats),
+  },
+  {
+    where: "microsite stat strip - creatives",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)<\/span><span class="l">Creatives<\/span>/,
+    expected: creatives,
+  },
+  {
+    where: "microsite stat strip - paid generations",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)<\/span><span class="l">Paid generation<\/span>/,
+    expected: String(report.metrics.liveHeroGenerations),
+  },
+  {
+    where: "microsite stat strip - creatives validated",
+    doc: microsite,
+    pattern: /<span class="v">([\d/]+)<\/span><span class="l">Creatives validated<\/span>/,
+    expected: `${report.metrics.validationPassed}/${report.metrics.variantsCreated}`,
+  },
+  {
+    where: "microsite stat strip - assignment proof",
+    doc: microsite,
+    pattern: /<span class="v">([\d/]+)<\/span><span class="l">Assignment proof<\/span>/,
+    expected: `${passedChecks}/${report.assignmentProof.checks.length}`,
+  },
 ];
 
 function capitalise(word: string): string {
@@ -105,8 +160,21 @@ function capitalise(word: string): string {
 
 function numberWord(n: number): string {
   return (
-    ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][n] ??
-    String(n)
+    [
+      "zero",
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+      "ten",
+      "eleven",
+      "twelve",
+    ][n] ?? String(n)
   );
 }
 

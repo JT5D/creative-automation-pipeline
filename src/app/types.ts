@@ -14,7 +14,14 @@
  * The three shapes that exist only because of HTTP live in src/api.ts, which
  * both ends import.
  */
-export type { BriefSummary, FormatOption, RunState } from "../api.js";
+export type {
+  BatchCampaign,
+  BatchState,
+  BriefSummary,
+  FormatOption,
+  LookOption,
+  RunState,
+} from "../api.js";
 export type { CampaignEstimate, PlannedProduct } from "../estimate.js";
 export type { Insights } from "../history.js";
 export type { PipelineEvent } from "../pipeline.js";

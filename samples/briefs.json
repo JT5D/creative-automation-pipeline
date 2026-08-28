@@ -3,19 +3,25 @@
     "file": "campaign.yaml",
     "label": "Autumn Glow - DACH",
     "teaches": "The canonical run. One hero reused, one generated. The console opens on the exercise's minimum - 1:1, 9:16, 16:9 in one market - for 6 creatives from 1 model call; select every format and market and the SAME single call yields 24.",
-    "expect": "24 creatives \u00b7 1 generation"
+    "expect": "24 creatives · 1 generation"
   },
   {
     "file": "campaign-minimal.yaml",
     "label": "Restock - UK",
     "teaches": "The smallest valid brief, and the cheapest run. Both heroes already approved, so nothing is generated.",
-    "expect": "8 creatives \u00b7 0 generations"
+    "expect": "8 creatives · 0 generations"
+  },
+  {
+    "file": "campaign-global-launch.yaml",
+    "label": "Radiance - global launch",
+    "teaches": "The shape the exercise describes: three products across five markets and four formats. 60 creatives from 2 generations, because one product already has an approved hero and markets multiply output at zero additional model cost.",
+    "expect": "60 creatives · 2 generations"
   },
   {
     "file": "campaign-cold-start.yaml",
     "label": "Nordvik - cold start",
     "teaches": "A different brand launching from nothing. No approved assets at all, so both heroes are generated from text.",
-    "expect": "8 creatives \u00b7 2 generations"
+    "expect": "8 creatives · 2 generations"
   },
   {
     "file": "campaign-legal-fail.yaml",
@@ -27,18 +33,30 @@
     "file": "campaign.json",
     "label": "Autumn Glow - JSON",
     "teaches": "The same brief in JSON. Both formats normalize to one validated object. Counts shown are the full brief: every format, every market.",
-    "expect": "24 creatives \u00b7 1 generation"
+    "expect": "24 creatives · 1 generation"
   },
   {
     "file": "campaign-coffee-nordics.yaml",
     "label": "Nordisk Brew - Nordics",
-    "teaches": "A different brand in a different category with its own art direction. Nothing in the pipeline is category-aware; only the data changes.",
-    "expect": "16 creatives - 2 generations"
+    "teaches": "A different brand in a different category with its own art direction, across all four Nordic markets it names. Nothing in the pipeline is category-aware; only the data changes, and four markets cost the same two generations as one.",
+    "expect": "32 creatives · 2 generations"
   },
   {
     "file": "campaign-fragrance-eu.yaml",
     "label": "Atelier Ferro - Nocturne",
     "teaches": "Luxury fragrance on a dark set, proving the quality bar is generic rather than tuned to the skincare sample.",
     "expect": "16 creatives - 2 generations"
+  },
+  {
+    "file": "campaign-incomplete.yaml",
+    "label": "Incomplete brief",
+    "teaches": "A brief that does not satisfy the contract at all: required fields missing, and two entries for the same product. Refused before preflight, with an error written for the marketer rather than a dump of validation objects.",
+    "expect": "blocked by the brief contract"
+  },
+  {
+    "file": "campaign-tokyo.yaml",
+    "label": "Tokyo launch",
+    "teaches": "A market the bundled typefaces cannot render. Japanese has no glyphs in Rubik or Cormorant, so the copy would rasterize as empty boxes and every pixel check would still pass. Preflight refuses it and names the characters.",
+    "expect": "blocked - no glyphs for that market"
   }
 ]

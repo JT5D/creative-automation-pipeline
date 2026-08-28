@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BatchResults } from "./components/BatchResults.js";
 import { CampaignStrip } from "./components/CampaignStrip.js";
 import { DeliveryBanner } from "./components/DeliveryBanner.js";
 import { Inspector } from "./components/Inspector.js";
@@ -6,10 +7,12 @@ import { Results, type Selection } from "./components/Results.js";
 import { RunDetails } from "./components/RunDetails.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
 import type {
+  BatchState,
   BriefSummary,
   CampaignEstimate,
   FormatOption,
   Insights as InsightsData,
+  LookOption,
   ModelOption,
   ProviderStatus,
   RunState,
@@ -57,6 +60,16 @@ export function App() {
   const [brief, setBrief] = useState("");
   const [library, setLibrary] = useState<BriefSummary[]>([]);
   const [active, setActive] = useState("campaign.yaml");
+  /**
+   * The campaigns this run will produce.
+   *
+   * The exercise's client launches hundreds of localized campaigns a month, so
+   * the console takes a list rather than one brief. One selected behaves
+   * exactly as it always has; more than one runs them as a batch, each with its
+   * own full scope, which is what `npm run portfolio` has always done.
+   */
+  const [selectedBriefs, setSelectedBriefs] = useState<string[]>(["campaign.yaml"]);
+  const [batch, setBatch] = useState<BatchState | null>(null);
 
   const [formats, setFormats] = useState<FormatOption[]>([]);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -64,9 +77,21 @@ export function App() {
 
   const [models, setModels] = useState<ModelOption[]>([]);
   const [model, setModel] = useState("");
+  // Empty means "whatever the brief asks for", which is not the same as
+  // "daylight": the fragrance brief says nocturne and picking a look here has
+  // to be a deliberate act, not the default state of the control.
+  const [looks, setLooks] = useState<LookOption[]>([]);
+  const [look, setLook] = useState("");
   const [provider, setProvider] = useState<ProviderStatus | null>(null);
 
   const [estimate, setEstimate] = useState<CampaignEstimate | null>(null);
+  const [batchEstimate, setBatchEstimate] = useState<{
+    campaigns: number;
+    refused: number;
+    variants: number;
+    generations: number;
+    costUsd: number;
+  } | null>(null);
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [run, setRun] = useState<RunState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +160,10 @@ export function App() {
         setModel((m) => m || d.models[0]?.id || "");
       })
       .catch(() => {});
+    fetch("/api/looks")
+      .then((r) => r.json())
+      .then((d: { looks: LookOption[] }) => setLooks(d.looks))
+      .catch(() => {});
     refreshInsights();
     return () => {
       if (timer.current) clearInterval(timer.current);
@@ -202,11 +231,64 @@ export function App() {
     () => ({
       brief,
       model,
+      // Omitted rather than sent empty, so the server can tell "the operator
+      // chose nothing" from "the operator chose daylight".
+      ...(look ? { look } : {}),
       ratios: selectedFormats,
       locales: selectedLocales,
     }),
-    [brief, model, selectedFormats, selectedLocales],
+    [brief, look, model, selectedFormats, selectedLocales],
   );
+
+  /**
+   * What a batch will cost, before any of it is spent.
+   *
+   * The guardrail matters more here than on a single run: eight campaigns can
+   * carry eight paid generations and nobody should discover that afterwards.
+   * It reuses the single-brief estimate once per brief rather than adding a
+   * second costing path that could disagree with the first.
+   */
+  const onEstimateBatch = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    setBatchEstimate(null);
+    try {
+      const rows = await Promise.all(
+        selectedBriefs.map(async (file) => {
+          const text = await fetch(`/api/briefs/${file}`).then((r) => r.text());
+          const res = await fetch("/api/estimate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ brief: text, model }),
+          });
+          const json = await res.json();
+          return { file, ok: res.ok, estimate: res.ok ? (json as CampaignEstimate) : null };
+        }),
+      );
+      setBatchEstimate({
+        campaigns: rows.length,
+        // A brief the estimator refuses is a campaign that will be refused, so
+        // it contributes nothing to the count and nothing to the bill.
+        refused: rows.filter((r) => !r.ok || r.estimate?.blocked).length,
+        variants: rows.reduce(
+          (n, r) => n + (r.estimate?.blocked ? 0 : (r.estimate?.variants ?? 0)),
+          0,
+        ),
+        generations: rows.reduce(
+          (n, r) => n + (r.estimate?.blocked ? 0 : (r.estimate?.generations ?? 0)),
+          0,
+        ),
+        costUsd: rows.reduce(
+          (n, r) => n + (r.estimate?.blocked ? 0 : (r.estimate?.estimatedCostUsd?.totalUsd ?? 0)),
+          0,
+        ),
+      });
+    } catch {
+      setError("Could not reach the local server. Is `npm run dev` still running?");
+    } finally {
+      setBusy(false);
+    }
+  }, [selectedBriefs, model]);
 
   const onEstimate = useCallback(async () => {
     setBusy(true);
@@ -227,10 +309,72 @@ export function App() {
     }
   }, [body]);
 
+  /**
+   * Several campaigns, one click.
+   *
+   * Formats and markets are not passed: a batch runs each brief at its own full
+   * scope, because the chips belong to the brief being previewed and applying
+   * one brief's locales to another brief's campaign would silently produce
+   * markets that brief never asked for.
+   */
+  const onRunBatch = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    setRun(null);
+    setBatch(null);
+    setEstimate(null);
+    setSelected(null);
+
+    const stop = () => {
+      if (timer.current) clearInterval(timer.current);
+      timer.current = null;
+      setBusy(false);
+    };
+
+    let batchId: string;
+    try {
+      const res = await fetch("/api/batches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files: selectedBriefs }),
+      });
+      if (!res.ok) {
+        setError((await res.json()).error ?? "Failed to start the batch");
+        return stop();
+      }
+      batchId = (await res.json()).batchId;
+    } catch {
+      setError("Could not reach the local server. Is `npm run dev` still running?");
+      return stop();
+    }
+
+    let misses = 0;
+    if (timer.current) clearInterval(timer.current);
+    timer.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/batches/${batchId}`);
+        if (!r.ok) throw new Error(String(r.status));
+        misses = 0;
+        const state: BatchState = await r.json();
+        setBatch(state);
+        if (state.status === "complete") {
+          stop();
+          refreshInsights();
+        }
+      } catch {
+        if (++misses >= 5) {
+          setError("Lost contact with the batch. Check the terminal running `npm run dev`.");
+          stop();
+        }
+      }
+    }, POLL_MS);
+  }, [selectedBriefs, refreshInsights]);
+
   const onRun = useCallback(async () => {
     setBusy(true);
     setError(null);
     setRun(null);
+    setBatch(null);
     setEstimate(null);
     setSelected(null);
     // Filters belong to the run that is being replaced. Carrying them over let
@@ -317,6 +461,9 @@ export function App() {
     setSelected(null);
   }, []);
 
+  // One brief behaves exactly as it always has. More than one is a batch.
+  const batching = selectedBriefs.length > 1;
+
   const toggle = (list: string[], set: (v: string[]) => void, key: string) =>
     set(list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
 
@@ -343,6 +490,21 @@ export function App() {
               </select>
             </label>
           )}
+          {looks.length > 0 && (
+            <label
+              className="model"
+              title="Art direction. The brief's own look is used unless you pick one."
+            >
+              <select value={look} onChange={(e) => setLook(e.target.value)}>
+                <option value="">Look: from brief</option>
+                {looks.map((l) => (
+                  <option key={l.id} value={l.id} title={l.description}>
+                    Look: {l.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {provider && (
             <div className="provider">
               <div className={`pill ${provider.configured ? "ok" : "off"}`}>
@@ -356,11 +518,25 @@ export function App() {
             </div>
           )}
           <ThemeToggle />
-          <button type="button" className="ghost" onClick={onEstimate} disabled={busy}>
+          <button
+            type="button"
+            className="ghost"
+            onClick={batching ? onEstimateBatch : onEstimate}
+            disabled={busy}
+          >
             Estimate
           </button>
-          <button type="button" className="run" onClick={onRun} disabled={busy || !brief.trim()}>
-            {run?.status === "running" ? "Running…" : "Run campaign"}
+          <button
+            type="button"
+            className="run"
+            onClick={batching ? onRunBatch : onRun}
+            disabled={busy || (!batching && !brief.trim())}
+          >
+            {busy && (run?.status === "running" || batch?.status === "running")
+              ? "Running…"
+              : batching
+                ? `Run ${selectedBriefs.length} campaigns`
+                : "Run campaign"}
           </button>
         </div>
       </header>
@@ -369,6 +545,9 @@ export function App() {
         library={library}
         active={active}
         onSelect={loadBrief}
+        selectedBriefs={selectedBriefs}
+        onToggleBrief={(file) => toggle(selectedBriefs, setSelectedBriefs, file)}
+        batchEstimate={batchEstimate}
         brief={brief}
         onBriefChange={setBrief}
         message={message}
@@ -383,11 +562,12 @@ export function App() {
 
       {(error || run?.error) && <p className="error">{error ?? run?.error}</p>}
 
-      {run?.report && <DeliveryBanner report={run.report} />}
+      {run?.report && !batch && <DeliveryBanner report={run.report} />}
 
       <main className="stage">
         <div className="work">
-          {run?.report && producedRatios.length > 0 && (
+          {batch && <BatchResults batch={batch} selected={selected} onSelect={setSelected} />}
+          {run?.report && !batch && producedRatios.length > 0 && (
             <div className="filters">
               {/* Each filter appears when its own axis has more than one value.
                   The format filter used to be gated on the number of MARKETS,
@@ -423,13 +603,15 @@ export function App() {
               />
             </div>
           )}
-          <Results
-            report={run?.report}
-            filterLocale={filterLocale}
-            filterRatio={filterRatio}
-            selected={selected}
-            onSelect={setSelected}
-          />
+          {!batch && (
+            <Results
+              report={run?.report}
+              filterLocale={filterLocale}
+              filterRatio={filterRatio}
+              selected={selected}
+              onSelect={setSelected}
+            />
+          )}
         </div>
 
         <Inspector

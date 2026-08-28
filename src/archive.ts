@@ -1,40 +1,31 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { crc32 } from "node:zlib";
 
 /**
- * A ZIP writer, stored rather than deflated, in about eighty lines.
+ * The campaign as one download.
  *
- * The console could only ever hand back one PNG at a time, which is not how a
- * producer collects a campaign. Everything needed to fix that is a zip of the
- * output folder, and reaching for a dependency to build one would have added a
- * package, a licence and a supply-chain question to save this file.
+ * The console could only hand back one PNG at a time, which is not how a
+ * producer collects a campaign. Zip is the only container a reviewer on any of
+ * the three desktop platforms can open by double-clicking, so it is worth the
+ * fifty lines it takes to write one, and worth NOT taking a dependency plus a
+ * licence plus a supply-chain question to save them.
  *
- * Stored (method 0) on purpose: the payload is PNGs and a JSON report, and PNG
- * is already deflate-compressed internally. Re-compressing it buys a few
- * percent for real CPU on every download. Storing also keeps this readable --
- * there is no compression state machine, just headers around bytes.
+ * Stored (method 0), not deflated: the payload is PNGs and a JSON report, and
+ * PNG is already deflate-compressed internally. Re-compressing buys a few
+ * percent for real CPU on every download, and storing means there is no
+ * compression state machine here - just headers wrapped around bytes.
  *
  * Format is APPNOTE 6.3.2, the subset every unzip implementation has supported
  * for decades: a local header per file, then the central directory, then the
  * end-of-central-directory record.
+ *
+ * The checksum comes from `node:zlib`, which has had `crc32` since Node 20.15.
+ * This file used to carry its own IEEE 802.3 lookup table and the loop to drive
+ * it, which was the one piece of this repo that made a reader stop and ask what
+ * it was doing in a creative pipeline. The platform grew the primitive; the
+ * table went.
  */
-
-/** Standard CRC-32 (IEEE 802.3), which the ZIP central directory requires. */
-const CRC_TABLE = (() => {
-  const table = new Int32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let bit = 0; bit < 8; bit++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    table[i] = c;
-  }
-  return table;
-})();
-
-function crc32(buf: Buffer): number {
-  let c = 0xffffffff;
-  for (const byte of buf) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
 
 /** Every file under `dir`, relative to it, depth first and sorted. */
 async function walk(dir: string, base = dir): Promise<string[]> {
@@ -46,6 +37,27 @@ async function walk(dir: string, base = dir): Promise<string[]> {
     else if (entry.isFile()) files.push(path.relative(base, full));
   }
   return files;
+}
+
+/** UTF-8 names, stored, no encryption. Identical in both headers. */
+const FLAGS = 0x0800;
+const STORED = 0;
+const VERSION = 20;
+
+/**
+ * MS-DOS date and time, which is what a zip entry stores.
+ *
+ * Skipping these is legal and every unzip accepts it, so the archive passed
+ * `unzip -t` without them. It also meant every file in the campaign listed as
+ * `00-00-1980`, which is what a producer sees the moment they open the folder.
+ * Two seconds of resolution and a 1980 epoch are the format's, not ours.
+ */
+function dosStamp(at: Date): { time: number; date: number } {
+  const year = Math.max(1980, at.getFullYear());
+  return {
+    time: (at.getHours() << 11) | (at.getMinutes() << 5) | (at.getSeconds() >> 1),
+    date: ((year - 1980) << 9) | ((at.getMonth() + 1) << 5) | at.getDate(),
+  };
 }
 
 /**
@@ -64,33 +76,39 @@ export async function zipDirectory(dir: string, prefix = ""): Promise<Buffer> {
   let offset = 0;
 
   for (const name of names) {
-    const data = await readFile(path.join(dir, name));
+    const file = path.join(dir, name);
+    const data = await readFile(file);
+    const stamp = dosStamp((await stat(file)).mtime);
     // Always forward slashes in a zip entry, whatever the host separator is.
     const entryName = Buffer.from(path.posix.join(prefix, name.split(path.sep).join("/")), "utf8");
-    const crc = crc32(data);
+    const checksum = crc32(data);
 
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0); // local file header signature
-    local.writeUInt16LE(20, 4); // version needed
-    local.writeUInt16LE(0x0800, 6); // UTF-8 filename flag
-    local.writeUInt16LE(0, 8); // method 0 = stored
-    local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(data.length, 18); // compressed size
+    local.writeUInt16LE(VERSION, 4);
+    local.writeUInt16LE(FLAGS, 6);
+    local.writeUInt16LE(STORED, 8);
+    local.writeUInt16LE(stamp.time, 10);
+    local.writeUInt16LE(stamp.date, 12);
+    local.writeUInt32LE(checksum, 14);
+    local.writeUInt32LE(data.length, 18); // compressed size, same as stored
     local.writeUInt32LE(data.length, 22); // uncompressed size
     local.writeUInt16LE(entryName.length, 26);
     locals.push(local, entryName, data);
 
     const dirEntry = Buffer.alloc(46);
     dirEntry.writeUInt32LE(0x02014b50, 0); // central directory signature
-    dirEntry.writeUInt16LE(20, 4); // version made by
-    dirEntry.writeUInt16LE(20, 6); // version needed
-    dirEntry.writeUInt16LE(0x0800, 8);
-    dirEntry.writeUInt16LE(0, 10);
-    dirEntry.writeUInt32LE(crc, 16);
+    dirEntry.writeUInt16LE(VERSION, 4); // version made by
+    dirEntry.writeUInt16LE(VERSION, 6); // version needed
+    dirEntry.writeUInt16LE(FLAGS, 8);
+    dirEntry.writeUInt16LE(STORED, 10);
+    dirEntry.writeUInt16LE(stamp.time, 12);
+    dirEntry.writeUInt16LE(stamp.date, 14);
+    dirEntry.writeUInt32LE(checksum, 16);
     dirEntry.writeUInt32LE(data.length, 20);
     dirEntry.writeUInt32LE(data.length, 24);
     dirEntry.writeUInt16LE(entryName.length, 28);
-    dirEntry.writeUInt32LE(offset, 42); // where the local header sits
+    dirEntry.writeUInt32LE(offset, 42); // where this file's local header sits
     central.push(dirEntry, entryName);
 
     offset += local.length + entryName.length + data.length;

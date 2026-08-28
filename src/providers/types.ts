@@ -11,6 +11,16 @@ export type HeroRequest = {
   prompt: string;
   /** Approved packshot used as an identity anchor when one exists. */
   referenceAssetPath?: string;
+  /**
+   * Output size to ask the provider for.
+   *
+   * 2K is what ships, and it is not optional for the deliverable: every format
+   * is a centre crop of one square hero, and 9:16 needs 1080x1920 out of it, so
+   * a 1K hero would be upscaled about 1.9x and go soft. 1K exists for PREVIEW,
+   * where the question is "is this the right look" rather than "is the label
+   * crisp" - and 1K unlocks the cheap models, which is where the saving is.
+   */
+  imageSize?: "1K" | "2K";
 };
 
 export type GeneratedHero = {
@@ -58,6 +68,37 @@ export function safeProviderMessage(
     .slice(0, 180);
   const id = requestId ? ` [request ${requestId}]` : "";
   return `${provider} refused the request (HTTP ${status})${id}: ${reason || "no detail returned"}`;
+}
+
+/**
+ * Runs a provider request under a deadline and turns whatever comes back into a
+ * ProviderError, so the pipeline never has to know that `fetch` signals a
+ * timeout by throwing a DOMException called TimeoutError.
+ *
+ * A timeout carries no status, which `withRetry` reads as not retryable. That
+ * is the right default here: a request that hung may already have been accepted
+ * and billed upstream, and the failure mode is "no answer", not "refused".
+ */
+export async function fetchWithDeadline(
+  provider: string,
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new ProviderError(
+        `${provider} did not answer within ${Math.round(timeoutMs / 1000)}s. ` +
+          "The request may still have been accepted and billed, so it is not retried automatically.",
+      );
+    }
+    throw new ProviderError(
+      `${provider} could not be reached: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 export class GenerationUnavailableError extends Error {

@@ -2,7 +2,7 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 import type { ComposedCreative } from "./composer.js";
 import { safeBoundsFor, type Template } from "./composer.js";
-import { availableFamilies } from "./fonts.js";
+import { availableFamilies, missingGlyphs } from "./fonts.js";
 import type {
   CampaignBrief,
   Market,
@@ -92,12 +92,17 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
 
   const font = headlineFontCheck(brief);
   if (font) checks.push(font);
+  checks.push(glyphCoverageCheck(brief));
 
   const baseline = baselineCheck(brief);
   if (baseline) checks.push(baseline);
 
   checks.push({
-    id: "brand.colors",
+    // Named for what it measures. It was `brand.colors`, which read as though
+    // the brand palette had been checked against the creative; it only ever
+    // confirmed the marketer typed a colour. The creative-level check of the
+    // same name now does the real one, against pixels.
+    id: "brand.colorFormat",
     status: isHex(brief.brand.primaryColor) && isHex(brief.brand.secondaryColor) ? "pass" : "fail",
     message: "Brand colours are valid hex values",
   });
@@ -156,6 +161,45 @@ function baselineCheck(brief: CampaignBrief): ValidationCheck | null {
     message: ok
       ? `Manual baseline itemises to ${summed} min/creative, matching the stated total`
       : `Manual baseline items add to ${summed} min but manualMinutesPerCreative says ${brief.manualMinutesPerCreative}`,
+  };
+}
+
+/**
+ * Every market's copy, checked against the glyphs actually bundled.
+ *
+ * Localization is the exercise's bonus and the font files are its honest limit:
+ * Rubik and Cormorant cover Latin and its accents, so a market written in
+ * Japanese or Arabic rasterizes as .notdef boxes. Nothing downstream would
+ * notice - the ink check counts opaque pixels, and a row of tofu is opaque - so
+ * the creative ships looking broken with every check green.
+ *
+ * A failure, not a warning, for the same reason a truncated headline is: the
+ * exercise requires the campaign message ON the post, and a row of .notdef
+ * boxes is not that message. Producing the covered markets and quietly shipping
+ * empty boxes for the rest would be worse than refusing - the boxes look like a
+ * bug in the brand's ad, and nobody would find out until it was live. It costs
+ * nothing to refuse, because this runs before any generation.
+ *
+ * It names the market and the characters so the fix is obvious: add the face to
+ * assets/fonts and set brand.headlineFont.
+ */
+function glyphCoverageCheck(brief: CampaignBrief): ValidationCheck {
+  const gaps: string[] = [];
+  for (const market of resolveMarkets(brief)) {
+    const copy = [market.message, market.callToAction, market.disclaimer].filter(Boolean).join(" ");
+    // Headline and interface copy use different faces, so both are checked.
+    const missing = [
+      ...new Set([...missingGlyphs(copy, "display"), ...missingGlyphs(copy, "bold")]),
+    ];
+    if (missing.length > 0) gaps.push(`${market.locale} (${missing.slice(0, 6).join("")})`);
+  }
+  return {
+    id: "brand.glyphCoverage",
+    status: gaps.length === 0 ? "pass" : "fail",
+    message:
+      gaps.length === 0
+        ? `Every market's copy renders in the bundled typefaces (${resolveMarkets(brief).length} screened)`
+        : `Bundled typefaces have no glyphs for ${gaps.join(", ")} - that copy would rasterize as empty boxes. Add the face to assets/fonts and set brand.headlineFont.`,
   };
 }
 
@@ -392,12 +436,36 @@ const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered, market }) => {
   };
 };
 
+/**
+ * The exercise's second named brand check: "use of brand colors".
+ *
+ * Measured off the finished creative, not off the brief. The accent carries the
+ * rule above the headline and the CTA pill, so if it is absent from the pixels
+ * the brand's own colour did not reach the post - whatever the brief said.
+ *
+ * The floor is deliberately tiny. This asks whether the brand colour is present
+ * at all, which is what the exercise names; it is not a proportion-of-palette
+ * rule, and inventing a threshold for how much gold an ad should contain would
+ * be a number with nothing behind it.
+ */
+const brandColorCheck: CreativeCheck = ({ brief, rendered }) => {
+  const present = rendered.accentCoverage > 0;
+  return {
+    id: "brand.colors",
+    status: present ? "pass" : "fail",
+    message: present
+      ? `Brand accent ${brief.brand.secondaryColor} present in the creative (${(rendered.accentCoverage * 100).toFixed(2)}% of pixels)`
+      : `Brand accent ${brief.brand.secondaryColor} does not appear anywhere in the finished creative`,
+  };
+};
+
 /** Order here is the order a reviewer reads them in. */
 const CREATIVE_CHECKS: CreativeCheck[] = [
   dimensionsCheck,
   messageRenderedCheck,
   legibilityCheck,
   contrastCheck,
+  brandColorCheck,
   logoCheck,
   safeZoneCheck,
   callToActionCheck,

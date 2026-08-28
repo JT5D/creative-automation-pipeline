@@ -1,4 +1,5 @@
 import {
+  fetchWithDeadline,
   type GeneratedHero,
   GenerationUnavailableError,
   type HeroGenerator,
@@ -29,6 +30,9 @@ const POLL_TIMEOUT_MS = 120_000;
 
 type CachedToken = { token: string; expiresAt: number };
 
+/** Same deadline the Gemini adapter uses. See src/providers/gemini.ts. */
+const REQUEST_TIMEOUT_MS = 120_000;
+
 export class FireflyHeroGenerator implements HeroGenerator {
   readonly provider = "adobe-firefly";
   /** The literal modelId sent, so provenance records the request, not a label. */
@@ -52,16 +56,21 @@ export class FireflyHeroGenerator implements HeroGenerator {
       return this.cachedToken.token;
     }
 
-    const res = await fetch(IMS_TOKEN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-        scope: SCOPES,
-      }),
-    });
+    const res = await fetchWithDeadline(
+      "Firefly",
+      IMS_TOKEN_URL,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          scope: SCOPES,
+        }),
+      },
+      REQUEST_TIMEOUT_MS,
+    );
 
     // The body of a failed auth can echo the secret back. Never forward it.
     if (!res.ok) {
@@ -89,24 +98,29 @@ export class FireflyHeroGenerator implements HeroGenerator {
       "Content-Type": "application/json",
     };
 
-    const submit = await fetch(GENERATE_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        prompt: input.prompt,
-        modelId: this.model,
-        // Square canonical hero. Every channel format is cut from this one
-        // asset locally, so we never pay per ratio.
-        aspectRatio: "1:1",
-        numVariations: 1, // Cost control: never fan out candidates.
-        // Empty = pure generation. Populated, this is the Object Composite
-        // path that would carry an approved packshot.
-        referenceBlobs: [],
-        // Image5's own quality lever. A campaign hero is the one image a
-        // reviewer actually looks at, so it is the right place to spend it.
-        modelSpecificPayload: { prompt_reasoner: "quality" },
-      }),
-    });
+    const submit = await fetchWithDeadline(
+      "Firefly",
+      GENERATE_URL,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          prompt: input.prompt,
+          modelId: this.model,
+          // Square canonical hero. Every channel format is cut from this one
+          // asset locally, so we never pay per ratio.
+          aspectRatio: "1:1",
+          numVariations: 1, // Cost control: never fan out candidates.
+          // Empty = pure generation. Populated, this is the Object Composite
+          // path that would carry an approved packshot.
+          referenceBlobs: [],
+          // Image5's own quality lever. A campaign hero is the one image a
+          // reviewer actually looks at, so it is the right place to spend it.
+          modelSpecificPayload: { prompt_reasoner: "quality" },
+        }),
+      },
+      REQUEST_TIMEOUT_MS,
+    );
 
     if (!submit.ok) {
       throw new ProviderError(
@@ -128,7 +142,7 @@ export class FireflyHeroGenerator implements HeroGenerator {
     const imageUrl = findFirstUrl(result);
     if (!imageUrl) throw new Error("Firefly job completed without an image URL");
 
-    const imageRes = await fetch(imageUrl);
+    const imageRes = await fetchWithDeadline("Firefly", imageUrl, {}, REQUEST_TIMEOUT_MS);
     if (!imageRes.ok) {
       throw new Error(`Firefly image download failed (HTTP ${imageRes.status})`);
     }
@@ -156,7 +170,7 @@ export class FireflyHeroGenerator implements HeroGenerator {
     const deadline = Date.now() + POLL_TIMEOUT_MS;
 
     while (Date.now() < deadline) {
-      const res = await fetch(statusUrl, { headers });
+      const res = await fetchWithDeadline("Firefly", statusUrl, { headers }, REQUEST_TIMEOUT_MS);
       if (!res.ok) throw new Error(`Firefly status poll failed (HTTP ${res.status})`);
 
       const body = (await res.json()) as Record<string, unknown>;

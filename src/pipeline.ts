@@ -1,9 +1,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
+import type { LookName } from "./artDirection.js";
 import { resolveHero } from "./assetResolver.js";
 import { composeVariant, templateFor } from "./composer.js";
 import { recordRun } from "./history.js";
+import { PREVIEW_MODEL } from "./pricing.js";
 import { type HeroGenerator, selectGenerator } from "./providers/index.js";
 import {
   type CampaignReport,
@@ -36,6 +38,31 @@ export type RunOptions = {
   locales?: string[];
   /** Model override for this run only. */
   model?: string;
+  /**
+   * Art-direction look for this run only, overriding whatever the brief says.
+   *
+   * Same grain as `ratios` and `locales`: the brief states the campaign's
+   * intent, and the console is allowed to try something else without editing
+   * the file. It sets the look and nothing below it, so a brief that overrode
+   * an individual slot keeps that override on top - which is the whole point of
+   * the cascade.
+   */
+  look?: LookName;
+  /**
+   * Preview: generate the hero at 1K on the cheapest model that can serve it.
+   *
+   * A quarter of the price, and the cost is per GENERATION rather than per
+   * creative, so a full 24-creative preview run costs about three cents against
+   * thirteen. It exists because iterating on art direction is the expensive
+   * habit - not shipping - and nobody should be choosing between "try the dark
+   * look" and "spend the budget".
+   *
+   * A preview is never the deliverable and does not pretend to be: 9:16 needs
+   * 1080x1920 out of a square hero, so a 1K source is upscaled about 1.9x and
+   * goes soft. The report says `preview`, and assignmentProof fails, for the
+   * same reason the offline renderer does.
+   */
+  preview?: boolean;
 };
 
 /**
@@ -56,7 +83,12 @@ export function parseBrief(raw: string): CampaignBrief {
 
   const problems = result.error.issues.map((issue) => {
     const field = issue.path.join(".") || "brief";
-    return `${field}: ${issue.message}`;
+    // Zod says "expected string, received undefined" for a field that is simply
+    // absent, which is a sentence for a developer reading a stack trace, not
+    // for the person editing the brief. A missing required field is the single
+    // most likely thing to be wrong with a brief, so it gets said plainly.
+    const missing = issue.code === "invalid_type" && /received undefined/i.test(issue.message);
+    return missing ? `${field} is required and is missing` : `${field}: ${issue.message}`;
   });
   throw new Error(
     problems.length === 1
@@ -83,7 +115,9 @@ export async function runCampaign(
 ): Promise<CampaignReport> {
   const startedAt = Date.now();
   const outputRoot = options.outputRoot ?? path.resolve("outputs");
-  const mode = options.mode ?? (process.env.MVP_MODE === "final" ? "final" : "dev");
+  const mode = options.preview
+    ? "preview"
+    : (options.mode ?? (process.env.MVP_MODE === "final" ? "final" : "dev"));
   const warnings: string[] = [];
 
   const emit = (event: string, detail?: Record<string, unknown>) =>
@@ -92,6 +126,10 @@ export async function runCampaign(
   // 1. Contract. An invalid brief never reaches the rest of the system.
   const brief =
     typeof rawBrief === "string" ? parseBrief(rawBrief) : CampaignBriefSchema.parse(rawBrief);
+  // Applied to the validated brief rather than threaded through every call
+  // below it, so there is exactly one place where "what look is this run" is
+  // decided and resolveArtDirection stays the only reader of it.
+  if (options.look) brief.look = options.look;
   const { ratios, markets } = selectScope(brief, options);
   emit("brief_validated", {
     campaignId: brief.id,
@@ -110,7 +148,9 @@ export async function runCampaign(
 
   // 3. Provider is resolved once, up front, so a misconfigured key fails the
   //    run immediately rather than after the first product has been composed.
-  const generator = options.generator ?? selectGenerator(process.env, options.model);
+  const generator =
+    options.generator ??
+    selectGenerator(process.env, options.preview ? PREVIEW_MODEL.id : options.model);
   emit("provider_selected", { provider: generator.provider, model: generator.model });
 
   // Cache sits under the output root, so every run's cache is scoped to it and
@@ -128,7 +168,14 @@ export async function runCampaign(
     try {
       emit("asset_resolving", { productId: product.id });
 
-      const hero = await resolveHero(product, { brief, generator, mode, cacheDir, emit });
+      const hero = await resolveHero(product, {
+        brief,
+        generator,
+        mode,
+        cacheDir,
+        emit,
+        imageSize: options.preview ? "1K" : undefined,
+      });
       stage = "compose";
 
       // Persist the canonical hero next to its outputs so the provenance chain

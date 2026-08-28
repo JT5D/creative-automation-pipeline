@@ -73,6 +73,19 @@ export const MODEL_OPTIONS: ModelOption[] = MODEL_CATALOG.filter(
   (m) => m.maxImageSize === REQUESTED_IMAGE_SIZE,
 );
 
+/**
+ * The cheapest model that can serve a 1K preview.
+ *
+ * Derived rather than named, so adding a cheaper 1K model to the catalogue
+ * moves the preview onto it without anyone remembering to. At the time of
+ * writing that is gemini-3.1-flash-lite-image at $0.0336 - a quarter of the
+ * frontier tier, which is the whole point: iterate on art direction at three
+ * cents and spend thirteen only on what ships.
+ */
+export const PREVIEW_MODEL: ModelOption = MODEL_CATALOG.filter((m) => m.maxImageSize === "1K").sort(
+  (a, b) => a.usdPer2K - b.usdPer2K,
+)[0];
+
 const BY_ID = new Map(MODEL_CATALOG.map((m) => [m.id, m]));
 
 /** Undefined for any model with no published price - never guessed. */

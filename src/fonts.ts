@@ -118,6 +118,33 @@ export function measureText(text: string, fontSize: number, face: Face = "displa
 }
 
 /**
+ * Characters in `text` the bundled faces have no glyph for.
+ *
+ * Localization is the exercise's stated bonus, and the honest limit of it here
+ * is the font files: Rubik and Cormorant Garamond cover Latin and its accents,
+ * so a market written in Japanese, Arabic or Devanagari would rasterize as
+ * .notdef boxes. Nothing would fail - the ink check counts opaque pixels and a
+ * row of tofu is opaque - so the creative would ship looking broken with every
+ * check green.
+ *
+ * fontconfig will not save it either: its answer to a missing glyph is a
+ * substitution from somewhere else on the machine, so the same brief renders
+ * differently on the evaluator's laptop than on mine.
+ *
+ * Returns the distinct offending characters, so preflight can name them.
+ */
+export function missingGlyphs(text: string, face: Face): string[] {
+  const font = loadFont(face);
+  const missing = new Set<string>();
+  for (const char of text) {
+    // Whitespace and control characters have no glyph and need none.
+    if (/\s/.test(char)) continue;
+    if (font.charToGlyphIndex(char) === 0) missing.add(char);
+  }
+  return [...missing];
+}
+
+/**
  * Families actually present in the bundled font directory.
  *
  * A brand may name its headline typeface. If that family is not bundled,

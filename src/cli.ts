@@ -1,8 +1,10 @@
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveArtDirection, SLOTS } from "./artDirection.js";
 import { estimateCampaign } from "./estimate.js";
 import { loadBriefFile, runCampaign } from "./pipeline.js";
+import { PREVIEW_MODEL } from "./pricing.js";
 import type { CampaignReport } from "./report.js";
 
 /**
@@ -18,11 +20,12 @@ const args = process.argv.slice(2);
 // here instead. `--help` is itself a documented flag and belongs in the set:
 // left out, asking for help printed the help, then reported "Unrecognised:
 // --help", then exited 2, telling a script that reading the manual was an error.
-const KNOWN = new Set(["--all", "--dry-run", "--prompts", "--help"]);
+const KNOWN = new Set(["--all", "--dry-run", "--prompts", "--preview", "--help"]);
 const unknown = args.filter((a) => a.startsWith("--") && !KNOWN.has(a));
 if (unknown.length || args.includes("--help")) {
   console.log(`
   npm run campaign -- <brief>              produce a campaign
+  npm run campaign -- <brief> --preview    the whole campaign for about 3 cents
   npm run campaign -- <brief> --dry-run    what it would cost, spending nothing
   npm run campaign -- <brief> --dry-run --prompts   ...and the exact prompts
   npm run portfolio                        every brief in samples/briefs.json
@@ -46,7 +49,13 @@ if (args.includes("--all")) {
   process.exit(await runPortfolio());
 }
 
-const brief = await loadBriefFile(path.resolve(file));
+// A brief that fails the contract is a normal outcome, not a crash. Without
+// this it threw before reaching the handler below and a marketer got a Node
+// stack trace pointing at parseBrief.
+const brief = await loadBriefFile(path.resolve(file)).catch((error: unknown) => {
+  console.error(`\n✗ ${error instanceof Error ? error.message : String(error)}\n`);
+  process.exit(2);
+});
 
 // --dry-run answers "what will this cost" without calling a provider.
 if (dryRun) {
@@ -71,6 +80,20 @@ DRY RUN  ${e.campaignName}
   // Off by default: the summary answers "what will this cost", and the full
   // art direction is a paragraph per product that would bury it.
   if (args.includes("--prompts")) {
+    // What this brief actually changed, before any of the paragraph. Most
+    // art-direction questions are "did my override land" and "what am I
+    // inheriting", and both are answerable here for nothing.
+    const art = resolveArtDirection(brief);
+    console.log(`\n  LOOK  ${art.look}${art.overridden.length ? "" : "  (nothing overridden)"}`);
+    for (const slot of SLOTS) {
+      const changed = art.overridden.includes(slot);
+      console.log(
+        `  ${changed ? "→" : " "} ${slot.padEnd(10)} ${changed ? "" : "inherited  "}${art.slots[slot].slice(0, changed ? 96 : 60)}${art.slots[slot].length > 60 ? "…" : ""}`,
+      );
+    }
+    console.log("    composition  LOCKED - derived from the crop arithmetic");
+    console.log("    typography   LOCKED - stops invented claims on the product");
+
     for (const p of e.products.filter((x) => x.prompt)) {
       console.log(`\n  ── ${p.productName} ─────────────────────────────────────────`);
       console.log(
@@ -94,7 +117,17 @@ DRY RUN  ${e.campaignName}
   process.exit(e.blocked ? 2 : 0);
 }
 
+const preview = args.includes("--preview");
+if (preview) {
+  console.log(
+    `\n  PREVIEW  hero at 1K on ${PREVIEW_MODEL.id} - $${PREVIEW_MODEL.usdPer2K.toFixed(4)} per` +
+      " generation instead of $0.134.\n  Exports are upscaled from a 1K source, so this is for" +
+      " judging the look, not for shipping.\n",
+  );
+}
+
 const report = await runCampaign(brief, {
+  preview,
   onEvent: (e) => {
     const detail = e.detail ? ` ${JSON.stringify(e.detail)}` : "";
     console.log(`  ${e.event}${detail}`);

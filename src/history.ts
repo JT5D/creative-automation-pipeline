@@ -14,7 +14,7 @@ export type RunHistoryEntry = {
   at: string;
   campaignId: string;
   campaignName: string;
-  mode: "dev" | "final";
+  mode: "dev" | "final" | "preview";
   provider: string;
   model: string;
   products: number;

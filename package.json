@@ -19,7 +19,9 @@
     "format": "biome check --write src tests scripts",
     "check": "bash scripts/check.sh",
     "test:baseline": "tsx scripts/baseline.ts",
-    "portfolio": "tsx src/cli.ts --all"
+    "portfolio": "tsx src/cli.ts --all",
+    "shots": "tsx scripts/shot-variants.ts",
+    "look": "tsx scripts/look.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
@@ -46,6 +48,6 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.15"
   }
 }

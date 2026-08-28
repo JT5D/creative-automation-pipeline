@@ -136,6 +136,36 @@ jobs:
             || { echo "✗ archive did not produce a readable zip"; exit 1; }
           checked=$((checked + 1)); echo "  ✓ GET  /api/campaigns/:id/archive"
 
+          # Several campaigns as one job, which is the shape the exercise's
+          # client actually has. Two of the briefs here exist to be refused, and
+          # the batch has to keep going and say which gate stopped each.
+          BATCH=$(curl -s -X POST "$B/api/batches" -H 'Content-Type: application/json' \
+            -d '{"files":["campaign-minimal.yaml","campaign-legal-fail.yaml","campaign-incomplete.yaml"]}' \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).batchId))')
+          [ -n "$BATCH" ] || { echo "✗ POST /api/batches returned no batchId"; exit 1; }
+          checked=$((checked + 1)); echo "  ✓ POST /api/batches"
+
+          for _ in $(seq 1 120); do
+            BSTATUS=$(curl -sf "$B/api/batches/$BATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).status))')
+            [ "$BSTATUS" = "running" ] || break
+            sleep 1
+          done
+          curl -sf "$B/api/batches/$BATCH" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const b=JSON.parse(s);
+              const by=Object.fromEntries(b.campaigns.map(c=>[c.file,c.status]));
+              if (b.status!=="complete") throw new Error("batch ended "+b.status);
+              if (by["campaign-minimal.yaml"]!=="complete") throw new Error("a valid brief did not complete");
+              // Refused for two DIFFERENT reasons: one by the legal scan, one by
+              // the brief contract. A batch that stopped at the first refusal
+              // would never reach the second.
+              if (by["campaign-legal-fail.yaml"]!=="refused") throw new Error("prohibited claims were not refused");
+              if (by["campaign-incomplete.yaml"]!=="refused") throw new Error("an invalid brief was not refused");
+              const bad=b.campaigns.find(c=>c.file==="campaign-incomplete.yaml");
+              if (!/audience is required/.test(bad.error||"")) throw new Error("contract error is not readable: "+bad.error);
+            });'
+          checked=$((checked + 1)); echo "  ✓ GET  /api/batches/:batchId"
+
           # The asset upload is the one write this server makes. Assert it
           # refuses a crafted product id, because that is the input that would
           # otherwise decide a filesystem path.
@@ -143,5 +173,20 @@ jobs:
             -X POST "$B/api/assets" -H 'Content-Type: application/json' \
             -d '{"productId":"../../etc/passwd","mimeType":"image/png","dataBase64":"aGk="}'
 
+          # And that it ACCEPTS a real one, which nothing covered: the rejection
+          # test passes just as happily against a route that refuses everything.
+          PNG=$(node -e 'require("sharp")({create:{width:8,height:8,channels:3,background:"#123456"}}).png().toBuffer().then(b=>process.stdout.write(b.toString("base64")))')
+          expect "POST /api/assets (accepts a real image)" 'samples/assets/ci-probe-approved-hero.png' \
+            -X POST "$B/api/assets" -H 'Content-Type: application/json' \
+            -d "{\"productId\":\"ci-probe\",\"mimeType\":\"image/png\",\"dataBase64\":\"$PNG\"}"
+          test -f samples/assets/ci-probe-approved-hero.png \
+            || { echo "✗ upload reported success but wrote no file"; exit 1; }
+
+          # And that it refuses bytes that are not a decodable image, because the
+          # declared MIME type is a claim rather than evidence.
+          expect "POST /api/assets (rejects a non-image)" 'not a readable image' \
+            -X POST "$B/api/assets" -H 'Content-Type: application/json' \
+            -d '{"productId":"ci-probe","mimeType":"image/png","dataBase64":"bm90IGFuIGltYWdl"}'
+
           echo "local app booted on 127.0.0.1:8787 and answered $checked routes"
-          [ "$checked" -eq 12 ] || { echo "✗ expected 12 routes, checked $checked"; exit 1; }
+          [ "$checked" -eq 16 ] || { echo "✗ expected 16 routes, checked $checked"; exit 1; }

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { REQUESTED_IMAGE_SIZE } from "../pricing.js";
 import {
+  fetchWithDeadline,
   type GeneratedHero,
   GenerationUnavailableError,
   type HeroGenerator,
@@ -34,6 +35,25 @@ const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"
  * derives the console's picker from exactly that constraint.
  */
 const DEFAULT_MODEL = "gemini-3-pro-image";
+
+/**
+ * Ceiling on a single generation request.
+ *
+ * The retry policy handles a request that FAILS. It does nothing for one that
+ * never answers, and this is the only call in the pipeline that costs money and
+ * the only one that reaches the network: without a deadline, a half-open
+ * connection hangs the run forever, with no output, no error and no way to know
+ * whether the generation was billed. 2K generations here measure around 23
+ * seconds, so 120 is roughly five times the observed worst case - long enough
+ * that a slow-but-working call is never cut off, short enough that a hung one
+ * surfaces while somebody is still watching.
+ *
+ * A timeout is a ProviderError with no status, which withRetry treats as not
+ * retryable. That is deliberate: a request that hung may well have been
+ * accepted and billed upstream, and firing another is the wrong default when
+ * the failure mode is "no answer" rather than "refused".
+ */
+const REQUEST_TIMEOUT_MS = 120_000;
 
 const MIME_BY_EXT: Record<string, string> = {
   ".png": "image/png",
@@ -74,29 +94,34 @@ export class GeminiHeroGenerator implements HeroGenerator {
       operation = "image-reference";
     }
 
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: {
-        "x-goog-api-key": this.apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: this.model,
-        input: parts,
-        // One canonical square hero with deliberate negative space. The three
-        // channel ratios are cut from this locally -- we never pay for three.
-        // The API accepts only image/jpeg here -- image/png is rejected with
-        // HTTP 400 (verified against the live endpoint 2026-08-28). Outputs
-        // are re-encoded to PNG by the compositor, so this is a transport
-        // detail, not a quality one.
-        response_format: {
-          type: "image",
-          mime_type: "image/jpeg",
-          aspect_ratio: "1:1",
-          image_size: REQUESTED_IMAGE_SIZE,
+    const res = await fetchWithDeadline(
+      "Gemini",
+      ENDPOINT,
+      {
+        method: "POST",
+        headers: {
+          "x-goog-api-key": this.apiKey,
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          model: this.model,
+          input: parts,
+          // One canonical square hero with deliberate negative space. The three
+          // channel ratios are cut from this locally -- we never pay for three.
+          // The API accepts only image/jpeg here -- image/png is rejected with
+          // HTTP 400 (verified against the live endpoint 2026-08-28). Outputs
+          // are re-encoded to PNG by the compositor, so this is a transport
+          // detail, not a quality one.
+          response_format: {
+            type: "image",
+            mime_type: "image/jpeg",
+            aspect_ratio: "1:1",
+            image_size: input.imageSize ?? REQUESTED_IMAGE_SIZE,
+          },
+        }),
+      },
+      REQUEST_TIMEOUT_MS,
+    );
 
     if (!res.ok) {
       const body = await res.text();

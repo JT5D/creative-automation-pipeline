@@ -23,7 +23,16 @@ const ProductSchema = z.object({
    */
   referenceAssetPath: z.string().optional(),
 
-  /** Art direction for this specific product. Optional; a default is derived. */
+  /**
+   * The entire prompt for this one product, replacing everything.
+   *
+   * The last escape hatch, and the widest. `look` and `artDirection` cover the
+   * cases anyone should normally need; this exists for the product whose art
+   * direction has nothing to do with the campaign's, and it deliberately still
+   * cannot reach the two locked slots - composition is appended from the crop
+   * arithmetic and the typography rule is appended last, because a bare prompt
+   * is exactly the input that produced invented packaging claims.
+   */
   generationPrompt: z.string().optional(),
 });
 
@@ -62,87 +71,184 @@ const MarketSchema = z.object({
   disclaimer: z.string().optional(),
 });
 
-export const CampaignBriefSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
+/**
+ * Brief ids come from user input and become directory names, which is why this
+ * lives with the contract rather than with the reporting: it is the function
+ * that decides what a brief is allowed to collide with.
+ */
+export function sanitizeId(id: string): string {
+  const cleaned = id
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(0, 64);
+  return cleaned || "campaign";
+}
 
-  region: z.string().min(1),
-  audience: z.string().min(1),
-  message: z.string().min(1),
+/** Reports the first value that two entries map onto, or null when all differ. */
+function firstCollision<T>(items: T[], key: (item: T) => string): string | null {
+  const seen = new Set<string>();
+  for (const item of items) {
+    const k = key(item);
+    if (seen.has(k)) return k;
+    seen.add(k);
+  }
+  return null;
+}
 
+export const CampaignBriefSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+
+    region: z.string().min(1),
+    audience: z.string().min(1),
+    message: z.string().min(1),
+
+    /**
+     * The 4A's brief standard reduces to who / what / why / where / success.
+     * audience=who, message=what, region=where. These cover why and success.
+     * All optional, so a minimal brief stays minimal.
+     */
+    objective: z.string().optional(),
+    /** Rendered into every creative. Every real social ad has one. */
+    callToAction: z.string().optional(),
+    /** Feeds the deterministic art-direction prompt. */
+    toneOfVoice: z.string().optional(),
+    /**
+     * The campaign's set: one physical world every product is photographed in.
+     *
+     * Without this the prompt describes a generic surface, so each product's
+     * hero samples its own set independently and a two-product campaign comes
+     * back as two unrelated stock photographs -- different room, different light,
+     * different palette. A real campaign is one shoot. Supplying it once here is
+     * what makes every hero in the campaign belong to the same one.
+     */
+    /**
+     * The named look this campaign is shot in. One word, and the rest is chosen:
+     * light, set, grade, optics, quality standard. Omitted, a campaign gets
+     * `daylight`, the house style. Looks live in src/artDirection.ts.
+     */
+    look: z.enum(["daylight", "nocturne", "nordic"]).optional(),
+
+    /**
+     * Art direction, overriding individual slots of the look.
+     *
+     * A bare string is the SET, which is all this field has ever meant, so every
+     * brief written before looks existed still says what it said. The object form
+     * reaches the rest: light, grade, optics, materials, integrity.
+     *
+     * This grain exists because the old one caused a defect. The fragrance brief
+     * asked for "a single low raking light and soft falloff into black" and the
+     * pipeline silently prepended "soft natural window daylight, warm, with open
+     * bounce fill" - two contradictory lighting instructions in one prompt,
+     * because the only hatch that existed reached the set and nothing else.
+     *
+     * Composition and typography are absent on purpose and cannot be overridden.
+     * Composition is derived from the crop arithmetic rather than from taste, and
+     * overriding it slices the product in half. Typography is the rule that stops
+     * a blank jar coming back printed with invented claims on a regulated
+     * cosmetic, which has already happened once.
+     */
+    artDirection: z
+      .union([
+        z.string(),
+        z.object({
+          standard: z.string().optional(),
+          optics: z.string().optional(),
+          light: z.string().optional(),
+          set: z.string().optional(),
+          grade: z.string().optional(),
+          materials: z.string().optional(),
+          integrity: z.string().optional(),
+        }),
+      ])
+      .optional(),
+    /**
+     * Overrides the standard the hero is shot to. Optional, because the default
+     * is the suggestion: a campaign that says nothing gets art direction chosen
+     * for it, and only a team with an opinion has to express one.
+     */
+    /**
+     * Documented baseline for the "manual time saved" figure. Reported only
+     * when supplied, and always labelled as an estimate from this number --
+     * never invented.
+     *
+     * Prefer `manualBaseline` below, which says what the number is made of.
+     */
+    manualMinutesPerCreative: z.number().positive().optional(),
+
+    /**
+     * The same baseline, itemised.
+     *
+     * "25 minutes per creative" is one opaque number carrying the entire time-
+     * saved claim, and the first thing anyone senior asks is what is in it. The
+     * honest answer is that a human has to state it either way -- so let them
+     * state the steps instead of the total, and derive the total by adding up.
+     * Nothing here is measured by this pipeline and nothing is invented by it;
+     * the line items are the client's assumption, and now they are visible and
+     * arguable rather than folded into a single figure.
+     *
+     * When both forms are present preflight requires them to agree, so the total
+     * cannot drift away from the work it claims to represent.
+     */
+    manualBaseline: z
+      .array(z.object({ task: z.string().min(1), minutes: z.number().positive() }))
+      .optional(),
+    /**
+     * Loaded cost of the studio hour this pipeline replaces. Optional and
+     * deliberately without a default: money saved is only reported when a
+     * human states the rate, because a plausible-looking guess here would be
+     * the easiest number in the project to fake.
+     */
+    manualHourlyRateUsd: z.number().positive().optional(),
+
+    locale: z.string().optional(),
+
+    /**
+     * Target markets. Every market multiplies the creative count and costs
+     * nothing extra -- the hero is generated once and localized copy is
+     * composited per market. Omit it and the brief runs as a single market
+     * built from the fields above.
+     */
+    markets: z.array(MarketSchema).optional(),
+
+    brand: BrandSchema,
+    products: z.array(ProductSchema).min(2, "A campaign needs at least 2 products"),
+  })
   /**
-   * The 4A's brief standard reduces to who / what / why / where / success.
-   * audience=who, message=what, region=where. These cover why and success.
-   * All optional, so a minimal brief stays minimal.
-   */
-  objective: z.string().optional(),
-  /** Rendered into every creative. Every real social ad has one. */
-  callToAction: z.string().optional(),
-  /** Feeds the deterministic art-direction prompt. */
-  toneOfVoice: z.string().optional(),
-  /**
-   * The campaign's set: one physical world every product is photographed in.
+   * "at least two DIFFERENT products" is the exercise's wording, and until this
+   * existed only the count was enforced. Two products sharing an id - or two
+   * whose ids merely sanitize to the same directory, like "Product A!" and
+   * "Product A?" - wrote into the same folder, and the second silently
+   * overwrote the first. The run then reported 8 creatives with 4 files on
+   * disk, every validation green, and the assignment proof passing.
    *
-   * Without this the prompt describes a generic surface, so each product's
-   * hero samples its own set independently and a two-product campaign comes
-   * back as two unrelated stock photographs -- different room, different light,
-   * different palette. A real campaign is one shoot. Supplying it once here is
-   * what makes every hero in the campaign belong to the same one.
-   */
-  artDirection: z.string().optional(),
-  /**
-   * Overrides the standard the hero is shot to. Optional, because the default
-   * is the suggestion: a campaign that says nothing gets art direction chosen
-   * for it, and only a team with an opinion has to express one.
-   */
-  styleBar: z.string().optional(),
-  /**
-   * Documented baseline for the "manual time saved" figure. Reported only
-   * when supplied, and always labelled as an estimate from this number --
-   * never invented.
+   * The same hazard exists one level down: two markets sharing a locale write
+   * the same <locale>.png.
    *
-   * Prefer `manualBaseline` below, which says what the number is made of.
+   * Refusing it here makes the collision unrepresentable and costs nothing,
+   * rather than detecting the damage after it is done.
    */
-  manualMinutesPerCreative: z.number().positive().optional(),
-
-  /**
-   * The same baseline, itemised.
-   *
-   * "25 minutes per creative" is one opaque number carrying the entire time-
-   * saved claim, and the first thing anyone senior asks is what is in it. The
-   * honest answer is that a human has to state it either way -- so let them
-   * state the steps instead of the total, and derive the total by adding up.
-   * Nothing here is measured by this pipeline and nothing is invented by it;
-   * the line items are the client's assumption, and now they are visible and
-   * arguable rather than folded into a single figure.
-   *
-   * When both forms are present preflight requires them to agree, so the total
-   * cannot drift away from the work it claims to represent.
-   */
-  manualBaseline: z
-    .array(z.object({ task: z.string().min(1), minutes: z.number().positive() }))
-    .optional(),
-  /**
-   * Loaded cost of the studio hour this pipeline replaces. Optional and
-   * deliberately without a default: money saved is only reported when a
-   * human states the rate, because a plausible-looking guess here would be
-   * the easiest number in the project to fake.
-   */
-  manualHourlyRateUsd: z.number().positive().optional(),
-
-  locale: z.string().optional(),
-
-  /**
-   * Target markets. Every market multiplies the creative count and costs
-   * nothing extra -- the hero is generated once and localized copy is
-   * composited per market. Omit it and the brief runs as a single market
-   * built from the fields above.
-   */
-  markets: z.array(MarketSchema).optional(),
-
-  brand: BrandSchema,
-  products: z.array(ProductSchema).min(2, "A campaign needs at least 2 products"),
-});
+  .superRefine((brief, ctx) => {
+    const product = firstCollision(brief.products, (p) => sanitizeId(p.id));
+    if (product) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["products"],
+        message: `two products share the output folder "${product}" - ids must be different, and different after being made filesystem-safe`,
+      });
+    }
+    const locale = firstCollision(brief.markets ?? [], (m) => sanitizeId(m.locale));
+    if (locale) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["markets"],
+        message: `two markets share the locale "${locale}" - each market writes ${locale}.png and would overwrite the other`,
+      });
+    }
+  });
 
 export type CampaignBrief = z.infer<typeof CampaignBriefSchema>;
 export type Market = z.infer<typeof MarketSchema>;

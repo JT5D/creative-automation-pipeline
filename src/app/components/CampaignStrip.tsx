@@ -15,6 +15,16 @@ type Props = {
   selectedLocales: string[];
   onToggleLocale: (locale: string) => void;
   estimate: CampaignEstimate | null;
+  /** Every campaign this run will produce. One is a run; more is a batch. */
+  selectedBriefs: string[];
+  onToggleBrief: (file: string) => void;
+  batchEstimate: {
+    campaigns: number;
+    refused: number;
+    variants: number;
+    generations: number;
+    costUsd: number;
+  } | null;
 };
 
 /**
@@ -42,6 +52,9 @@ export function CampaignStrip(props: Props) {
     selectedLocales,
     onToggleLocale,
     estimate,
+    selectedBriefs,
+    onToggleBrief,
+    batchEstimate,
   } = props;
 
   const [editing, setEditing] = useState(false);
@@ -50,22 +63,29 @@ export function CampaignStrip(props: Props) {
   return (
     <>
       <div className="strip">
-        <div className="cell">
-          <span className="cell-k">Brief</span>
-          <div className="cell-v">
-            <select
-              value={active}
-              onChange={(e) => onSelect(e.target.value)}
-              aria-label="Campaign brief"
-            >
-              {library.map((b) => (
-                <option key={b.file} value={b.file}>
+        <div className="cell wide">
+          <span className="cell-k">Campaigns</span>
+          {/* Checkboxes, not a dropdown. The client in this exercise launches
+              hundreds of campaigns a month, and a control that can only hold
+              one of them cannot express that. Clicking a label previews that
+              brief; the box decides what runs. */}
+          <div className="briefs">
+            {library.map((b) => (
+              <label key={b.file} className={selectedBriefs.includes(b.file) ? "on" : ""}>
+                <input
+                  type="checkbox"
+                  checked={selectedBriefs.includes(b.file)}
+                  onChange={() => onToggleBrief(b.file)}
+                />
+                <button type="button" onClick={() => onSelect(b.file)}>
                   {b.label}
-                </option>
-              ))}
-            </select>
+                </button>
+              </label>
+            ))}
+          </div>
+          <div className="cell-v">
             <button type="button" className="link" onClick={() => setEditing(true)}>
-              Edit source
+              Edit source: {current?.label ?? active}
             </button>
           </div>
           {current && <span className="cell-note">{current.expect}</span>}
@@ -143,6 +163,36 @@ export function CampaignStrip(props: Props) {
       )}
 
       {estimate && !editing && <EstimateCard estimate={estimate} />}
+
+      {/* The batch guardrail: what all of it costs, before any of it is spent. */}
+      {batchEstimate && (
+        <div className="estimate">
+          <div className="est-head">
+            <strong>Dry run · {batchEstimate.campaigns} campaigns</strong>
+            <span>nothing generated</span>
+          </div>
+          <div className="est-figs">
+            <div>
+              <b>{batchEstimate.variants}</b>
+              <span>creatives</span>
+            </div>
+            <div>
+              <b>{batchEstimate.generations}</b>
+              <span>generations</span>
+            </div>
+            <div>
+              <b>${batchEstimate.costUsd.toFixed(3)}</b>
+              <span>est. spend</span>
+            </div>
+            {batchEstimate.refused > 0 && (
+              <div>
+                <b>{batchEstimate.refused}</b>
+                <span>refused at the gate</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
