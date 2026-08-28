@@ -71,7 +71,7 @@ export async function recordRun(report: CampaignReport, outputRoot: string): Pro
   };
 
   await mkdir(outputRoot, { recursive: true });
-  await appendFile(path.join(outputRoot, FILE), JSON.stringify(entry) + "\n");
+  await appendFile(path.join(outputRoot, FILE), `${JSON.stringify(entry)}\n`);
 }
 
 export async function readInsights(outputRoot: string): Promise<Insights> {
@@ -92,8 +92,7 @@ export async function readInsights(outputRoot: string): Promise<Insights> {
     })
     .filter((e): e is RunHistoryEntry => e !== null);
 
-  const sum = (pick: (e: RunHistoryEntry) => number) =>
-    history.reduce((a, e) => a + pick(e), 0);
+  const sum = (pick: (e: RunHistoryEntry) => number) => history.reduce((a, e) => a + pick(e), 0);
 
   const creatives = sum((e) => e.variants);
   const heroes = sum((e) => e.reused + e.generated);

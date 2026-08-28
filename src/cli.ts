@@ -34,7 +34,14 @@ DRY RUN  ${e.campaignName}
         : `GENERATE  ${p.usingReference ? "from packshot reference" : "text-to-image"}`;
     console.log(`  ${p.productName.padEnd(30)} ${how}`);
   }
-  console.log(e.blocked ? `\n  ✗ ${e.preflight.checks.filter((c) => c.status === "fail").map((c) => c.message).join("; ")}\n` : "\n  Nothing was generated. Re-run without --dry-run to produce these.\n");
+  console.log(
+    e.blocked
+      ? `\n  ✗ ${e.preflight.checks
+          .filter((c) => c.status === "fail")
+          .map((c) => c.message)
+          .join("; ")}\n`
+      : "\n  Nothing was generated. Re-run without --dry-run to produce these.\n",
+  );
   process.exit(e.blocked ? 2 : 0);
 }
 
@@ -63,3 +70,19 @@ CAMPAIGN COMPLETE  ${report.campaignName}
 
   Outputs → outputs/${report.campaignId}/
 `);
+
+if (report.failures.length > 0) {
+  console.log("  Products that failed:");
+  for (const f of report.failures) {
+    console.log(`    ✗ ${f.productName} (${f.stage}) — ${f.message.slice(0, 100)}`);
+  }
+  console.log("");
+}
+
+/**
+ * Exit codes carry the outcome, so this composes into a batch script.
+ *   0  every product produced every creative
+ *   2  partial success -- some creatives shipped, some products failed
+ *   1  the run could not start (thrown above)
+ */
+process.exit(report.failures.length > 0 ? 2 : 0);

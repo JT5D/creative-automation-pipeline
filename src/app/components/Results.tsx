@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CampaignReport, Creative, ProductRecord } from "../types.js";
 
 /** Compact, filterable gallery of the files that actually shipped. */
@@ -25,12 +25,30 @@ export function Results({ report }: { report?: CampaignReport }) {
         <Metric v={m.variantsCreated} l="Creatives" />
         <Metric v={m.approvedAssetsReused} l="Reused" />
         <Metric v={m.generationRequests} l="Paid calls" accent />
-        <Metric v={`${m.validationPassed}/${m.variantsCreated}`} l="Passed" accent={m.validationFailed === 0} />
+        <Metric
+          v={`${m.validationPassed}/${m.variantsCreated}`}
+          l="Passed"
+          accent={m.validationFailed === 0}
+        />
         <Metric v={`${(report.durationMs / 1000).toFixed(1)}s`} l="Elapsed" />
         {report.estimatedCostUsd && (
           <Metric v={`$${report.estimatedCostUsd.totalUsd.toFixed(3)}`} l="Spend" accent />
         )}
       </div>
+
+      {report.failures.length > 0 && (
+        <div className="failures">
+          <strong>{report.failures.length} product(s) did not complete</strong>
+          <ul>
+            {report.failures.map((f) => (
+              <li key={f.productId}>
+                <b>{f.productName}</b> — {f.message}
+              </li>
+            ))}
+          </ul>
+          <p>Everything below shipped anyway.</p>
+        </div>
+      )}
 
       <div className="filters">
         {locales.length > 1 && (
@@ -51,8 +69,7 @@ export function Results({ report }: { report?: CampaignReport }) {
         {report.products.map((product) => {
           const shown = product.creatives.filter(
             (c) =>
-              (locale === "all" || c.locale === locale) &&
-              (ratio === "all" || c.ratio === ratio),
+              (locale === "all" || c.locale === locale) && (ratio === "all" || c.ratio === ratio),
           );
           if (shown.length === 0) return null;
 
@@ -80,11 +97,7 @@ export function Results({ report }: { report?: CampaignReport }) {
       </div>
 
       {zoom && (
-        <Lightbox
-          creative={zoom.creative}
-          product={zoom.product}
-          onClose={() => setZoom(null)}
-        />
+        <Lightbox creative={zoom.creative} product={zoom.product} onClose={() => setZoom(null)} />
       )}
     </>
   );
@@ -114,11 +127,16 @@ function Chips({
 }) {
   return (
     <div className="chips">
-      <button className={value === "all" ? "on" : ""} onClick={() => onChange("all")}>
+      <button type="button" className={value === "all" ? "on" : ""} onClick={() => onChange("all")}>
         {allLabel}
       </button>
       {options.map((o) => (
-        <button key={o} className={value === o ? "on" : ""} onClick={() => onChange(o)}>
+        <button
+          type="button"
+          key={o}
+          className={value === o ? "on" : ""}
+          onClick={() => onChange(o)}
+        >
           {format(o)}
         </button>
       ))}
@@ -144,15 +162,24 @@ function Card({
 
   return (
     <figure className="card">
-      <button className="shot" onClick={onZoom} title="View full size">
-        <img src={`/outputs/${c.outputPath}`} alt={`${product.productName} ${c.ratio} ${c.locale}`} />
+      <button type="button" className="shot" onClick={onZoom} title="View full size">
+        <img
+          src={`/outputs/${c.outputPath}`}
+          alt={`${product.productName} ${c.ratio} ${c.locale}`}
+        />
       </button>
       <figcaption>
         <strong>{c.ratio.replace("x", ":")}</strong>
         <span className="loc">{c.locale}</span>
-        <span className="dim">{c.width}×{c.height}</span>
+        <span className="dim">
+          {c.width}×{c.height}
+        </span>
       </figcaption>
-      <button className={`checkbar ${c.validation.status}`} onClick={() => setOpen((o) => !o)}>
+      <button
+        type="button"
+        className={`checkbar ${c.validation.status}`}
+        onClick={() => setOpen((o) => !o)}
+      >
         {c.validation.status === "pass"
           ? `${c.validation.checks.length} checks passed`
           : `${failed} of ${c.validation.checks.length} need attention`}
@@ -181,9 +208,18 @@ function Lightbox({
   product: ProductRecord;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div className="lightbox" onClick={onClose} role="presentation">
-      <div className="lb-inner" onClick={(e) => e.stopPropagation()} role="presentation">
+    <div className="lightbox" role="dialog" aria-modal="true" aria-label={product.productName}>
+      <button type="button" className="lb-backdrop" aria-label="Close" onClick={onClose} />
+      <div className="lb-inner">
         <img src={`/outputs/${c.outputPath}`} alt={`${product.productName} ${c.ratio}`} />
         <div className="lb-side">
           <h3>{product.productName}</h3>
@@ -201,7 +237,9 @@ function Lightbox({
               </li>
             ))}
           </ul>
-          <button className="ghost" onClick={onClose}>Close</button>
+          <button type="button" className="ghost" onClick={onClose}>
+            Close (Esc)
+          </button>
         </div>
       </div>
     </div>

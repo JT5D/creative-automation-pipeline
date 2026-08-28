@@ -1,12 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
-import type {
-  CampaignBrief,
-  CanonicalHeroAsset,
-  RatioKey,
-  ValidationResult,
-} from "./schema.js";
+import type { CampaignBrief, CanonicalHeroAsset, RatioKey, ValidationResult } from "./schema.js";
 
 export type CreativeRecord = {
   ratio: RatioKey;
@@ -17,6 +12,14 @@ export type CreativeRecord = {
   bytes: number;
   validation: ValidationResult;
   durationMs: number;
+};
+
+/** A product the run could not complete, and why. */
+export type ProductFailure = {
+  productId: string;
+  productName: string;
+  stage: "resolve" | "compose";
+  message: string;
 };
 
 export type ProductRecord = {
@@ -41,6 +44,7 @@ export type CampaignReport = {
   preflight: ValidationResult;
   metrics: {
     productsProcessed: number;
+    productsFailed: number;
     marketsProcessed: number;
     approvedAssetsReused: number;
     heroesGenerated: number;
@@ -53,14 +57,40 @@ export type CampaignReport = {
     validationFailed: number;
     generationRequests: number;
   };
+  /**
+   * The three metrics the assessment FAQ names when asked what matters most:
+   * "time saved, number of campaigns generated, and overall efficiency."
+   * Reported together, in that language, rather than left for a reader to
+   * assemble from the raw counters above.
+   */
+  successMetrics: {
+    /** Illustrative, from the baseline the brief supplies. Absent without one. */
+    timeSaved?: { minutes: number; baselineMinutesPerCreative: number; basis: string };
+    campaignsGenerated: { campaigns: number; creatives: number; markets: number };
+    efficiency: {
+      /** How much output each paid call produced. The headline number. */
+      creativesPerGenerationCall: number | null;
+      costPerCreativeUsd: number | null;
+      /** Share of heroes served from already-approved assets. */
+      reuseRate: number;
+      secondsPerCreative: number;
+    };
+  };
   products: ProductRecord[];
+  /** Products that failed. Empty on a clean run; the run still completes. */
+  failures: ProductFailure[];
   warnings: string[];
   /**
    * Estimated spend for this run: generation calls x published list price for
    * the model used. Omitted when no verified price is known for that model.
    * An estimate from published pricing, not a billed amount.
    */
-  estimatedCostUsd?: { generations: number; unitPriceUsd: number; totalUsd: number; source: string };
+  estimatedCostUsd?: {
+    generations: number;
+    unitPriceUsd: number;
+    totalUsd: number;
+    source: string;
+  };
   /**
    * Only present when the brief supplies manualMinutesPerCreative. It is an
    * estimate derived from that stated baseline, not a measured figure, and it
@@ -81,6 +111,7 @@ export function createReport(args: {
   /** The markets actually produced, which may be a subset of the brief's. */
   markets: { locale: string; message: string }[];
   products: ProductRecord[];
+  failures: ProductFailure[];
   preflight: ValidationResult;
   mode: "dev" | "final";
   provider: { provider: string; model: string };
@@ -88,8 +119,18 @@ export function createReport(args: {
   completedAt: number;
   warnings: string[];
 }): CampaignReport {
-  const { brief, markets, products, preflight, mode, provider, startedAt, completedAt } = args;
+  const { brief, markets, products, failures, preflight, mode, provider, startedAt, completedAt } =
+    args;
   const creatives = products.flatMap((p) => p.creatives);
+  const generations = products.filter((p) => p.hero.source === "generated").length;
+  const reused = products.filter((p) => p.hero.source === "reused").length;
+  const heroes = products.length;
+  const cost = costEstimate(provider.model, generations);
+  const timeSaved = timeSavedEstimate(
+    brief.manualMinutesPerCreative,
+    creatives.length,
+    completedAt - startedAt,
+  );
 
   return {
     campaignId: brief.id,
@@ -106,11 +147,12 @@ export function createReport(args: {
     preflight,
     metrics: {
       productsProcessed: products.length,
-    marketsProcessed: markets.length,
+      productsFailed: failures.length,
+      marketsProcessed: markets.length,
       approvedAssetsReused: products.filter((p) => p.hero.source === "reused").length,
       heroesGenerated: products.filter((p) => p.hero.source === "generated").length,
       heroesFromCache: products.filter((p) => p.hero.source === "generated_cached").length,
-    heroesPlaceholder: products.filter((p) => p.hero.source === "placeholder").length,
+      heroesPlaceholder: products.filter((p) => p.hero.source === "placeholder").length,
       variantsCreated: creatives.length,
       validationPassed: creatives.filter((c) => c.validation.status === "pass").length,
       validationWarnings: creatives.filter((c) => c.validation.status === "warning").length,
@@ -118,25 +160,36 @@ export function createReport(args: {
       // Only a live call counts. A cache hit is explicitly not a request.
       generationRequests: products.filter((p) => p.hero.source === "generated").length,
     },
+    successMetrics: {
+      timeSaved: timeSaved && {
+        minutes: timeSaved.savedMinutes,
+        baselineMinutesPerCreative: timeSaved.baselineMinutesPerCreative,
+        basis: timeSaved.basis,
+      },
+      campaignsGenerated: {
+        campaigns: 1,
+        creatives: creatives.length,
+        markets: markets.length,
+      },
+      efficiency: {
+        creativesPerGenerationCall:
+          generations > 0 ? Number((creatives.length / generations).toFixed(1)) : null,
+        costPerCreativeUsd: cost ? Number((cost.totalUsd / creatives.length).toFixed(5)) : null,
+        reuseRate: heroes > 0 ? Number((reused / heroes).toFixed(3)) : 0,
+        secondsPerCreative: Number(
+          ((completedAt - startedAt) / 1000 / Math.max(1, creatives.length)).toFixed(2),
+        ),
+      },
+    },
     products,
+    failures,
     warnings: args.warnings,
-    estimatedCostUsd: costEstimate(
-      provider.model,
-      products.filter((p) => p.hero.source === "generated").length,
-    ),
-    estimatedTimeSaved: timeSavedEstimate(
-      brief.manualMinutesPerCreative,
-      creatives.length,
-      completedAt - startedAt,
-    ),
+    estimatedCostUsd: cost,
+    estimatedTimeSaved: timeSaved,
   };
 }
 
-
-export async function writeReport(
-  report: CampaignReport,
-  outputRoot: string,
-): Promise<string> {
+export async function writeReport(report: CampaignReport, outputRoot: string): Promise<string> {
   const dir = path.join(outputRoot, sanitizeId(report.campaignId));
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, "report.json");

@@ -1,7 +1,8 @@
 # Creative Automation Pipeline
 
-Turns one campaign brief into ready-to-ship social creatives across three
-channel formats — Turns one campaign brief into ready-to-ship social creatives across four
+[![CI](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml)
+
+Turns one campaign brief into ready-to-ship social creatives across four
 channel formats and every target market — reusing brand-approved assets
 wherever they exist, and calling a GenAI image model only for what is
 genuinely missing.
@@ -24,6 +25,21 @@ Campaign brief (YAML/JSON)
 ```
 
 ---
+
+## Contents
+
+**Start here** · [What this solves](#what-this-solves) · [Setup](#setup) · [Example input and output](#example-input-and-output) · [The sample library](#the-sample-library)
+
+**How it thinks** · [Key design decisions](#key-design-decisions) · [Reproducibility](#reproducibility) · [Provider strategy](#provider-strategy-and-an-honest-limitation) · [Model guide](#model-guide)
+
+**What it guarantees** · [Brand and legal checks](#brand-and-legal-checks) · [Visual regression](#visual-regression) · [Cost control](#cost-control) · [Knowing the cost before you spend it](#knowing-the-cost-before-you-spend-it) · [Learning across runs](#learning-across-runs)
+
+**Honest limits** · [Assumptions](#assumptions) · [Limitations](#limitations)
+
+**For a reviewer** · [Requirements traceability](#requirements-traceability) · [Demo script](#demo-script-230) · [Project layout](#project-layout) · [Production extension path](#production-extension-path)
+
+If you only read one file, read `src/pipeline.ts` — the whole product is legible
+in one screen of code.
 
 ## What this solves
 
@@ -95,7 +111,7 @@ npm run dev                                   # UI + API
 npm run campaign -- samples/campaign.yaml     # same pipeline, CLI
 npm run campaign -- samples/campaign.json     # identical brief, JSON form
 npm run campaign -- samples/campaign.yaml --dry-run   # what it costs, spending nothing
-npm run verify                                # typecheck + tests + build
+npm run check                                 # the release gate
 ```
 
 ---
@@ -224,6 +240,94 @@ states.
 
 No database — an append-only JSONL file is enough, and it is inspectable with
 `cat`.
+
+## Visual regression
+
+Every other test checks that something is *true* of an output: the right size,
+ink where the copy should be, the safe zone respected. None of them would
+notice a headline sliding on top of the lockup — that creative still has the
+right dimensions and plenty of ink.
+
+So each creative is also reduced to a coarse grid of mean luminance and
+compared against a committed signature. Anti-aliasing noise disappears at that
+resolution; a moved element does not.
+
+```bash
+npm run test:baseline    # regenerate, deliberately, after eyeballing the output
+```
+
+The thresholds come from measurement, not taste. Re-rendering the same brief
+twice drifts by exactly **0**. The same baselines re-rendered on Linux in CI
+drift by **0.014** — that is the real cost of different font rasterization at
+this grid size. Sliding a copy band 100px drifts by **0.74**. The tolerance is
+set at 0.3: roughly twenty times above cross-platform noise, and well under a
+change worth catching.
+
+Two tests keep the check honest — one **proves it can fail** by shifting a band
+and asserting the signature notices, the other proves rendering is
+deterministic in the first place. A regression test that cannot fail is
+decoration.
+
+This closes the gap that let the cache bug through: a green suite is not
+evidence the output is right unless something is actually looking at it.
+
+## When something fails
+
+A client running hundreds of campaigns a month cannot lose a batch to one
+provider hiccup. Before this was handled, a single HTTP 503 on the second
+product threw the whole run away — including every creative that had already
+been composed.
+
+Now each product is isolated. A transient failure — a rate limit or a server
+fault — is retried with exponential backoff. A permanent one, a malformed
+request or a rejected key, is **not** retried, because it will fail identically
+and only spend quota to do it. If a product still cannot be resolved, it is
+recorded in `report.json` and the run continues:
+
+```
+  processed 1 · failed 1 · creatives 4
+  failures: [ 'Oat Barista Blend: HTTP 503: unavailable' ]
+```
+
+Exit codes carry the outcome so this composes into a batch script: **0** every
+product succeeded, **2** partial success, **1** the run could not start. A
+pipeline that always exits 0 is a renderer; one that can refuse, and one that
+can partially succeed, is a system you can schedule.
+
+## Success metrics
+
+The assessment FAQ asks what matters most and answers: *"time saved, number of
+campaigns generated, and overall efficiency."* Every run reports exactly those
+three, in that language, at `report.json → successMetrics`:
+
+```
+  TIME SAVED           10.0 hours   illustrative, vs the 25 min/creative
+                                    baseline the brief itself supplies
+  CAMPAIGNS GENERATED  1 campaign · 24 creatives · 3 markets
+  EFFICIENCY           24 creatives per paid call · $0.00558 each
+                       50% reuse · 1.43s each
+```
+
+**Efficiency is the one that compounds.** *Creatives per paid generation call*
+is the number this architecture exists to move: it was 24 here because one of
+two products already had an approved hero and one hero served four formats
+across three markets. Add a market and it rises again at no cost. Approve more
+of the catalogue and it rises again.
+
+Time saved is honest but soft — it derives from a baseline the brief supplies,
+not from a stopwatch, and is labelled that way everywhere it appears. The hard
+numbers are the ones underneath it: **one API call, 34 seconds, $0.134.**
+
+Across runs, the console tracks the same three plus **reuse rate**, which is
+what makes the cost curve bend as a catalogue matures.
+
+## Example output, without running anything
+
+[`docs/sample-output/`](docs/sample-output) holds a real run so a reviewer can
+see the result without cloning: the complete
+[`report.json`](docs/sample-output/report.json), the
+[file tree](docs/sample-output/file-tree.txt) of all 24 creatives, and four
+finished creatives spanning every format and market.
 
 ## Key design decisions
 
@@ -400,6 +504,17 @@ would also have produced 24 visibly different products in one campaign — a
 brand-consistency failure, not just a budget one.
 
 ---
+
+## Reproducibility
+
+Everything downstream of the hero is deterministic: the same hero and brief
+produce byte-identical creatives, and a test asserts it. Generation is the one
+step that is not.
+
+Adobe documents seed-based reproducibility on the **v3** generation API. Image 5
+uses a breaking **v4** schema and seed support there was not verified here, so
+this implementation neither claims nor sends it. Gemini's image API exposes no
+seed at all. See [`docs/MODEL_STRATEGY.md`](docs/MODEL_STRATEGY.md).
 
 ## Provider strategy, and an honest limitation
 
@@ -619,7 +734,8 @@ src/
   cli.ts             thin wrapper over the same runCampaign()
   providers/         HeroGenerator: gemini · firefly · test double
   app/               one-screen React console
-tests/               20 tests, no network calls
+tests/               73 tests, no network calls
+  baselines/         committed visual signatures
 samples/             campaign briefs + input assets
 docs/
   API_NOTES.md         verified API contracts, including one the docs omit

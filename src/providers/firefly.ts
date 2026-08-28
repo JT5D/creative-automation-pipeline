@@ -1,8 +1,9 @@
 import {
-  GenerationUnavailableError,
   type GeneratedHero,
+  GenerationUnavailableError,
   type HeroGenerator,
   type HeroRequest,
+  ProviderError,
 } from "./types.js";
 
 /**
@@ -29,8 +30,7 @@ import {
  */
 const IMS_TOKEN_URL = "https://ims-na1.adobelogin.com/ims/token/v3";
 const GENERATE_URL = "https://firefly-api.adobe.io/v4/images/generate-async";
-const SCOPES =
-  "openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis";
+const SCOPES = "openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis";
 
 const POLL_INTERVAL_MS = 1500;
 const POLL_TIMEOUT_MS = 120_000;
@@ -104,18 +104,18 @@ export class FireflyHeroGenerator implements HeroGenerator {
 
     if (!submit.ok) {
       const body = await submit.text();
-      throw new Error(
+      throw new ProviderError(
         `Firefly submit failed (HTTP ${submit.status}): ${body.slice(0, 400)}`,
+        submit.status,
       );
     }
 
     const job = (await submit.json()) as Record<string, unknown>;
+    const links = job.links as { self?: string } | undefined;
     const statusUrl =
-      (job.statusUrl as string) ?? (job.links as any)?.self ?? (job.self as string);
+      (job.statusUrl as string | undefined) ?? links?.self ?? (job.self as string | undefined);
     if (!statusUrl) {
-      throw new Error(
-        `Firefly returned no status URL. Keys: ${Object.keys(job).join(", ")}`,
-      );
+      throw new Error(`Firefly returned no status URL. Keys: ${Object.keys(job).join(", ")}`);
     }
 
     const result = await this.pollUntilDone(statusUrl, headers);
@@ -181,11 +181,7 @@ function findFirstUrl(node: unknown): string | null {
   }
 
   for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-    if (
-      typeof value === "string" &&
-      value.startsWith("http") &&
-      /url|href|presigned/i.test(key)
-    ) {
+    if (typeof value === "string" && value.startsWith("http") && /url|href|presigned/i.test(key)) {
       return value;
     }
     const found = findFirstUrl(value);

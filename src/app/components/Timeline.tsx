@@ -35,6 +35,7 @@ export function Timeline({
         const meta = [d.productId, d.ratio, d.locale].filter(Boolean).join(" · ");
         const last = i === events.length - 1;
         return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: append-only log, position is identity
           <li key={i} className={`ev ${e.event}`}>
             <span className="tick">
               {status === "running" && last ? "◐" : e.event === "failed" ? "✕" : "✓"}

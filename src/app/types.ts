@@ -53,6 +53,7 @@ export type CampaignReport = {
   preflight: ValidationResult;
   metrics: {
     productsProcessed: number;
+    productsFailed: number;
     marketsProcessed: number;
     approvedAssetsReused: number;
     heroesGenerated: number;
@@ -65,8 +66,14 @@ export type CampaignReport = {
     generationRequests: number;
   };
   products: ProductRecord[];
+  failures: { productId: string; productName: string; stage: string; message: string }[];
   warnings: string[];
-  estimatedCostUsd?: { generations: number; unitPriceUsd: number; totalUsd: number; source: string };
+  estimatedCostUsd?: {
+    generations: number;
+    unitPriceUsd: number;
+    totalUsd: number;
+    source: string;
+  };
   estimatedTimeSaved?: { baselineMinutesPerCreative: number; savedMinutes: number; basis: string };
 };
 
@@ -127,7 +134,12 @@ export type CampaignEstimate = {
   products: PlannedProduct[];
   variants: number;
   generations: number;
-  estimatedCostUsd?: { generations: number; unitPriceUsd: number; totalUsd: number; source: string };
+  estimatedCostUsd?: {
+    generations: number;
+    unitPriceUsd: number;
+    totalUsd: number;
+    source: string;
+  };
   estimatedTimeSaved?: { baselineMinutesPerCreative: number; savedMinutes: number; basis: string };
 };
 

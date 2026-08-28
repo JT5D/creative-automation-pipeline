@@ -19,16 +19,23 @@ const ASSETS = path.resolve("samples/assets");
 
 const BRAND = { deep: "#14322B", gold: "#C9A227", cream: "#F4F1EA" };
 
-/** The wordmark is drawn in code — deterministic, and mine, not a model's. */
+/**
+ * The wordmark is drawn in code — deterministic, and mine, not a model's.
+ *
+ * It is the reversed, single-colour lockup: every element is the same light
+ * tone so it holds over any background. An earlier two-colour version put gold
+ * under the wordmark, which disappeared against a sunlit wall. Brand systems
+ * ship a reversed variant for exactly this reason.
+ */
 async function makeLogo() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200">
     <rect width="640" height="200" fill="none"/>
-    <circle cx="92" cy="100" r="52" fill="none" stroke="${BRAND.gold}" stroke-width="7"/>
-    <path d="M92 58 L92 142 M60 100 L124 100" stroke="${BRAND.gold}" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="92" cy="100" r="52" fill="none" stroke="${BRAND.cream}" stroke-width="7"/>
+    <path d="M92 58 L92 142 M60 100 L124 100" stroke="${BRAND.cream}" stroke-width="7" stroke-linecap="round"/>
     <text x="176" y="92" font-family="Helvetica, Arial, sans-serif" font-size="52"
           font-weight="700" letter-spacing="6" fill="${BRAND.cream}">LUMEN</text>
     <text x="178" y="136" font-family="Helvetica, Arial, sans-serif" font-size="25"
-          letter-spacing="10.5" fill="${BRAND.gold}">BOTANICALS</text>
+          letter-spacing="10.5" fill="${BRAND.cream}" opacity="0.82">BOTANICALS</text>
   </svg>`;
   const out = path.join(ASSETS, "lumen-logo.png");
   await sharp(Buffer.from(svg)).png().toFile(out);

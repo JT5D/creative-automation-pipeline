@@ -4,21 +4,22 @@ import { parse as parseYaml } from "yaml";
 import { resolveHero } from "./assetResolver.js";
 import { composeVariant } from "./composer.js";
 import { recordRun } from "./history.js";
-import { selectGenerator, type HeroGenerator } from "./providers/index.js";
+import { type HeroGenerator, selectGenerator } from "./providers/index.js";
 import {
-  createReport,
-  sanitizeId,
-  writeReport,
   type CampaignReport,
   type CreativeRecord,
+  createReport,
+  type ProductFailure,
   type ProductRecord,
+  sanitizeId,
+  writeReport,
 } from "./report.js";
 import {
+  type CampaignBrief,
   CampaignBriefSchema,
   RATIOS,
-  resolveMarkets,
-  type CampaignBrief,
   type RatioKey,
+  resolveMarkets,
 } from "./schema.js";
 import { preflight, preflightOrThrow, validateCreative } from "./validation.js";
 
@@ -41,11 +42,31 @@ export type RunOptions = {
   model?: string;
 };
 
-/** Accepts JSON or YAML text; both normalize to the same validated object. */
+/**
+ * Accepts JSON or YAML text; both normalize to the same validated object.
+ *
+ * Validation failures are rewritten into something a marketer can act on. Zod's
+ * raw output is a JSON dump of issue objects, and anyone editing a brief in the
+ * console would have seen that wall of text rather than "products: a campaign
+ * needs at least 2 products".
+ */
 export function parseBrief(raw: string): CampaignBrief {
   const trimmed = raw.trim();
+  if (!trimmed) throw new Error("The brief is empty.");
+
   const data = trimmed.startsWith("{") ? JSON.parse(trimmed) : parseYaml(trimmed);
-  return CampaignBriefSchema.parse(data);
+  const result = CampaignBriefSchema.safeParse(data);
+  if (result.success) return result.data;
+
+  const problems = result.error.issues.map((issue) => {
+    const field = issue.path.join(".") || "brief";
+    return `${field}: ${issue.message}`;
+  });
+  throw new Error(
+    problems.length === 1
+      ? `Invalid brief — ${problems[0]}`
+      : `Invalid brief:\n  · ${problems.join("\n  · ")}`,
+  );
 }
 
 export async function loadBriefFile(file: string): Promise<CampaignBrief> {
@@ -77,12 +98,12 @@ export async function runCampaign(
     typeof rawBrief === "string" ? parseBrief(rawBrief) : CampaignBriefSchema.parse(rawBrief);
   const allMarkets = resolveMarkets(brief);
   const markets = options.locales?.length
-    ? allMarkets.filter((m) => options.locales!.includes(m.locale))
+    ? allMarkets.filter((m) => options.locales?.includes(m.locale))
     : allMarkets;
 
   const allRatios = Object.keys(RATIOS) as RatioKey[];
   const ratios = options.ratios?.length
-    ? allRatios.filter((r) => options.ratios!.includes(r))
+    ? allRatios.filter((r) => options.ratios?.includes(r))
     : allRatios;
 
   if (markets.length === 0) throw new Error("No markets selected");
@@ -106,77 +127,99 @@ export async function runCampaign(
   const generator = options.generator ?? selectGenerator(process.env, options.model);
   emit("provider_selected", { provider: generator.provider, model: generator.model });
 
+  // Cache sits under the output root, so every run's cache is scoped to it and
+  // a test can never write into the project's.
+  const cacheDir = path.join(outputRoot, ".cache");
   const campaignDir = path.join(outputRoot, sanitizeId(brief.id));
   const products: ProductRecord[] = [];
+  const failures: ProductFailure[] = [];
 
   for (const product of brief.products) {
-    emit("asset_resolving", { productId: product.id });
+    try {
+      emit("asset_resolving", { productId: product.id });
 
-    const hero = await resolveHero(product, { brief, generator, mode, emit });
+      const hero = await resolveHero(product, { brief, generator, mode, cacheDir, emit });
 
-    // Persist the canonical hero next to its outputs so the provenance chain
-    // is inspectable on disk, not just in the report.
-    const productDir = path.join(campaignDir, sanitizeId(product.id));
-    await mkdir(path.join(productDir, "source"), { recursive: true });
-    const heroCopyName =
-      hero.source === "reused" ? "approved-hero" : "generated-hero";
-    const heroCopy = path.join(
-      productDir,
-      "source",
-      `${heroCopyName}${path.extname(hero.localPath) || ".png"}`,
-    );
-    await writeFile(heroCopy, await readFile(hero.localPath));
+      // Persist the canonical hero next to its outputs so the provenance chain
+      // is inspectable on disk, not just in the report.
+      const productDir = path.join(campaignDir, sanitizeId(product.id));
+      await mkdir(path.join(productDir, "source"), { recursive: true });
+      const heroCopyName = hero.source === "reused" ? "approved-hero" : "generated-hero";
+      const heroCopy = path.join(
+        productDir,
+        "source",
+        `${heroCopyName}${path.extname(hero.localPath) || ".png"}`,
+      );
+      await writeFile(heroCopy, await readFile(hero.localPath));
 
-    const creatives: CreativeRecord[] = [];
+      const creatives: CreativeRecord[] = [];
 
-    // One hero, then every ratio x every market. Adding a format or a market
-    // multiplies the output and costs nothing -- the expensive step is done.
-    for (const ratio of ratios) {
-      for (const market of markets) {
-        const variantStart = Date.now();
-        emit("variant_composing", { productId: product.id, ratio, locale: market.locale });
+      // One hero, then every ratio x every market. Adding a format or a market
+      // multiplies the output and costs nothing -- the expensive step is done.
+      for (const ratio of ratios) {
+        for (const market of markets) {
+          const variantStart = Date.now();
+          emit("variant_composing", { productId: product.id, ratio, locale: market.locale });
 
-        const rendered = await composeVariant({ brief, product, hero, ratio, market });
-        const validation = validateCreative({ brief, product, rendered, ratio, market });
+          const rendered = await composeVariant({ brief, product, hero, ratio, market });
+          const validation = validateCreative({ brief, rendered, ratio, market });
 
-        const dir = path.join(productDir, ratio);
-        await mkdir(dir, { recursive: true });
-        const outputPath = path.join(dir, `${sanitizeId(market.locale)}.png`);
-        await writeFile(outputPath, rendered.buffer);
+          const dir = path.join(productDir, ratio);
+          await mkdir(dir, { recursive: true });
+          const outputPath = path.join(dir, `${sanitizeId(market.locale)}.png`);
+          await writeFile(outputPath, rendered.buffer);
 
-        emit("variant_saved", {
-          productId: product.id,
-          ratio,
-          locale: market.locale,
-          status: validation.status,
-          outputPath: path.relative(outputRoot, outputPath),
-        });
+          emit("variant_saved", {
+            productId: product.id,
+            ratio,
+            locale: market.locale,
+            status: validation.status,
+            outputPath: path.relative(outputRoot, outputPath),
+          });
 
-        creatives.push({
-          ratio,
-          locale: market.locale,
-          width: rendered.width,
-          height: rendered.height,
-          outputPath: path.relative(outputRoot, outputPath),
-          bytes: rendered.buffer.length,
-          validation,
-          durationMs: Date.now() - variantStart,
-        });
+          creatives.push({
+            ratio,
+            locale: market.locale,
+            width: rendered.width,
+            height: rendered.height,
+            outputPath: path.relative(outputRoot, outputPath),
+            bytes: rendered.buffer.length,
+            validation,
+            durationMs: Date.now() - variantStart,
+          });
+        }
       }
-    }
 
-    products.push({
-      productId: product.id,
-      productName: product.name,
-      hero: { ...hero, localPath: path.relative(outputRoot, heroCopy) },
-      creatives,
-    });
+      products.push({
+        productId: product.id,
+        productName: product.name,
+        hero: { ...hero, localPath: path.relative(outputRoot, heroCopy) },
+        creatives,
+      });
+    } catch (error) {
+      // One product failing must not lose the rest of the campaign. A client
+      // running hundreds of these does not want a single provider hiccup to
+      // discard every creative that did succeed.
+      const message = error instanceof Error ? error.message : String(error);
+      failures.push({
+        productId: product.id,
+        productName: product.name,
+        stage: "resolve",
+        message,
+      });
+      emit("product_failed", { productId: product.id, message: message.slice(0, 160) });
+    }
+  }
+
+  if (products.length === 0) {
+    throw new Error(`Every product failed. First error: ${failures[0]?.message ?? "unknown"}`);
   }
 
   const report = createReport({
     brief,
     markets,
     products,
+    failures,
     preflight: pre,
     mode,
     provider: { provider: generator.provider, model: generator.model },
@@ -191,6 +234,7 @@ export async function runCampaign(
   emit("complete", {
     variants: report.metrics.variantsCreated,
     generationRequests: report.metrics.generationRequests,
+    productsFailed: failures.length,
   });
 
   return report;

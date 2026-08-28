@@ -1,6 +1,7 @@
 node_modules/
 dist/
 outputs/
+.baseline-run/
 .cache/
 .env
 .env.local

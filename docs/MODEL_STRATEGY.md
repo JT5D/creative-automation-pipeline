@@ -101,6 +101,25 @@ on an entitled account:
 `/v4/images/generate-async`. Object Composite is the first thing I would wire
 next on an entitled account, and it is noted as such in the code.
 
+## Reproducibility
+
+Everything downstream of the hero is deterministic: the same hero and brief
+produce byte-identical creatives, and a test asserts it. The generation itself
+is the one non-repeatable step.
+
+Adobe documents **seed-based reproducibility on the v3 generation API** —
+`"seeds": [n]` in, `result.outputs[].seed` back, with the same seed, prompt and
+presets reproducing the image. Image 5 uses a breaking **v4** schema, and seed
+support there was **not verified in this proof-of-concept**, so this
+implementation does not claim it and does not send the field.
+
+Gemini's image API documents no seed, temperature or determinism control at
+all, so that gap cannot be closed on the provider this repo actually runs.
+
+Recording it honestly: reproducible generation is a real enterprise
+requirement, Adobe has documented a mechanism for it, and verifying that
+mechanism on Image 5 needs an entitled account this project does not have.
+
 ## Models deliberately not integrated
 
 FLUX, Ideogram, Midjourney, Runway, Kling, Veo, Seedance — all credible, none
