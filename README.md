@@ -242,10 +242,16 @@ npm run test:baseline    # regenerate, deliberately, after eyeballing the output
 ```
 
 The thresholds come from measurement, not taste. Re-rendering the same brief
-twice drifts by exactly **0** — composition is deterministic. Sliding a copy
-band 100px drifts by 0.74. The tolerance sits between the two, and one of the
-tests **proves the check can fail** by shifting a band and asserting the
-signature notices. A regression test that cannot fail is decoration.
+twice drifts by exactly **0**. The same baselines re-rendered on Linux in CI
+drift by **0.014** — that is the real cost of different font rasterization at
+this grid size. Sliding a copy band 100px drifts by **0.74**. The tolerance is
+set at 0.3: roughly twenty times above cross-platform noise, and well under a
+change worth catching.
+
+Two tests keep the check honest — one **proves it can fail** by shifting a band
+and asserting the signature notices, the other proves rendering is
+deterministic in the first place. A regression test that cannot fail is
+decoration.
 
 This closes the gap that let the cache bug through: a green suite is not
 evidence the output is right unless something is actually looking at it.

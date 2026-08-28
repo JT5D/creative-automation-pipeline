@@ -35,10 +35,11 @@ const baselines = JSON.parse(
  *     100px      0.743          27
  *     160px      0.965          36
  *
- * So these thresholds sit well above the zero-noise floor -- leaving room for
- * the anti-aliasing difference between a macOS dev machine and the Linux box CI
- * runs on -- and comfortably below a shift worth catching. The last test in
- * this file proves the detection rather than assuming it.
+ * The same baselines rendered on Linux in CI drift by 0.014 -- that is the real
+ * cost of different font rasterization at this grid size. So 0.3 sits about
+ * twenty times above cross-platform noise and comfortably below a shift worth
+ * catching. The last two tests keep the check honest: one proves it detects a
+ * moved band, the other proves rendering is deterministic in the first place.
  */
 const MAX_MEAN_DRIFT = 0.3;
 const MAX_CELLS_CHANGED = 6;
@@ -93,19 +94,33 @@ describe("visual regression", () => {
     expect(drift.cellsChanged).toBeGreaterThan(MAX_CELLS_CHANGED);
   });
 
-  it("is deterministic, so a passing baseline means something", async () => {
-    const again = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
+  /**
+   * Composition must be deterministic, or a baseline proves nothing. This
+   * compares two renders on the SAME machine, which is the only place exact
+   * equality is a fair ask -- against a committed baseline from another
+   * platform the honest expectation is "negligible", not "identical".
+   */
+  it("renders the same brief identically twice", async () => {
+    const opts = {
       outputRoot: outputs,
-      mode: "final",
-      generator: new TestDoubleHeroGenerator(),
-      ratios: ["1x1"],
+      mode: "final" as const,
+      ratios: ["1x1" as const],
       locales: ["en-GB"],
+    };
+    const first = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
+      ...opts,
+      generator: new TestDoubleHeroGenerator(),
     });
-    const rerendered = await visualSignature(
-      path.join(outputs, again.products[0].creatives[0].outputPath),
-    );
-    expect(compareSignatures(rerendered, baselines["radiance-serum/1x1/en-GB"]).meanDrift).toBe(0);
-  }, 60_000);
+    const a = await visualSignature(path.join(outputs, first.products[0].creatives[0].outputPath));
+
+    const second = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
+      ...opts,
+      generator: new TestDoubleHeroGenerator(),
+    });
+    const b = await visualSignature(path.join(outputs, second.products[0].creatives[0].outputPath));
+
+    expect(compareSignatures(a, b).meanDrift).toBe(0);
+  }, 120_000);
 });
 
 describe("layout collisions", () => {
