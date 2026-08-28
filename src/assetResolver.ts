@@ -175,27 +175,89 @@ export async function findApprovedHero(maybePath?: string): Promise<string | und
  * Deterministic art direction. Pure string composition -- no LLM call, so the
  * same brief always produces the same prompt and the same cache key.
  *
- * Everything here is aimed at one goal: a hero that survives being re-cut into
- * three very different shapes. Hence centred subject, generous negative space,
- * and an explicit ban on typography the compositor is going to draw itself.
+ * This is written as a photographic brief rather than a description, because
+ * that is the difference between a stock-looking render and something a brand
+ * would run. Every clause below is a decision a photographer or retoucher would
+ * actually make on a beauty shoot:
+ *
+ *   optics    a long macro at a closed aperture, focus stacked -- the whole
+ *             product sharp front to back. Shallow depth of field looks
+ *             cinematic and destroys the packaging detail a brand is paying for.
+ *   light     large soft key at 45 degrees, bounce fill opposite, a narrow
+ *             kicker to draw an edge and lift the product off the background.
+ *   set       honed stone or matte plaster, seamless tonal falloff.
+ *   material  frosted glass has to transmit light correctly; a lacquered cap
+ *             needs a crisp specular roll-off or it reads as untextured 3D.
+ *   contents  the vessel is CLOSED and opaque. This one is load-bearing: asked
+ *             for an open or translucent jar, the model renders the cream
+ *             inside, and at 2K it comes out lumpy and curdled -- the single
+ *             worst artefact in the first version of these creatives.
+ *   retouch   catalogue standard, stated explicitly, because "professional"
+ *             alone does not remove dust, fingerprints or warped ellipses.
+ *
+ * Reference is the category standard set by premium beauty campaigns -- the
+ * craft conventions, not anyone's imagery. Style is not copyrightable and none
+ * is reproduced; every pixel here is generated from this brief.
  */
 export function buildHeroPrompt(product: Product, brief: CampaignBrief): string {
   if (product.generationPrompt) return product.generationPrompt;
 
-  const tone = brief.toneOfVoice ? `Art direction tone: ${brief.toneOfVoice}.` : "";
-  const objective = brief.objective ? `Campaign objective: ${brief.objective}.` : "";
+  // The brief's prose already ends its own sentences; re-punctuating it gave
+  // "never hype..", which is the kind of thing a model happily renders around.
+  const sentence = (text?: string) => (text ? text.trim().replace(/\.*$/, "") : "");
+  const tone = brief.toneOfVoice ? `Art direction: ${sentence(brief.toneOfVoice)}.` : "";
+  const objective = brief.objective ? `Campaign objective: ${sentence(brief.objective)}.` : "";
 
   return [
-    `Professional commercial advertising photography of ${product.name}`,
-    `by the brand ${brief.brand.name}.`,
-    `Campaign audience: ${brief.audience}. Market: ${brief.region}.`,
+    `Premium beauty campaign photograph of ${product.name} by ${brief.brand.name}.`,
+    `Audience: ${brief.audience}. Market: ${brief.region}.`,
     objective,
     tone,
-    "The product is the hero: centred, sharp, and framed with generous negative",
-    "space on all sides so the image can be re-cropped to square, vertical and",
-    "landscape formats without cutting the product.",
-    "Clean studio lighting, soft natural shadows, calm minimal background,",
-    "premium editorial colour grading.",
+
+    // Optics -- the whole product sharp, not a shallow-focus mood shot.
+    "Shot on a 100mm macro lens at f/9, focus stacked so the entire product is",
+    "critically sharp from front to back. Tripod, no motion blur.",
+
+    // Light -- named positions, controlled speculars.
+    "Lighting is soft and directional from the upper left, with open fill from",
+    "the right and a narrow highlight raking the product's edge to separate it",
+    "from the background. Highlights are controlled and rolled off, never blown;",
+    "shadows are soft and open. The lighting is felt, not seen: no softbox,",
+    "reflector, light stand, modifier or any studio equipment appears in frame.",
+
+    // Set and colour.
+    "The product stands on a honed stone or matte plaster surface against a",
+    "seamless background with a gentle tonal gradient. Restrained tonal colour",
+    "grade, sympathetic to the brand palette without tinting the product itself.",
+
+    // Material truth -- where AI product shots usually fail.
+    "Materials must read as real: frosted glass transmits light correctly with a",
+    "crisp polished rim, and the cap is smooth lacquered metal or resin with a",
+    "clean specular roll-off and a precise machined edge.",
+
+    // The decisive constraint.
+    "The container is CLOSED with its cap fully seated, and is opaque: the",
+    "contents are NOT visible. Do not render cream, lotion, product texture or",
+    "any substance inside or on the vessel.",
+
+    // Composition, so one hero survives every crop.
+    // Width, not height, is the binding constraint: a 9:16 crop of a square
+    // discards ~41% of the width, so anything wider than about half the frame
+    // gets its edges sliced. This is the clause that keeps one generation
+    // usable across every channel format.
+    "WIDE SHOT. The camera is pulled well back and the product is SMALL and",
+    "distant in a large empty set -- a single small jar alone on a wide expanse",
+    "of surface. The product occupies only the central third of the image and",
+    "is surrounded by a large amount of empty space on every side. Most of this",
+    "picture is background. Do not fill the frame with the product; do not crop",
+    "it; the entire product including its base is visible with room to spare.",
+
+    // Retouch standard, stated rather than implied.
+    "Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical,",
+    "circular openings drawn as true undistorted ellipses. No lumps, no curdling,",
+    "no smears, no double lids, no warped geometry, no visible seams, and no",
+    "second product, prop or duplicate of the item anywhere in the frame.",
+
     "Absolutely no text, no lettering, no typography, no logos, no watermarks,",
     "and no packaging claims of any kind in the image.",
   ]

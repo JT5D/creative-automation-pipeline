@@ -23,9 +23,9 @@
     "provider": "google-gemini",
     "model": "gemini-3-pro-image"
   },
-  "startedAt": "2026-08-28T19:58:47.410Z",
-  "completedAt": "2026-08-28T19:59:21.649Z",
-  "durationMs": 34239,
+  "startedAt": "2026-08-28T21:07:01.420Z",
+  "completedAt": "2026-08-28T21:07:35.200Z",
+  "durationMs": 33780,
   "preflight": {
     "status": "pass",
     "checks": [
@@ -92,7 +92,7 @@
   },
   "successMetrics": {
     "timeSaved": {
-      "minutes": 599.43,
+      "minutes": 599.44,
       "baselineMinutesPerCreative": 25,
       "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
     },
@@ -105,7 +105,7 @@
       "creativesPerGenerationCall": 24,
       "costPerCreativeUsd": 0.00558,
       "reuseRate": 0.5,
-      "secondsPerCreative": 1.43
+      "secondsPerCreative": 1.41
     }
   },
   "assignmentProof": {
@@ -193,11 +193,6 @@
                 "message": "Copy fits in 3 line(s) at 74px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -219,7 +214,7 @@
               }
             ]
           },
-          "durationMs": 546
+          "durationMs": 541
         },
         {
           "ratio": "1x1",
@@ -247,11 +242,6 @@
                 "message": "Copy fits in 3 line(s) at 66px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 66px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -273,7 +263,7 @@
               }
             ]
           },
-          "durationMs": 498
+          "durationMs": 496
         },
         {
           "ratio": "1x1",
@@ -301,11 +291,6 @@
                 "message": "Copy fits in 3 line(s) at 60px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 60px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -327,7 +312,7 @@
               }
             ]
           },
-          "durationMs": 340
+          "durationMs": 474
         },
         {
           "ratio": "4x5",
@@ -355,11 +340,6 @@
                 "message": "Copy fits in 2 line(s) at 74px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -381,7 +361,7 @@
               }
             ]
           },
-          "durationMs": 510
+          "durationMs": 507
         },
         {
           "ratio": "4x5",
@@ -409,11 +389,6 @@
                 "message": "Copy fits in 3 line(s) at 68px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 68px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -435,7 +410,7 @@
               }
             ]
           },
-          "durationMs": 348
+          "durationMs": 499
         },
         {
           "ratio": "4x5",
@@ -463,11 +438,6 @@
                 "message": "Copy fits in 3 line(s) at 62px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 62px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -489,7 +459,7 @@
               }
             ]
           },
-          "durationMs": 533
+          "durationMs": 393
         },
         {
           "ratio": "9x16",
@@ -515,11 +485,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 2 line(s) at 88px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
               },
               {
                 "id": "brand.logo",
@@ -548,7 +513,7 @@
               }
             ]
           },
-          "durationMs": 406
+          "durationMs": 571
         },
         {
           "ratio": "9x16",
@@ -574,11 +539,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 88px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
               },
               {
                 "id": "brand.logo",
@@ -607,7 +567,7 @@
               }
             ]
           },
-          "durationMs": 559
+          "durationMs": 567
         },
         {
           "ratio": "9x16",
@@ -633,11 +593,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 86px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 86px)"
               },
               {
                 "id": "brand.logo",
@@ -666,7 +621,7 @@
               }
             ]
           },
-          "durationMs": 611
+          "durationMs": 458
         },
         {
           "ratio": "16x9",
@@ -720,7 +675,7 @@
               }
             ]
           },
-          "durationMs": 277
+          "durationMs": 433
         },
         {
           "ratio": "16x9",
@@ -774,7 +729,7 @@
               }
             ]
           },
-          "durationMs": 282
+          "durationMs": 434
         },
         {
           "ratio": "16x9",
@@ -828,7 +783,7 @@
               }
             ]
           },
-          "durationMs": 444
+          "durationMs": 441
         }
       ]
     },
@@ -847,9 +802,9 @@
           "provider": "google-gemini",
           "operation": "image-reference",
           "model": "gemini-3-pro-image",
-          "prompt": "Professional commercial advertising photography of Overnight Recovery Cream by the brand Lumen Botanicals. Campaign audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction tone: Calm, clinical, warm. Understated luxury — never hype.. The product is the hero: centred, sharp, and framed with generous negative space on all sides so the image can be re-cropped to square, vertical and landscape formats without cutting the product. Clean studio lighting, soft natural shadows, calm minimal background, premium editorial colour grading. Absolutely no text, no lettering, no typography, no logos, no watermarks, and no packaging claims of any kind in the image.",
-          "durationMs": 24518,
-          "requestId": "v1_ChdrLWlSYW82WEc2WFZqTWNQeUtxWXdBcxIXay1pUmFvNlhHNlhWak1jUHlLcVl3QXM"
+          "prompt": "Premium beauty campaign photograph of Overnight Recovery Cream by Lumen Botanicals. Audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction: Calm, clinical, warm. Understated luxury — never hype. Shot on a 100mm macro lens at f/9, focus stacked so the entire product is critically sharp from front to back. Tripod, no motion blur. Lighting is soft and directional from the upper left, with open fill from the right and a narrow highlight raking the product's edge to separate it from the background. Highlights are controlled and rolled off, never blown; shadows are soft and open. The lighting is felt, not seen: no softbox, reflector, light stand, modifier or any studio equipment appears in frame. The product stands on a honed stone or matte plaster surface against a seamless background with a gentle tonal gradient. Restrained tonal colour grade, sympathetic to the brand palette without tinting the product itself. Materials must read as real: frosted glass transmits light correctly with a crisp polished rim, and the cap is smooth lacquered metal or resin with a clean specular roll-off and a precise machined edge. The container is CLOSED with its cap fully seated, and is opaque: the contents are NOT visible. Do not render cream, lotion, product texture or any substance inside or on the vessel. WIDE SHOT. The camera is pulled well back and the product is SMALL and distant in a large empty set -- a single small jar alone on a wide expanse of surface. The product occupies only the central third of the image and is surrounded by a large amount of empty space on every side. Most of this picture is background. Do not fill the frame with the product; do not crop it; the entire product including its base is visible with room to spare. Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical, circular openings drawn as true undistorted ellipses. No lumps, no curdling, no smears, no double lids, no warped geometry, no visible seams, and no second product, prop or duplicate of the item anywhere in the frame. Absolutely no text, no lettering, no typography, no logos, no watermarks, and no packaging claims of any kind in the image.",
+          "durationMs": 23974,
+          "requestId": "v1_ChdrZmlSYXBEY0Y5UGRfdU1QN3JDUndBRRIXa2ZpUmFwRGNGOVBkX3VNUDdyQ1J3QUU"
         }
       },
       "creatives": [
@@ -859,7 +814,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/en-gb.png",
-          "bytes": 156563,
+          "bytes": 221183,
           "validation": {
             "status": "pass",
             "checks": [
@@ -879,11 +834,6 @@
                 "message": "Copy fits in 3 line(s) at 74px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -905,7 +855,7 @@
               }
             ]
           },
-          "durationMs": 419
+          "durationMs": 404
         },
         {
           "ratio": "1x1",
@@ -913,7 +863,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/de-de.png",
-          "bytes": 152338,
+          "bytes": 222135,
           "validation": {
             "status": "pass",
             "checks": [
@@ -933,11 +883,6 @@
                 "message": "Copy fits in 3 line(s) at 66px"
               },
               {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 66px)"
-              },
-              {
                 "id": "brand.logo",
                 "status": "pass",
                 "message": "Brand logo composited"
@@ -959,7 +904,7 @@
               }
             ]
           },
-          "durationMs": 391
+          "durationMs": 384
         },
         {
           "ratio": "1x1",
@@ -967,7 +912,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/fr-fr.png",
-          "bytes": 155992,
+          "bytes": 224585,
           "validation": {
             "status": "pass",
             "checks": [
@@ -985,11 +930,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 60px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 60px)"
               },
               {
                 "id": "brand.logo",
@@ -1013,7 +953,7 @@
               }
             ]
           },
-          "durationMs": 390
+          "durationMs": 385
         },
         {
           "ratio": "4x5",
@@ -1021,7 +961,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/en-gb.png",
-          "bytes": 219004,
+          "bytes": 264535,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1039,11 +979,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 2 line(s) at 74px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
               },
               {
                 "id": "brand.logo",
@@ -1067,7 +1002,7 @@
               }
             ]
           },
-          "durationMs": 427
+          "durationMs": 450
         },
         {
           "ratio": "4x5",
@@ -1075,7 +1010,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/de-de.png",
-          "bytes": 221731,
+          "bytes": 267756,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1093,11 +1028,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 68px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 68px)"
               },
               {
                 "id": "brand.logo",
@@ -1121,7 +1051,7 @@
               }
             ]
           },
-          "durationMs": 302
+          "durationMs": 275
         },
         {
           "ratio": "4x5",
@@ -1129,7 +1059,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png",
-          "bytes": 221596,
+          "bytes": 268360,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1147,11 +1077,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 62px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 62px)"
               },
               {
                 "id": "brand.logo",
@@ -1175,7 +1100,7 @@
               }
             ]
           },
-          "durationMs": 433
+          "durationMs": 425
         },
         {
           "ratio": "9x16",
@@ -1183,7 +1108,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png",
-          "bytes": 296260,
+          "bytes": 333737,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1201,11 +1126,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 2 line(s) at 88px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
               },
               {
                 "id": "brand.logo",
@@ -1234,7 +1154,7 @@
               }
             ]
           },
-          "durationMs": 454
+          "durationMs": 335
         },
         {
           "ratio": "9x16",
@@ -1242,7 +1162,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png",
-          "bytes": 295314,
+          "bytes": 336183,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1260,11 +1180,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 88px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
               },
               {
                 "id": "brand.logo",
@@ -1293,7 +1208,7 @@
               }
             ]
           },
-          "durationMs": 296
+          "durationMs": 336
         },
         {
           "ratio": "9x16",
@@ -1301,7 +1216,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png",
-          "bytes": 298457,
+          "bytes": 342461,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1319,11 +1234,6 @@
                 "id": "message.legible",
                 "status": "pass",
                 "message": "Copy fits in 3 line(s) at 86px"
-              },
-              {
-                "id": "brand.contrast",
-                "status": "pass",
-                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 86px)"
               },
               {
                 "id": "brand.logo",
@@ -1352,7 +1262,7 @@
               }
             ]
           },
-          "durationMs": 315
+          "durationMs": 321
         },
         {
           "ratio": "16x9",
@@ -1360,7 +1270,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png",
-          "bytes": 169373,
+          "bytes": 271879,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1406,7 +1316,7 @@
               }
             ]
           },
-          "durationMs": 357
+          "durationMs": 222
         },
         {
           "ratio": "16x9",
@@ -1414,7 +1324,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png",
-          "bytes": 169572,
+          "bytes": 276486,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1460,7 +1370,7 @@
               }
             ]
           },
-          "durationMs": 362
+          "durationMs": 219
         },
         {
           "ratio": "16x9",
@@ -1468,7 +1378,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png",
-          "bytes": 181313,
+          "bytes": 272180,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1514,7 +1424,7 @@
               }
             ]
           },
-          "durationMs": 204
+          "durationMs": 225
         }
       ]
     }
@@ -1530,8 +1440,8 @@
   "estimatedTimeSaved": {
     "baselineMinutesPerCreative": 25,
     "manualMinutes": 600,
-    "pipelineMinutes": 0.571,
-    "savedMinutes": 599.43,
+    "pipelineMinutes": 0.563,
+    "savedMinutes": 599.44,
     "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
   }
 }
