@@ -1,0 +1,62 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Campaign brief — the single input to the pipeline.
+# JSON is accepted too; both normalize to the same validated object.
+# ─────────────────────────────────────────────────────────────────────────────
+
+id: lumen-autumn-glow-de
+name: Lumen Botanicals — Autumn Glow (DACH)
+
+# The 4A's brief standard reduces to who / what / why / where / success.
+region: Germany (DACH)                    # WHERE
+audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare   # WHO
+message: Wake up to visibly brighter skin # WHAT — the single-minded proposition
+objective: Drive first-purchase conversion for the autumn skincare range in DACH   # WHY
+callToAction: Jetzt entdecken             # rendered into every creative
+toneOfVoice: Calm, clinical, warm. Understated luxury — never hype.
+
+# SUCCESS — the documented baseline for the "time saved" figure in report.json.
+# Reported only because it is supplied here; it is an estimate from this
+# number, clearly labelled, never an invented measurement.
+manualMinutesPerCreative: 25
+
+# Optional pre-translated copy, signed off by the market team.
+# When present this is what gets rasterized. Translation is deliberately data,
+# not a runtime model call — localized legal copy needs human approval.
+locale: de-DE
+localizedMessage: Wach auf mit sichtbar strahlenderer Haut
+
+brand:
+  name: Lumen Botanicals
+  logoPath: samples/assets/lumen-logo.png
+  primaryColor: "#14322B"
+  secondaryColor: "#C9A227"
+  disclaimer: Individual results may vary. Dermatologist tested.
+
+  # Legal / MLR screen. These are the claims regulated markets do not allow on
+  # a cosmetic, so they must never reach a rendered creative.
+  prohibitedWords:
+    - cure
+    - cures
+    - miracle
+    - clinically proven
+    - anti-aging
+    - eliminates wrinkles
+    - guaranteed
+    - permanent results
+
+products:
+  # ── Product A ──────────────────────────────────────────────────────────────
+  # An approved campaign hero already exists, so the pipeline REUSES it
+  # and spends nothing. Delete the file and this product takes the
+  # generation path instead — the branch is a real filesystem check.
+  - id: radiance-serum
+    name: Radiance Vitamin C Serum
+    approvedHeroPath: samples/assets/radiance-serum-hero.png
+
+  # ── Product B ──────────────────────────────────────────────────────────────
+  # No approved hero. A packshot exists, so it is handed to the model as an
+  # identity anchor: the real product is composited into a new campaign scene
+  # rather than hallucinated from a text description.
+  - id: overnight-recovery-cream
+    name: Overnight Recovery Cream
+    referenceAssetPath: samples/assets/overnight-cream-packshot.png

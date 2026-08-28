@@ -1,0 +1,23 @@
+# A deliberately non-compliant brief, used to prove the legal gate can go red.
+# Preflight fails on the prohibited claim BEFORE any generation is paid for.
+#   npm run campaign -- samples/campaign-legal-fail.yaml
+id: lumen-autumn-glow-de-rejected
+name: Lumen Botanicals — Autumn Glow (rejected copy)
+
+region: Germany (DACH)
+audience: Urban professionals 28–45
+message: The clinically proven miracle that cures dull skin overnight
+
+brand:
+  name: Lumen Botanicals
+  primaryColor: "#14322B"
+  secondaryColor: "#C9A227"
+  prohibitedWords: [cure, cures, miracle, clinically proven, guaranteed]
+
+products:
+  - id: radiance-serum
+    name: Radiance Vitamin C Serum
+    approvedHeroPath: samples/assets/radiance-serum-hero.png
+  - id: overnight-recovery-cream
+    name: Overnight Recovery Cream
+    referenceAssetPath: samples/assets/overnight-cream-packshot.png
