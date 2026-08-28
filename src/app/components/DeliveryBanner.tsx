@@ -16,7 +16,14 @@ import type { CampaignReport } from "../types.js";
  * two come apart whenever a hero is served from cache. The proof is reported
  * underneath, unchanged and just as strict.
  */
-export function DeliveryBanner({ report }: { report: CampaignReport }) {
+export function DeliveryBanner({
+  report,
+  restored,
+}: {
+  report: CampaignReport;
+  /** Read back off disk rather than produced by this session. */
+  restored?: boolean;
+}) {
   const m = report.metrics;
   const proof = report.assignmentProof;
   const failedProof = proof.checks.filter((c) => !c.passed);
@@ -40,6 +47,15 @@ export function DeliveryBanner({ report }: { report: CampaignReport }) {
         </span>
         <div>
           <strong>{heading}</strong>
+          {/* A finished run loaded from outputs/ is real, but it is not
+              something that just happened in front of you, and a banner that
+              cannot tell the two apart is a status that cannot report the
+              truth. Says which one it is, and when. */}
+          {restored && (
+            <span className="restored">
+              Loaded from disk. Completed {new Date(report.completedAt).toLocaleString()}.
+            </span>
+          )}
           {/* Exact counts only. Every clause below names the number it read. */}
           <span>
             {m.variantsCreated} creative{m.variantsCreated === 1 ? "" : "s"} exported ·{" "}
@@ -65,15 +81,28 @@ export function DeliveryBanner({ report }: { report: CampaignReport }) {
 
       <div className="dmetrics">
         <Cell v={m.variantsCreated} k="creatives exported" />
-        <Cell v={m.approvedAssetsReused} k="approved heroes reused" />
+        <Cell
+          v={m.approvedAssetsReused}
+          k={m.approvedAssetsReused === 1 ? "approved hero reused" : "approved heroes reused"}
+        />
         <Cell
           v={m.liveHeroGenerations}
           k={m.liveHeroGenerations === 1 ? "hero generated live" : "heroes generated live"}
         />
         <Cell v={`${(report.durationMs / 1000).toFixed(1)}s`} k="elapsed" />
-        {saved && <Cell v={fmtHours(saved.minutes)} k="studio time saved" good />}
+        {/*
+         * The two largest numbers on this banner are the two that were never
+         * measured. They are the brief's own stated baseline multiplied out,
+         * and saying "studio time saved" and "labour cost avoided" states them
+         * as achievements. "estimated" is doing real work in these two labels:
+         * it is the difference between a figure this pipeline observed and a
+         * figure the client supplied an assumption for. The estimate panel
+         * already says "illustrative"; the banner has to say it too, because
+         * this is the screen a reviewer photographs.
+         */}
+        {saved && <Cell v={fmtHours(saved.minutes)} k="studio time saved (est.)" good />}
         {saved?.usd !== undefined && (
-          <Cell v={`$${saved.usd.toLocaleString()}`} k="labour cost avoided" good />
+          <Cell v={`$${saved.usd.toLocaleString()}`} k="labour cost avoided (est.)" good />
         )}
         <Cell
           v={`${m.validationPassed}/${m.variantsCreated}`}

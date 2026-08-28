@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { BriefSummary, CampaignEstimate, FormatOption } from "../types.js";
 
 type Props = {
@@ -25,6 +25,17 @@ type Props = {
     generations: number;
     costUsd: number;
   } | null;
+  /**
+   * Supply an approved hero for a product the run would otherwise pay to
+   * generate.
+   *
+   * The same write the Inspector offers, moved to where the decision is
+   * actually visible. It used to live only behind "run a campaign, click a
+   * generated creative, read the review panel", which is three steps past the
+   * moment a person can see that this product is about to cost money. A
+   * capability nobody can find is not a capability.
+   */
+  onApproveAsset: (productId: string, file: File) => Promise<void>;
 };
 
 /**
@@ -37,6 +48,61 @@ type Props = {
  * side panel because changing a format or a market is the thing an operator
  * does most, and it has to sit next to what it changes.
  */
+/**
+ * Hand the run an approved hero for one product, before it spends anything.
+ *
+ * Deliberately a plain file input behind a button rather than a drop zone: the
+ * whole point is that the reuse branch is a real filesystem check, and the
+ * shortest way to show that is to put a file on disk and let the next estimate
+ * flip the row from GENERATE to REUSE on its own.
+ */
+function SupplyHero({
+  productId,
+  onApproveAsset,
+}: {
+  productId: string;
+  onApproveAsset: (productId: string, file: File) => Promise<void>;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const send = async (file?: File) => {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onApproveAsset(productId, file);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={input}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        hidden
+        onChange={(e) => send(e.target.files?.[0])}
+      />
+      <button
+        type="button"
+        className="supply"
+        onClick={() => input.current?.click()}
+        disabled={busy}
+        title="Supply an approved hero for this product. The next run reuses it instead of paying to generate one."
+      >
+        {busy ? "Saving…" : "Supply approved hero"}
+      </button>
+      {error && <span className="err">{error}</span>}
+    </>
+  );
+}
+
 export function CampaignStrip(props: Props) {
   const {
     library,
@@ -55,6 +121,7 @@ export function CampaignStrip(props: Props) {
     selectedBriefs,
     onToggleBrief,
     batchEstimate,
+    onApproveAsset,
   } = props;
 
   const [editing, setEditing] = useState(false);
@@ -130,6 +197,20 @@ export function CampaignStrip(props: Props) {
         <div className="cell wide">
           <span className="cell-k">Message</span>
           <span className="cell-v msg">{message || "-"}</span>
+          {/* Audience and objective are two of the four things the exercise
+              requires a brief to carry, and both were readable only by opening
+              the YAML. They are inputs to the prompt, so they belong beside the
+              proposition rather than behind Edit source. */}
+          {estimate?.audience && (
+            <span className="cell-sub">
+              <b>Audience</b> {estimate.audience}
+            </span>
+          )}
+          {estimate?.objective && (
+            <span className="cell-sub">
+              <b>Objective</b> {estimate.objective}
+            </span>
+          )}
         </div>
       </div>
 
@@ -157,12 +238,12 @@ export function CampaignStrip(props: Props) {
                 Done
               </button>
             </div>
-            {estimate && <EstimateCard estimate={estimate} />}
+            {estimate && <EstimateCard estimate={estimate} onApproveAsset={onApproveAsset} />}
           </div>
         </div>
       )}
 
-      {estimate && !editing && <EstimateCard estimate={estimate} />}
+      {estimate && !editing && <EstimateCard estimate={estimate} onApproveAsset={onApproveAsset} />}
 
       {/* The batch guardrail: what all of it costs, before any of it is spent. */}
       {batchEstimate && (
@@ -198,7 +279,13 @@ export function CampaignStrip(props: Props) {
 }
 
 /** The answer to "what will this cost" - shown before anything is spent. */
-function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
+function EstimateCard({
+  estimate: e,
+  onApproveAsset,
+}: {
+  estimate: CampaignEstimate;
+  onApproveAsset: (productId: string, file: File) => Promise<void>;
+}) {
   return (
     <div className={`estimate ${e.blocked ? "blocked" : ""}`}>
       <div className="est-head">
@@ -227,9 +314,45 @@ function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
             </div>
             <div>
               <b>{e.estimatedCostUsd ? `$${e.estimatedCostUsd.totalUsd.toFixed(3)}` : "-"}</b>
-              <span>est. spend</span>
+              {/* The total, then the arithmetic that produced it. A unit price
+                  on its own next to "24 creatives" invites the reader to
+                  multiply the wrong pair of numbers and arrive at $3.22 for a
+                  run that costs $0.134. Showing "1 x $0.134" makes the count
+                  that is actually charged visible, which is the number of
+                  missing heroes and never the number of outputs. */}
+              <span>
+                {e.estimatedCostUsd
+                  ? `est. spend · ${e.estimatedCostUsd.generations} × $${e.estimatedCostUsd.unitPriceUsd.toFixed(3)} per image`
+                  : "est. spend"}
+              </span>
             </div>
           </div>
+
+          {/* What the money actually buys, readable before it is spent. The
+              estimate has carried the exact prompt since it was added; the
+              console never showed it, so the one decision with a real cost
+              attached stayed the least inspectable thing on screen. */}
+          <details className="est-art">
+            <summary>
+              Art direction: {e.look}
+              {e.overriddenSlots.length > 0
+                ? ` · ${e.overriddenSlots.length} slot${e.overriddenSlots.length > 1 ? "s" : ""} overridden by the brief (${e.overriddenSlots.join(", ")})`
+                : " · nothing overridden"}
+            </summary>
+            {e.products.filter((p) => p.prompt).length === 0 ? (
+              <pre>Every product reuses an approved hero, so no prompt is sent.</pre>
+            ) : (
+              e.products
+                .filter((p) => p.prompt)
+                .map((p) => (
+                  <pre key={p.productId}>
+                    {p.productName}
+                    {"\n\n"}
+                    {p.prompt}
+                  </pre>
+                ))
+            )}
+          </details>
 
           <ul className="est-plan">
             {e.products.map((p) => (
@@ -238,6 +361,9 @@ function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
                   {p.action === "reuse" ? "REUSE" : "GENERATE"}
                 </span>
                 {p.productName}
+                {p.action === "generate" && (
+                  <SupplyHero productId={p.productId} onApproveAsset={onApproveAsset} />
+                )}
                 <em>
                   {p.action === "reuse"
                     ? p.sourceAssetPath?.split("/").pop()

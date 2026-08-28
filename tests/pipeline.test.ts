@@ -1374,6 +1374,31 @@ describe("end-to-end campaign run", () => {
     }
   });
 
+  it("screens a brief-supplied hashtag for prohibited claims, camel case and all", async () => {
+    // A brief may state its own campaign tags, because inventing one is a
+    // marketing decision but accepting one is not. That makes a tag published
+    // copy, and the prohibited-claim scan only ever read the caption.
+    //
+    // The matcher is word-boundary anchored so "cure" does not trip on
+    // "secure", which is right for prose and useless for "#MiracleCure" - the
+    // exact shape a brand writes a campaign tag in. The scan splits the case
+    // changes so it sees the words a reader sees.
+    const clean = parseBrief(`${briefYaml()}`);
+    expect((await preflight(clean)).status).not.toBe("fail");
+
+    const withTag = parseBrief(briefYaml());
+    withTag.brand.hashtags = ["MiracleCure"];
+    const result = await preflight(withTag);
+    expect(result.status).toBe("fail");
+    expect(JSON.stringify(result.checks)).toMatch(/miracle/i);
+
+    // And an honest campaign tag still passes, or the check would just be a ban
+    // on hashtags.
+    const ok = parseBrief(briefYaml());
+    ok.brand.hashtags = ["AutumnGlow"];
+    expect((await preflight(ok)).status).not.toBe("fail");
+  });
+
   it("lets a run override the brief's look without touching the slots on top of it", () => {
     // The cascade shipped reachable only from a YAML field, so the console --
     // the surface this work is demonstrated on -- could not select a look at
@@ -1445,7 +1470,21 @@ describe("end-to-end campaign run", () => {
     const brief = parseBrief(briefYaml());
     const base = buildHeroPrompt(brief.products[1], brief);
     expect(base).toMatch(/window daylight/i);
-    expect(base).toMatch(/travertine/i);
+
+    // The set rotates within the look, so the campaign reads as several
+    // photographs of one world rather than one photograph taken twice. The
+    // first product keeps the house set; the second moves to another corner of
+    // the same room, and the LIGHT does not move, which is what holds a
+    // campaign together.
+    const first = buildHeroPrompt(brief.products[0], brief);
+    expect(first).toMatch(/travertine/i);
+    expect(base).not.toBe(first);
+    expect(base).toMatch(/window daylight/i);
+    expect(first).toMatch(/window daylight/i);
+
+    // Google's prompting guide names action as an essential element and this
+    // prompt had none, which is why every hero was an object sitting still.
+    expect(base).toMatch(/Caught at a moment rather than posed/i);
 
     // A look changes several slots at once, and REPLACES them rather than
     // appending, so the contradiction cannot come back.
@@ -1456,6 +1495,7 @@ describe("end-to-end campaign run", () => {
     expect(darkPrompt).not.toMatch(/window daylight/i);
     expect(darkPrompt).not.toMatch(/open bounce fill/i);
     expect(darkPrompt).not.toMatch(/travertine/i);
+    expect(darkPrompt).toMatch(/Caught at a moment rather than posed/i);
 
     // A bare string is still the SET, which is all it has ever meant, so every
     // brief written before looks existed says exactly what it said.

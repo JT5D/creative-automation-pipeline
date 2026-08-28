@@ -101,7 +101,7 @@ export type CampaignReport = {
     };
     campaignsGenerated: { campaigns: number; creatives: number; markets: number };
     efficiency: {
-      /** How much output each paid call produced. The headline number. */
+      /** How much output each live hero generation produced. The headline number. */
       creativesPerGenerationCall: number | null;
       costPerCreativeUsd: number | null;
       /** Share of heroes served from already-approved assets. */

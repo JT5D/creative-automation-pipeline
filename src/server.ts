@@ -1,19 +1,21 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import sharp from "sharp";
 import type { BatchCampaign, BatchState, FormatOption, RunState } from "./api.js";
 import { zipDirectory } from "./archive.js";
 import { DEFAULT_LOOK, LOOK_OPTIONS } from "./artDirection.js";
+import { buildShotPrompt, findApprovedHero, SHOT_SET } from "./assetResolver.js";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
-import { loadBriefFile, runCampaign } from "./pipeline.js";
-import { MODEL_OPTIONS, PRICING_SOURCE } from "./pricing.js";
-import { providerStatus } from "./providers/index.js";
-import { sanitizeId } from "./report.js";
+import { loadBriefFile, parseBrief, runCampaign } from "./pipeline.js";
+import { MODEL_OPTIONS, PRICING_SOURCE, priceFor } from "./pricing.js";
+import { providerStatus, selectGenerator } from "./providers/index.js";
+import { type CampaignReport, sanitizeId } from "./report.js";
 import { RATIOS, type RatioKey, REQUIRED_RATIOS } from "./schema.js";
+import { preflight, preflightOrThrow } from "./validation.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
 const OUTPUT_ROOT = path.resolve("outputs");
@@ -183,6 +185,175 @@ app.get("/api/looks", (_req, res) => {
   res.json({ looks: LOOK_OPTIONS, default: DEFAULT_LOOK });
 });
 
+/**
+ * The most recent campaign still on disk, as a completed run.
+ *
+ * Runs are held in memory, so restarting the server used to leave the console
+ * saying "no creatives yet" over a directory full of finished creatives. The
+ * report and the PNGs are durable and /outputs already serves them, so the only
+ * thing missing was reading them back.
+ *
+ * Picked by completedAt from the report itself, not by file mtime: copying a
+ * directory changes mtime and does not change which run finished last.
+ */
+app.get("/api/last-run", async (_req, res) => {
+  try {
+    const entries = await readdir(OUTPUT_ROOT, { withFileTypes: true });
+    const reports: CampaignReport[] = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      try {
+        const raw = await readFile(path.join(OUTPUT_ROOT, entry.name, "report.json"), "utf8");
+        reports.push(JSON.parse(raw) as CampaignReport);
+      } catch {
+        // A directory without a readable report is a partial run, not an error.
+      }
+    }
+    const latest = reports.sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+    if (!latest) {
+      res.status(404).json({ error: "No completed run on disk yet" });
+      return;
+    }
+    const state: RunState = {
+      runId: `restored-${latest.campaignId}`,
+      status: "complete",
+      startedAt: latest.startedAt,
+      events: [],
+      report: latest,
+      restored: true,
+    };
+    res.json(state);
+  } catch {
+    res.status(404).json({ error: "No completed run on disk yet" });
+  }
+});
+
+/**
+ * The camera set-ups a shoot would cover, and what covering them costs.
+ *
+ * Free. Deliberately a separate GET from the act of shooting, because the whole
+ * point of putting this in the console is that the price is visible before the
+ * button is pressed: nine set-ups is nine paid generations, which is an order
+ * of magnitude more than the campaign that produced the hero.
+ */
+app.get("/api/shots", (_req, res) => {
+  const model = process.env.GEMINI_IMAGE_MODEL ?? "gemini-3-pro-image";
+  res.json({
+    shots: SHOT_SET.map((s) => ({ id: s.id, label: s.label, framing: s.framing })),
+    model,
+    unitPriceUsd: priceFor(model),
+  });
+});
+
+/**
+ * Cover one product from several camera set-ups.
+ *
+ * Separate from the campaign path, exactly as the CLI is. A campaign generates
+ * ONE hero and crops it to every format because the crop is free and the
+ * generation is not, and that is the cost argument the whole pipeline rests on.
+ * Coverage is what the argument gives up; this is what buying it back costs,
+ * one paid generation per set-up, and only when a person asks for it by name.
+ *
+ * The reference is THE HERO, not the packshot: the model is looking at the
+ * finished scene and being asked to move the camera inside it, so the set, the
+ * light and the grade come from the image rather than from a paragraph trying
+ * to respecify them.
+ */
+app.post("/api/shoot", async (req, res) => {
+  const raw = typeof req.body?.brief === "string" ? req.body.brief : null;
+  const productId = typeof req.body?.productId === "string" ? req.body.productId : null;
+  const wanted: string[] = Array.isArray(req.body?.shots) ? req.body.shots : [];
+  if (!raw || !productId) {
+    res.status(400).json({ error: "Body must be { brief, productId, shots[] }" });
+    return;
+  }
+
+  const shots = SHOT_SET.filter((s) => wanted.includes(s.id));
+  if (shots.length === 0) {
+    res.status(400).json({ error: "Select at least one camera set-up" });
+    return;
+  }
+
+  try {
+    const brief = parseBrief(raw);
+    const product = brief.products.find((p) => p.id === productId);
+    if (!product) {
+      res.status(404).json({ error: `No product ${productId} in this brief` });
+      return;
+    }
+
+    // The same gate the campaign path uses. A shoot spends real money per
+    // set-up, so a brief carrying a prohibited claim is refused here too: a
+    // side entrance that skips the free checks is not a side entrance, it is a
+    // hole.
+    preflightOrThrow(await preflight(brief));
+
+    // Something to move the camera within. The campaign writes its hero to
+    // outputs/<campaign>/<product>/source/, so a product that has just been run
+    // can be shot even when the brief names no approved asset.
+    const generated = path.join(
+      OUTPUT_ROOT,
+      sanitizeId(brief.id),
+      sanitizeId(product.id),
+      "source",
+      "generated-hero.png",
+    );
+    const reference =
+      (await findApprovedHero(product.approvedHeroPath)) ?? (await findApprovedHero(generated));
+    if (!reference) {
+      res.status(409).json({
+        error:
+          "This product has no hero on disk yet. Run the campaign first, then shoot the hero it produced.",
+      });
+      return;
+    }
+
+    const generator = selectGenerator(process.env, req.body?.model);
+    const outDir = path.join(OUTPUT_ROOT, "shot-variants", sanitizeId(product.id));
+    await mkdir(outDir, { recursive: true });
+
+    const results: { id: string; label: string; path?: string; error?: string }[] = [];
+    for (const shot of shots) {
+      try {
+        const hero = await generator.generateHero({
+          productId: product.id,
+          productName: product.name,
+          campaignMessage: brief.message,
+          region: brief.region,
+          audience: brief.audience,
+          brandName: brief.brand.name,
+          prompt: buildShotPrompt(shot),
+          referenceAssetPath: reference,
+        });
+        const file = path.join(outDir, `${shot.id}.png`);
+        await writeFile(file, hero.bytes);
+        results.push({
+          id: shot.id,
+          label: shot.label,
+          path: `/outputs/${path.relative(OUTPUT_ROOT, file).split(path.sep).join("/")}`,
+        });
+      } catch (error) {
+        // One refused set-up must not lose the rest of the shoot.
+        results.push({
+          id: shot.id,
+          label: shot.label,
+          error: error instanceof Error ? error.message.split("\n")[0] : String(error),
+        });
+      }
+    }
+
+    res.json({
+      productId: product.id,
+      productName: product.name,
+      model: generator.model,
+      results,
+      generated: results.filter((r) => r.path).length,
+    });
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+  }
+});
+
 /** Cross-run learning: reuse rate, spend and time saved over every run so far. */
 app.get("/api/insights", async (_req, res) => {
   res.json(await readInsights(OUTPUT_ROOT));
@@ -198,6 +369,7 @@ app.post("/api/estimate", async (req, res) => {
   try {
     res.json(
       await estimateCampaign(raw, {
+        preview: req.body?.preview === true,
         model: req.body?.model,
         ratios: req.body?.ratios,
         locales: req.body?.locales,
@@ -232,6 +404,7 @@ app.post("/api/runs", async (req, res) => {
     ratios: req.body?.ratios,
     locales: req.body?.locales,
     model: typeof req.body?.model === "string" ? req.body.model : undefined,
+    preview: req.body?.preview === true,
     look: LOOK_OPTIONS.some((l) => l.id === req.body?.look) ? req.body.look : undefined,
     onEvent: (event) => state.events.push(event),
   })

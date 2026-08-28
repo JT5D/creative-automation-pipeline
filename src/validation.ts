@@ -121,8 +121,24 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
  * post body underneath them.
  */
 function prohibitedClaimCheck(brief: CampaignBrief): ValidationCheck {
+  // The whole post, not just its body. A brief may now state its own campaign
+  // hashtags, and a tag is published copy exactly as a caption is: a brand
+  // shipping "#MiracleCure" would otherwise have cleared a check whose message
+  // says it screened the campaign copy. Alt text is scanned for the same
+  // reason - a screen reader is a publication channel.
   const captions = resolveMarkets(brief).flatMap((market) =>
-    brief.products.map((product) => socialCopy(brief, product, market).caption),
+    brief.products.flatMap((product) => {
+      const post = socialCopy(brief, product, market);
+      // Hashtags are scanned as words, not as tags. The matcher is
+      // word-boundary anchored so "cure" does not trip on "secure", which also
+      // means "#MiracleCure" sails past a ban on "miracle" - the exact shape a
+      // brand would write a campaign tag in. Split on the case changes so the
+      // scan sees the words a reader sees.
+      const tagWords = post.hashtags
+        .map((t) => t.replace(/^#/, "").replace(/([a-z0-9])([A-Z])/g, "$1 $2"))
+        .join(" ");
+      return [post.caption, tagWords, post.altText];
+    }),
   );
   const copy = [
     brief.message,

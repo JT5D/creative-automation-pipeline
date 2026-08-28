@@ -25,13 +25,22 @@ import type { CampaignBrief } from "./schema.js";
  *                comes back printed with invented claims on a regulated
  *                cosmetic. This one already happened.
  */
-export type Slot = "standard" | "optics" | "light" | "set" | "grade" | "materials" | "integrity";
+export type Slot =
+  | "standard"
+  | "optics"
+  | "light"
+  | "set"
+  | "moment"
+  | "grade"
+  | "materials"
+  | "integrity";
 
 export const SLOTS: Slot[] = [
   "standard",
   "optics",
   "light",
   "set",
+  "moment",
   "grade",
   "materials",
   "integrity",
@@ -91,6 +100,24 @@ const INTEGRITY =
   "contents are NOT visible. Do not render cream, lotion, product texture or " +
   "any substance inside or on the vessel.";
 
+/**
+ * The moment. Google's own prompting guide lists the essential elements of an
+ * image prompt as subject, composition, ACTION, location and style, and this
+ * prompt had every one of those except action.
+ * (cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-nano-banana,
+ * verified 2026-08-29.)
+ *
+ * It showed. Every hero was a correctly lit object sitting still on a ledge:
+ * excellent packshot photography, and not campaign photography. The reference
+ * workflow this project studied had motion in every generated prompt - an arm
+ * mid-stroke, water splashing - because a frame with something happening in it
+ * reads as a photograph taken at a moment rather than an object recorded.
+ *
+ * The constraint is that the subject is a sealed cosmetic that must stay sealed
+ * and unlabelled, so the action cannot be the product doing something. It is
+ * the air and the light doing something around it, which is exactly what a
+ * still-life photographer actually waits for.
+ */
 export const LOOKS: Record<LookName, SlotValues> = {
   daylight: {
     standard: CINEMATIC_BAR,
@@ -107,6 +134,10 @@ export const LOOKS: Record<LookName, SlotValues> = {
     set:
       "on a honed travertine ledge against a seamless plaster wall, with soft " +
       "foliage shadow falling across the background",
+    moment:
+      "Caught at a moment rather than posed: the foliage shadow is mid-drift " +
+      "across the wall, fine dust hangs in the light beam, and the air is " +
+      "faintly moving. Something is happening in the frame.",
     grade:
       "Restrained tonal colour grade, sympathetic to the brand palette without " +
       "tinting the product itself.",
@@ -128,6 +159,10 @@ export const LOOKS: Record<LookName, SlotValues> = {
       "is felt, not seen: no softbox, reflector, light stand, modifier or any " +
       "studio equipment appears in frame.",
     set: "on a dark polished stone plinth against a deep shadowed wall",
+    moment:
+      "Caught at a moment rather than posed: a thin haze drifts through the " +
+      "single beam, catching it, and the edge of the light is just breaking " +
+      "across the product as though it were moving.",
     grade:
       "Low-key grade with crushed shadows and a narrow highlight range, warm " +
       "only where the light actually falls.",
@@ -144,6 +179,10 @@ export const LOOKS: Record<LookName, SlotValues> = {
       "a room. Very low contrast. The lighting is felt, not seen: no softbox, " +
       "reflector, light stand, modifier or any studio equipment appears in frame.",
     set: "on a pale ash wood counter beside a linen cloth, with a soft haze in the air",
+    moment:
+      "Caught at a moment rather than posed: the linen has just been set down " +
+      "and is still settling into its folds, and cool morning air moves the " +
+      "haze across the counter.",
     grade: "Cool, desaturated grade with pale neutrals and no warm cast.",
     materials: MATERIALS,
     integrity: INTEGRITY,
@@ -192,6 +231,43 @@ export const TYPOGRAPHY_RULE =
   "unlabelled and blank. Inventing packaging copy is the single worst failure " +
   "this image can have.";
 
+/**
+ * Where a second, third or fourth product in the same campaign is placed.
+ *
+ * `artDirection` is brief-level, so every product in a campaign resolved to the
+ * identical `set` clause: two products, one travertine ledge, two nearly
+ * interchangeable photographs. A real shoot does not move to a different
+ * country for the second product, but it does move the camera to another corner
+ * of the same location, and the campaign reads as a set of pictures rather than
+ * one picture taken twice.
+ *
+ * Deliberately NOT new schema. A per-product artDirection field would be a
+ * fourth escape hatch on a system that already has three, to solve a problem a
+ * brief never has to think about. This rotates within the resolved look, so the
+ * light, the grade and the materials stay identical - which is what holds a
+ * campaign together - and only the placement moves.
+ *
+ * Index-keyed rather than random, because the same brief must produce the same
+ * prompt on every run or the cache key changes and the evidence stops matching.
+ */
+const SET_VARIATIONS: Record<LookName, string[]> = {
+  daylight: [
+    "on a honed travertine ledge against a seamless plaster wall, with soft foliage shadow falling across the background",
+    "on a wide plaster sill in the same room, further from the window, with the foliage shadow thrown longer and lower across the wall behind",
+    "on a raw travertine block set on the floor against the same plaster wall, the light arriving from higher up",
+  ],
+  nocturne: [
+    "on a dark polished stone plinth against a deep shadowed wall",
+    "on the same dark stone, closer to the light source, so the plinth edge catches a hard specular line and the wall falls further away",
+    "on a low dark stone step against the same shadowed wall, the light raking from further behind",
+  ],
+  nordic: [
+    "on a pale ash wood counter beside a linen cloth, with a soft haze in the air",
+    "on the same pale ash counter further along, beside a shallow ceramic dish, the linen out of frame",
+    "on a pale ash shelf against the wall, the counter and its linen visible softly behind",
+  ],
+};
+
 /** What a campaign gets when it says nothing at all. */
 export const DEFAULT_LOOK: LookName = "daylight";
 
@@ -231,7 +307,15 @@ export const LOOK_OPTIONS: { id: LookName; label: string; description: string }[
  * changed rather than making someone diff two paragraphs by eye. Control you
  * cannot see is not control.
  */
-export function resolveArtDirection(brief: CampaignBrief): {
+export function resolveArtDirection(
+  brief: CampaignBrief,
+  /**
+   * Which product in the campaign this is. Rotates the SET only, so a campaign
+   * reads as several photographs of one world rather than one photograph taken
+   * twice. Omitted, or when the brief names its own set, nothing rotates.
+   */
+  productIndex = 0,
+): {
   look: LookName;
   slots: Required<SlotValues>;
   overridden: Slot[];
@@ -253,6 +337,13 @@ export function resolveArtDirection(brief: CampaignBrief): {
     const override = overrides[slot]?.trim();
     if (override) overridden.push(slot);
     slots[slot] = override || (base[slot] as string);
+  }
+
+  // Only when the brief did not state a set of its own. A brief that named one
+  // means it, for every product.
+  if (!overrides.set) {
+    const variants = SET_VARIATIONS[look] ?? SET_VARIATIONS[DEFAULT_LOOK];
+    slots.set = variants[productIndex % variants.length];
   }
   return { look, slots, overridden };
 }

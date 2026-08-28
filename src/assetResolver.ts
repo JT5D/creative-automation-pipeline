@@ -225,6 +225,14 @@ export async function findApprovedHero(maybePath?: string): Promise<string | und
  * change what the frame is about - all of which are decisions about what to
  * include. It cannot synthesise unseen geometry or change the optics. Both of
  * those are a 3D or multi-reference job, not a prompt.
+ *
+ * That sentence names the production extension precisely, and the extension is
+ * closer than it reads: the model this pipeline already calls, Nano Banana Pro
+ * / gemini-3-pro-image, accepts multiple reference images in one request. A
+ * product photographed from two or three sides would give the orbit set-ups the
+ * geometry they need, which is a brief-and-assets change rather than a
+ * different architecture. Not built here, because the sample products have one
+ * packshot each and an unexercised path is not a feature.
  */
 export type Shot = { id: string; label: string; framing: string };
 
@@ -374,7 +382,13 @@ export function buildHeroPrompt(
     return [product.generationPrompt.trim(), COMPOSITION, TYPOGRAPHY_RULE].join(" ");
   }
 
-  const { slots } = resolveArtDirection(brief);
+  // Which product this is, so the set rotates within the look rather than
+  // every product in the campaign landing on the same ledge.
+  const productIndex = Math.max(
+    0,
+    brief.products.findIndex((p) => p.id === product.id),
+  );
+  const { slots } = resolveArtDirection(brief, productIndex);
 
   // The brief's prose already ends its own sentences; re-punctuating it gave
   // "never hype..", which is the kind of thing a model happily renders around.
@@ -394,6 +408,7 @@ export function buildHeroPrompt(
     slots.optics,
     slots.light,
     `The product stands ${slots.set}.`,
+    slots.moment,
     slots.grade,
     slots.materials,
     slots.integrity,

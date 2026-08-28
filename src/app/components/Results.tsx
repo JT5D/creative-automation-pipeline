@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { CampaignReport, Creative, ProductRecord } from "../types.js";
 
 export type Selection = { creative: Creative; product: ProductRecord };
@@ -12,12 +13,15 @@ export type Selection = { creative: Creative; product: ProductRecord };
  */
 export function Results({
   report,
+  brief,
   filterLocale,
   filterRatio,
   selected,
   onSelect,
 }: {
   report?: CampaignReport;
+  /** The brief text the shoot re-parses, so a shoot uses what is on screen. */
+  brief?: string;
   filterLocale: string;
   filterRatio: string;
   selected: Selection | null;
@@ -68,6 +72,8 @@ export function Results({
                 <ReviewBadge product={product} />
               </div>
 
+              {brief && <ShootPanel productId={product.productId} brief={brief} />}
+
               <div className="shots">
                 {shown.map((c) => {
                   const on =
@@ -99,6 +105,8 @@ export function Results({
                   );
                 })}
               </div>
+
+              <PostCopy product={product} locale={filterLocale} />
             </section>
           );
         })}
@@ -120,6 +128,180 @@ const BASIS: Record<string, number> = { "1x1": 236, "4x5": 190, "9x16": 133, "16
  * anything a new model produced, or anything that did not pass cleanly, needs
  * eyes. Reused approved assets that passed every check do not.
  */
+type ShotCatalogue = {
+  shots: { id: string; label: string; framing: string }[];
+  model: string;
+  unitPriceUsd?: number;
+};
+type ShotResult = { id: string; label: string; path?: string; error?: string };
+
+/**
+ * Cover one product from several camera set-ups, with the bill shown first.
+ *
+ * The campaign path generates ONE hero and crops it to every format, because a
+ * crop is free and a generation is not. That is the cost argument this whole
+ * pipeline rests on, and coverage is what it gives up. This is what buying the
+ * coverage back costs, and the reason it lives behind a disclosure with a
+ * running total rather than behind a button: nine set-ups is nine paid
+ * generations, roughly ten times the campaign that produced the hero. Nobody
+ * should discover that afterwards.
+ *
+ * Defaults to nothing selected. A control that spends money on load is not a
+ * control.
+ */
+function ShootPanel({ productId, brief }: { productId: string; brief: string }) {
+  const [catalogue, setCatalogue] = useState<ShotCatalogue | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [made, setMade] = useState<ShotResult[]>([]);
+
+  useEffect(() => {
+    fetch("/api/shots")
+      .then((r) => r.json())
+      .then(setCatalogue)
+      .catch(() => {});
+  }, []);
+
+  if (!catalogue) return null;
+  const unit = catalogue.unitPriceUsd ?? 0;
+  const total = picked.length * unit;
+
+  const toggle = (id: string) =>
+    setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+
+  const shoot = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/shoot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brief, productId, shots: picked }),
+      });
+      const json = await res.json();
+      if (!res.ok) setError(json.error ?? "Shoot failed");
+      else setMade(json.results ?? []);
+    } catch {
+      setError("Could not reach the local server.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <details className="shoot">
+      <summary>
+        Shoot camera variations
+        <span> {catalogue.shots.length} set-ups available, one paid generation each</span>
+      </summary>
+
+      <div className="shoot-grid">
+        {catalogue.shots.map((s) => (
+          <label key={s.id} className={picked.includes(s.id) ? "on" : ""} title={s.framing}>
+            <input type="checkbox" checked={picked.includes(s.id)} onChange={() => toggle(s.id)} />
+            {s.label}
+          </label>
+        ))}
+      </div>
+
+      <div className="shoot-bill">
+        {/* The number that is real money, before the button that spends it. */}
+        <b>
+          {picked.length} x ${unit.toFixed(3)} = ${total.toFixed(3)}
+        </b>
+        <button type="button" onClick={shoot} disabled={busy || picked.length === 0}>
+          {busy ? "Shooting…" : `Shoot ${picked.length || "nothing"}`}
+        </button>
+      </div>
+
+      {error && <p className="err">{error}</p>}
+
+      {made.length > 0 && (
+        <div className="shoot-out">
+          {made.map((r) =>
+            r.path ? (
+              <figure key={r.id}>
+                <img src={r.path} alt={r.label} />
+                <figcaption>{r.label}</figcaption>
+              </figure>
+            ) : (
+              <p key={r.id} className="err">
+                {r.label}: {r.error}
+              </p>
+            ),
+          )}
+        </div>
+      )}
+    </details>
+  );
+}
+
+/**
+ * The post that goes with the pictures, ready to paste.
+ *
+ * A creative is not a post. Whoever schedules it still needs a caption, a tag
+ * set and alt text for every product in every market, which is the same
+ * per-market, per-product multiplication the images used to cost - so producing
+ * the image and stopping is stopping one step short of the thing being
+ * automated. It was written to disk and shown one creative at a time in the
+ * inspector; it belongs under the images, where the person copying it is
+ * looking.
+ *
+ * Assembled, never generated. Every line is a string the brief already carries
+ * and a human already signed off, and the whole post - caption, tags and alt
+ * text - is screened by the prohibited-claim check before any of it is
+ * produced.
+ */
+function PostCopy({ product, locale }: { product: ProductRecord; locale: string }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const posts = product.socialCopy ?? [];
+  const shown = locale === "all" ? posts : posts.filter((p) => p.locale === locale);
+  if (shown.length === 0) return null;
+
+  const copy = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1600);
+    } catch {
+      // Clipboard is permission-gated and can simply refuse. The text is on
+      // screen and selectable either way, so this is not worth an error state.
+    }
+  };
+
+  return (
+    <div className="post-copy">
+      {shown.map((post) => {
+        const full = `${post.caption}\n\n${post.hashtags.join(" ")}`;
+        return (
+          <div key={post.locale} className="post">
+            <div className="post-head">
+              <code>{post.locale}</code>
+              <button type="button" onClick={() => copy(full, post.locale)}>
+                {copied === post.locale ? "Copied" : "Copy post"}
+              </button>
+              <button type="button" onClick={() => copy(post.altText, `${post.locale}-alt`)}>
+                {copied === `${post.locale}-alt` ? "Copied" : "Copy alt text"}
+              </button>
+            </div>
+            <p className="post-caption">{post.caption}</p>
+            <p className="post-tags">{post.hashtags.join(" ")}</p>
+            {/* A report written before alt text existed has none, and the
+                console reads those back off disk. An empty ALT label is worse
+                than no label. */}
+            {post.altText && (
+              <p className="post-alt">
+                <b>ALT</b> {post.altText}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ReviewBadge({ product }: { product: ProductRecord }) {
   const clean = product.creatives.every((c) => c.validation.status === "pass");
   const label =

@@ -5,6 +5,17 @@ export type SocialCopy = {
   /** The post body, ready to paste. */
   caption: string;
   hashtags: string[];
+  /**
+   * Alt text for the post.
+   *
+   * Not a nicety: every social platform takes one, screen readers depend on it,
+   * and it is the one field of a published post that is routinely left empty
+   * because it is written last. It is derivable honestly here, because both
+   * halves are verified rather than guessed - the product is the one the hero
+   * resolved to, and the message is measured present in the pixels of every
+   * creative by the campaign_message_rasterized check.
+   */
+  altText: string;
 };
 
 /**
@@ -41,7 +52,12 @@ export function socialCopy(brief: CampaignBrief, product: Product, market: Marke
     .filter(Boolean)
     .join("\n\n");
 
-  return { locale: market.locale, caption, hashtags: hashtags(brief.brand, product) };
+  return {
+    locale: market.locale,
+    caption,
+    hashtags: hashtags(brief.brand, product),
+    altText: `${product.name} by ${brief.brand.name}. Campaign message: "${market.message}"`,
+  };
 }
 
 /**
@@ -54,8 +70,14 @@ export function socialCopy(brief: CampaignBrief, product: Product, market: Marke
  * be derived honestly, so it is what gets derived.
  */
 function hashtags(brand: Brand, product: Product): string[] {
-  const tags = [pascal(brand.name), pascal(product.name)].filter((t) => t.length > 1);
-  return [...new Set(tags)].map((t) => `#${t}`);
+  const derived = [pascal(brand.name), pascal(product.name)]
+    .filter((t) => t.length > 1)
+    .map((t) => `#${t}`);
+  // Brief-supplied tags lead, because they are the campaign's own and the
+  // derived pair is only ever a floor. Normalised so a brief may write them
+  // with or without the hash.
+  const stated = brand.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`));
+  return [...new Set([...stated, ...derived])];
 }
 
 /** "Radiance Vitamin C Serum" -> "RadianceVitaminCSerum". */
@@ -71,5 +93,5 @@ function pascal(text: string): string {
 
 /** The pasteable file that ships next to the creatives. */
 export function renderCopyFile(copy: SocialCopy): string {
-  return `${copy.caption}\n\n${copy.hashtags.join(" ")}\n`;
+  return `${copy.caption}\n\n${copy.hashtags.join(" ")}\n\nALT: ${copy.altText}\n`;
 }

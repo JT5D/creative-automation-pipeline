@@ -156,7 +156,25 @@ export async function runCampaign(
   // Cache sits under the output root, so every run's cache is scoped to it and
   // a test can never write into the project's.
   const cacheDir = path.join(outputRoot, ".cache");
-  const campaignDir = path.join(outputRoot, sanitizeId(brief.id));
+  /*
+   * A run that overrides the look gets its own folder.
+   *
+   * Market-level art direction is how business goal 3 - "adapt messaging,
+   * offers and CREATIVE to resonate with local cultures" - is actually reached
+   * here: select the markets, pick a look, run. Two runs of the same brief for
+   * different markets were landing in the same directory and the second
+   * silently overwrote the first, so the capability existed and could not be
+   * used.
+   *
+   * Suffixed only when the look is overridden, so the default path is byte for
+   * byte what it was: one hero, every market, one folder. Adapting creative per
+   * market is a deliberate act that costs another generation, and it should
+   * look like one.
+   */
+  const campaignDir = path.join(
+    outputRoot,
+    options.look ? `${sanitizeId(brief.id)}-${sanitizeId(options.look)}` : sanitizeId(brief.id),
+  );
   const products: ProductRecord[] = [];
   const failures: ProductFailure[] = [];
 

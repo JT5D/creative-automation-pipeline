@@ -223,6 +223,31 @@ executed.
 
 ---
 
+## The prompt is the lever, not the model
+
+Measured 2026-08-29, two findings that cost 13 cents to establish.
+
+**The workhorse tier is indistinguishable at 2K.** `gemini-3.1-flash-image`
+generated the same hero from the same packshot and the same prompt in **18.5s
+for $0.101**, against 24.5s and $0.134 on the frontier tier: 25% cheaper and
+25% faster, at 2048x2048, with product identity, the closed unlabelled
+container and the locked composition all intact. One sample is not a quality
+programme, so it is not the default, but it is a lever that is ready and the
+evidence is in `docs/images/hero-pro-2k.png` and `hero-flash-2k.png`.
+
+**The bigger lever was the prompt.** Google's own prompting guide lists the
+essential elements of an image prompt as subject, composition, **action**,
+location and style
+([Google Cloud, ultimate prompting guide](https://cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-nano-banana),
+verified 2026-08-29). This prompt had every one of them except action, and it
+showed: every hero was a correctly lit object sitting still. Adding a `moment`
+slot, on the CHEAPEST 1K model, produced a hard diagonal light shaft with dust
+in the beam and, for the first time, **autumn foliage on a campaign called
+Autumn Glow**. The objective had been in the prompt all along; nothing was
+looking for a moment to put it in.
+
+That is the ordering worth remembering: the model was never the constraint.
+
 ## Why the cheap model cannot be the shipping model
 
 The client in this exercise is a global consumer goods company. What a brand's

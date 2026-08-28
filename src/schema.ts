@@ -45,6 +45,20 @@ const BrandSchema = z.object({
   /** Legal/MLR terms that must never appear in campaign copy. */
   prohibitedWords: z.array(z.string()).default([]),
   /**
+   * Campaign and brand hashtags the client has actually agreed to.
+   *
+   * The tag set is otherwise derived from two owned nouns, the brand and the
+   * product, because a campaign hashtag is a marketing decision rather than a
+   * string transformation and inventing one is the same class of error as
+   * inventing a claim. That argument rules out INVENTING them. It never ruled
+   * out ACCEPTING them, and the brief had no way to say what they are, so a
+   * campaign with a real hashtag could not use it.
+   *
+   * Stated here by the people accountable for it, exactly like the disclaimer
+   * and the prohibited terms, and screened by the same prohibited-word check.
+   */
+  hashtags: z.array(z.string()).default([]),
+  /**
    * Headline typeface, by family name.
    *
    * Typography is brand identity in exactly the way colour is, so a brand that
@@ -107,7 +121,8 @@ export const CampaignBriefSchema = z
     message: z.string().min(1),
 
     /**
-     * The 4A's brief standard reduces to who / what / why / where / success.
+     * Who / what / why / where / success - the fields a creative brief carries,
+     * and the ones the public AMA creative brief template names.
      * audience=who, message=what, region=where. These cover why and success.
      * All optional, so a minimal brief stays minimal.
      */

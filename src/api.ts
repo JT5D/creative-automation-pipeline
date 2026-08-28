@@ -23,6 +23,18 @@ export type RunState = {
   events: PipelineEvent[];
   report?: CampaignReport;
   error?: string;
+  /**
+   * True when this run was read back off disk rather than produced by this
+   * server process.
+   *
+   * The console used to say "no creatives yet" on load while a finished
+   * campaign sat in outputs/, because runs live in memory and memory does not
+   * survive a restart. The files do. Flagged rather than silently presented as
+   * fresh: a banner reading "production complete" about a run that happened
+   * yesterday, with no way to tell, is exactly the kind of quiet lie this
+   * project keeps finding in its own status.
+   */
+  restored?: boolean;
 };
 
 /**

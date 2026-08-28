@@ -1159,10 +1159,247 @@ body {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  max-width: 320px;
 }
+
+/*
+ * The Firefly hand-off, demoted out of the focal point.
+ *
+ * It used to sit inline in the control row, which turned five lines of
+ * monospace caveat into the densest thing on the pre-run screen and put it
+ * between the look picker and the primary action. The sentence is honest and
+ * it stays -- an unexecuted adapter should say so where a reviewer sees it --
+ * but leading the chrome with the weakest fact is a presentation error, not an
+ * honesty requirement. It now sits under the controls, full width and quiet,
+ * where it reads as a footnote to the provider rather than a competing control.
+ */
+.provider .pill {
+  align-self: flex-start;
+}
+/* Inline "supply an approved hero" on a GENERATE row. Quiet until hovered:
+   it is an escape hatch from spending, not the primary action. */
+.est-plan .supply {
+  margin-left: 10px;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.est-plan .supply:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.est-plan .supply:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* "Loaded from disk" note under the delivery heading. Quiet, but present:
+   the point is that it can never be confused with a run you just watched. */
+.verdict .restored {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Audience and objective under the proposition. Secondary to the message,
+   which is the thing that gets rasterized, but present without a click. */
+.cell-sub {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.cell-sub b {
+  color: var(--ink);
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+/* The resolved art direction, and the exact prompt a paid call would send.
+   Collapsed, because it is four hundred words and it is not what a reviewer
+   reads first - but one disclosure away, because it is what the money buys. */
+.est-art {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.est-art summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+.est-art pre {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  font-size: 11px;
+  line-height: 1.55;
+  max-height: 240px;
+  overflow: auto;
+}
+
+/* Camera set-ups, and the bill for them.
+   Collapsed by default and nothing pre-selected, because this is the one
+   control in the console that can spend an order of magnitude more than the
+   campaign it sits under. */
+.shoot {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.shoot summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+.shoot summary span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.shoot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.shoot-grid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.shoot-grid label.on {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.shoot-bill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.shoot-bill b {
+  /* Gold is money, and this is the only number here that is money. */
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.shoot-bill button {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.shoot-bill button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.shoot-out {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.shoot-out figure {
+  margin: 0;
+  width: 150px;
+}
+.shoot-out img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+.shoot-out figcaption {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+/* The post that ships with the pictures. Sits under the creatives because that
+   is where the person copying it is looking, and reads as a document rather
+   than a control: it is text to take away, not a thing to operate. */
+.post-copy {
+  margin: 14px 0 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.post {
+  flex: 1 1 260px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.post-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.post-head code {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: auto;
+}
+.post-head button {
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.post-head button:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.post-caption {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.post-tags {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--accent);
+}
+.post-alt {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.post-alt b {
+  color: var(--ink);
+  margin-right: 5px;
+}
+
 .handoff {
   margin: 0;
+  /* Take the whole row after the controls, so it never wedges between two
+     buttons at any width.
+     No max-width here, deliberately. Flex breaks lines on the item's
+     hypothetical main size AFTER max-width is applied, so a max-width narrow
+     enough to fit the leftover space cancels the flex-basis and the paragraph
+     slides back up beside the buttons. It did exactly that at 1680, which is
+     why this is a comment and not a tidier rule. */
+  flex: 0 0 100%;
+  order: 99;
   font-size: 10.5px;
   line-height: 1.45;
   color: var(--muted);

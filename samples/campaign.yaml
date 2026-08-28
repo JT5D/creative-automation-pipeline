@@ -4,7 +4,8 @@
 id: lumen-autumn-glow-de
 name: Lumen Botanicals - Autumn Glow (DACH)
 
-# The 4A's brief standard reduces to who / what / why / where / success.
+# Who / what / why / where / success. The same fields the public AMA creative
+# brief template names: audience, objective, message, tone, mandatory elements.
 region: Germany (DACH)                    # WHERE
 audience: Urban professionals 28-45 who buy dermatologist-tested, clean-formula skincare   # WHO
 message: Wake up to visibly brighter skin # WHAT - the single-minded proposition

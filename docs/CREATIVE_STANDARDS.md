@@ -7,15 +7,25 @@ changed - the two cases where that happened are marked **corrected**.
 
 ---
 
-## 1. Brief structure - the 4A's core
+## 1. Brief structure
 
-The American Association of Advertising Agencies has published briefing
-standards since the 1980s, and every revision reduces to the same five
-questions: **who · what · why · where · success**.
+A creative brief has a settled shape, and the fields below are that shape.
+The public [AMA creative brief template](https://www.ama.org/toolkits/creative-brief-template/)
+specifies audience definition, campaign objectives, tone and messaging
+guidance, creative direction, mandatory elements, and distribution including
+asset formats. Every one of those has a field here.
+
+**Corrected 2026-08-29.** This section previously attributed the structure to
+"the 4A's brief standard, published since the 1980s, every revision reducing to
+who / what / why / where / success". Two searches found no public 4A's briefing
+standard - their briefing material is member-only - so that attribution could
+not be substantiated and has been removed. The five-question grouping below is
+this document's own framing, which is useful for reading the schema and is not
+a citation.
 
 Mapped onto `CampaignBriefSchema`:
 
-| 4A's | Field | Required |
+| Question | Field | Required |
 |---|---|---|
 | WHO | `audience` | yes |
 | WHAT | `message` - the single-minded proposition | yes |
@@ -29,7 +39,7 @@ ad carries and which is now rendered into every creative and validated by
 `creative.callToAction`.
 
 The optional fields stay optional so a minimal brief remains minimal, but the
-sample brief in `samples/campaign.yaml` is annotated with the 4A's mapping so
+sample brief in `samples/campaign.yaml` is annotated with that mapping so
 the structure is legible to a marketer, not just an engineer.
 
 ---

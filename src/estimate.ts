@@ -1,5 +1,6 @@
+import { resolveArtDirection } from "./artDirection.js";
 import { buildHeroPrompt, findApprovedHero } from "./assetResolver.js";
-import { costEstimate, timeSavedEstimate } from "./pricing.js";
+import { costEstimate, PREVIEW_MODEL, timeSavedEstimate } from "./pricing.js";
 import {
   baselineMinutes,
   type CampaignBrief,
@@ -32,6 +33,25 @@ export type PlannedProduct = {
 export type CampaignEstimate = {
   campaignId: string;
   campaignName: string;
+  /**
+   * Who the campaign is for and what it is trying to do.
+   *
+   * The console showed the message and nothing else, so two of the four things
+   * the exercise requires a brief to carry - audience and objective - were
+   * visible only by opening the YAML. They are inputs to the prompt, so a
+   * reviewer reading the generated image has a right to see them next to it.
+   */
+  audience: string;
+  objective?: string;
+  /**
+   * The art direction this run resolved to, and which slots the brief replaced.
+   *
+   * `--prompts` has printed this since the cascade shipped; the console had a
+   * look picker but never showed what it produced. Control you cannot see is
+   * not control, and that applies to the surface people actually demo on.
+   */
+  look: string;
+  overriddenSlots: string[];
   preflight: ValidationResult;
   blocked: boolean;
   model: string;
@@ -45,6 +65,13 @@ export type CampaignEstimate = {
 };
 
 export type EstimateOptions = {
+  /**
+   * Price and plan the run the way `--preview` runs it: 1K on the cheapest
+   * model that can serve it. The estimate has to agree with the run or the
+   * guardrail is decorative, so this reads the same PREVIEW_MODEL the pipeline
+   * selects rather than a second opinion about what preview costs.
+   */
+  preview?: boolean;
   model?: string;
   ratios?: RatioKey[];
   locales?: string[];
@@ -92,9 +119,12 @@ export async function estimateCampaign(
     });
   }
 
+  const art = resolveArtDirection(brief);
   const generations = products.filter((p) => p.action === "generate").length;
   const variants = products.length * ratios.length * locales.length;
-  const model = options.model ?? process.env.GEMINI_IMAGE_MODEL ?? "gemini-3-pro-image";
+  const model = options.preview
+    ? PREVIEW_MODEL.id
+    : (options.model ?? process.env.GEMINI_IMAGE_MODEL ?? "gemini-3-pro-image");
 
   // Runtime is dominated by generation; composition is milliseconds per file.
   const projectedMs = generations * (options.secondsPerGeneration ?? 27) * 1000;
@@ -102,6 +132,10 @@ export async function estimateCampaign(
   return {
     campaignId: brief.id,
     campaignName: brief.name,
+    audience: brief.audience,
+    objective: brief.objective,
+    look: art.look,
+    overriddenSlots: art.overridden,
     preflight: pre,
     blocked: pre.status === "fail",
     model,

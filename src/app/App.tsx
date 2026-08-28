@@ -82,6 +82,14 @@ export function App() {
   // to be a deliberate act, not the default state of the control.
   const [looks, setLooks] = useState<LookOption[]>([]);
   const [look, setLook] = useState("");
+  /**
+   * Preview runs the hero at 1K on the cheapest model that can serve it, which
+   * is half the price of shipping and the reason `--preview` exists. It was CLI
+   * only, so the console offered exactly one price. Iterating on art direction
+   * is the expensive habit, not shipping, and the cheap tier is the answer to
+   * that - it is worth a control rather than a paragraph in a doc.
+   */
+  const [preview, setPreview] = useState(false);
   const [provider, setProvider] = useState<ProviderStatus | null>(null);
 
   const [estimate, setEstimate] = useState<CampaignEstimate | null>(null);
@@ -160,6 +168,15 @@ export function App() {
         setModel((m) => m || d.models[0]?.id || "");
       })
       .catch(() => {});
+    // Show the last campaign that is still on disk, so opening the console
+    // after a restart shows creatives instead of an empty state. Only ever
+    // fills an empty slot; a live run always wins.
+    fetch("/api/last-run")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: RunState | null) => {
+        if (d) setRun((current) => current ?? d);
+      })
+      .catch(() => {});
     fetch("/api/looks")
       .then((r) => r.json())
       .then((d: { looks: LookOption[] }) => setLooks(d.looks))
@@ -234,10 +251,11 @@ export function App() {
       // Omitted rather than sent empty, so the server can tell "the operator
       // chose nothing" from "the operator chose daylight".
       ...(look ? { look } : {}),
+      preview,
       ratios: selectedFormats,
       locales: selectedLocales,
     }),
-    [brief, look, model, selectedFormats, selectedLocales],
+    [brief, look, model, preview, selectedFormats, selectedLocales],
   );
 
   /**
@@ -308,6 +326,33 @@ export function App() {
       setBusy(false);
     }
   }, [body]);
+
+  /**
+   * Keep the dry run current without anyone asking for it.
+   *
+   * The estimate is the only place the console says what the products are, which
+   * of them reuses an approved asset, which one is about to cost money, and
+   * where to hand it an asset instead. All of that sat behind a button, so a
+   * reviewer opening the console saw four filter panels and no product - and
+   * someone looking straight at the screen asked whether there was an upload at
+   * all. The answer was yes, two clicks away, which is the same as no.
+   *
+   * Safe to run on its own because a dry run is exactly that: it validates the
+   * brief, resolves what each product would do, and constructs no provider and
+   * spends nothing. The Estimate button stays, because re-checking on demand is
+   * still a thing people want, and because a control that vanishes when it
+   * starts happening automatically is worse than one that agrees with itself.
+   *
+   * Debounced, since the brief is a live textarea and this fires per keystroke
+   * otherwise. Not run while the source editor is open, for the same reason.
+   */
+  useEffect(() => {
+    if (!brief.trim() || selectedBriefs.length > 1) return;
+    const t = setTimeout(() => {
+      void onEstimate();
+    }, 400);
+    return () => clearTimeout(t);
+  }, [brief, selectedBriefs, onEstimate]);
 
   /**
    * Several campaigns, one click.
@@ -484,7 +529,12 @@ export function App() {
               <select value={model} onChange={(e) => setModel(e.target.value)}>
                 {models.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.label} - ${m.usdPer2K.toFixed(3)}/image
+                    {/* Unit price only. What makes it unambiguous is the
+                        estimate panel underneath, which shows the total AND the
+                        arithmetic: "1 x $0.134 per image". A unit price beside
+                        "24 creatives" with no visible multiplicand invites the
+                        wrong sum, $3.22 for a run that costs $0.134. */}
+                    {m.label} - ${m.usdPer2K.toFixed(3)} per image
                   </option>
                 ))}
               </select>
@@ -511,12 +561,31 @@ export function App() {
                 <span className="dot" />
                 {provider.label}
               </div>
-              {/* The hand-off, as a sentence. Not a Firefly button: this repo
-                  has no entitlement to run that adapter, and a control that
-                  quietly does nothing is worse than an absent one. */}
-              {provider.handoff && <p className="handoff">{provider.handoff}</p>}
             </div>
           )}
+          {/* Gold is money in this console, so the tier that spends less is
+              not gold. It reads as a mode, because that is what it is. */}
+          <div
+            className="theme tier"
+            title="Preview generates the hero at 1K on the cheapest model that can serve it. Half the price, and not the deliverable: 9:16 needs 1080x1920 out of a square hero, so a 1K source goes soft."
+          >
+            <button
+              type="button"
+              className={preview ? "on" : ""}
+              aria-pressed={preview}
+              onClick={() => setPreview(true)}
+            >
+              Preview
+            </button>
+            <button
+              type="button"
+              className={preview ? "" : "on"}
+              aria-pressed={!preview}
+              onClick={() => setPreview(false)}
+            >
+              Ship
+            </button>
+          </div>
           <ThemeToggle />
           <button
             type="button"
@@ -538,6 +607,12 @@ export function App() {
                 ? `Run ${selectedBriefs.length} campaigns`
                 : "Run campaign"}
           </button>
+          {/* The hand-off, as a sentence. Not a Firefly button: this repo has no
+              entitlement to run that adapter, and a control that quietly does
+              nothing is worse than an absent one. Last child of the control row
+              on purpose, so it takes its own line underneath rather than
+              wedging five lines of caveat between two buttons. */}
+          {provider?.handoff && <p className="handoff">{provider.handoff}</p>}
         </div>
       </header>
 
@@ -548,6 +623,7 @@ export function App() {
         selectedBriefs={selectedBriefs}
         onToggleBrief={(file) => toggle(selectedBriefs, setSelectedBriefs, file)}
         batchEstimate={batchEstimate}
+        onApproveAsset={onApproveAsset}
         brief={brief}
         onBriefChange={setBrief}
         message={message}
@@ -562,7 +638,7 @@ export function App() {
 
       {(error || run?.error) && <p className="error">{error ?? run?.error}</p>}
 
-      {run?.report && !batch && <DeliveryBanner report={run.report} />}
+      {run?.report && !batch && <DeliveryBanner report={run.report} restored={run.restored} />}
 
       <main className="stage">
         <div className="work">
@@ -606,6 +682,7 @@ export function App() {
           {!batch && (
             <Results
               report={run?.report}
+              brief={brief}
               filterLocale={filterLocale}
               filterRatio={filterRatio}
               selected={selected}

@@ -43,8 +43,10 @@ it.
 
 Most of what came after was not features. It was verification, and it kept
 finding the same defect: **a check whose label was broader than its
-measurement.** Eight of them, each invisible to a passing test suite and obvious
-the moment I opened the file it was meant to be guarding. The last one is the
+measurement.** It kept turning up, each one invisible to a passing test suite
+and obvious the moment I opened the file it was meant to be guarding. The count
+used to be written here as a number, which drifted the moment the next one was
+found, so it is a pattern now rather than a tally. The last one is the
 one I would lead with in a review: twenty-four committed visual baselines, every
 test named *"matches its committed appearance"*, every one of them greyscaling
 the image before measuring it. The worst rendering bug this project had was a
@@ -232,6 +234,16 @@ stays at 1.
 | **9:16** 1080×1920 | Story / Reel | Same again, copy inside Meta's published safe zone |
 | **16:9** 1920×1080 | Landscape | Hero right, brand copy panel left |
 
+The exercise names 1:1, 9:16 and 16:9, and those three are what the console
+selects by default. **4:5 is here because the platform asks for it**, not to pad
+the list: Meta's own ads guide gives the image placement as `Ratio: 4:5`,
+`Resolution: 1440 x 1800`, minimum 600x750, with a 3% aspect-ratio tolerance
+([Meta Ads Guide, image](https://www.facebook.com/business/ads-guide/update/image),
+verified 2026-08-29). Square is no longer the recommended feed image. 1080x1350
+is a true 4:5 and clears the stated minimum comfortably; it is not Meta's
+recommended 1440x1800, which is the one place this repo ships under a published
+spec, and the fix is a constant rather than a redesign.
+
 Copy sits in the **top band on every full-bleed format**, forced by geometry
 rather than chosen. One hero serves all of them, so either the copy zone agrees
 across formats or the product shrinks until it misses the copy everywhere - and
@@ -287,6 +299,11 @@ campaigns monthly"*, and its first pain point is producing those variants at
 that volume. A console that runs one campaign at a time does not show the shape
 of that problem, so the brief selector is a **multi-select** and the run button
 counts what it will run.
+
+The estimate counts with it. Six briefs together is 148 creatives from **9**
+generations, and the console says so, and says it costs $1.206, before anything
+is spent. That ratio is the whole argument: the expensive step is per missing
+hero, and everything after it is free.
 
 ![Batch run](docs/images/ui-batch.png)
 
