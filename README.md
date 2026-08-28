@@ -60,6 +60,15 @@ the legal rules of each market.
 Most of that work is mechanical. This pipeline automates the mechanical part
 and spends model budget only where a human genuinely needs something new.
 
+**Who operates it.** The console is the production operator's view — whoever is
+accountable for getting a campaign out, and is comfortable with a brief file and
+a cost line. It is deliberately *not* a creative director's tool. A director's
+job starts where this ends: at the `REVIEW NEW HERO` badge on anything a model
+touched, and at the six exported files. In production that review-and-activate
+surface is GenStudio or Firefly Creative Production, and this repo is the spine
+underneath it — which is why the seams that matter here are the asset resolver
+and the provider, not the UI.
+
 **The five business goals in the brief, and where each one is answered**
 
 | Business goal | Where it is answered | Honest status |
