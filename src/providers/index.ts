@@ -1,6 +1,7 @@
 import { FireflyHeroGenerator } from "./firefly.js";
 import { GeminiHeroGenerator } from "./gemini.js";
-import { GenerationUnavailableError, type HeroGenerator } from "./types.js";
+import { PlaceholderHeroGenerator } from "./placeholder.js";
+import { type HeroGenerator } from "./types.js";
 
 export type ProviderStatus = {
   provider: string;
@@ -31,10 +32,10 @@ export function selectGenerator(env: NodeJS.ProcessEnv = process.env): HeroGener
     return new GeminiHeroGenerator(GEMINI_API_KEY);
   }
 
-  throw new GenerationUnavailableError(
-    "No image provider configured. Set GEMINI_API_KEY (free: https://aistudio.google.com/apikey) " +
-      "or FIREFLY_SERVICES_CLIENT_ID + FIREFLY_SERVICES_CLIENT_SECRET in .env",
-  );
+  // No credentials: render offline rather than fail. The repo stays runnable
+  // on a fresh clone, and the placeholder is labelled as such everywhere it
+  // appears -- it is never counted as a generation.
+  return new PlaceholderHeroGenerator();
 }
 
 /** Non-throwing view of provider state, safe to send to the browser. */
@@ -47,14 +48,16 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
       label:
         g.provider === "adobe-firefly"
           ? `Adobe Firefly — ${g.model}`
-          : `Google Gemini — ${g.model}`,
-      configured: true,
+          : g.provider === "google-gemini"
+            ? `Google Gemini — ${g.model}`
+            : "Offline placeholder — no model will be called",
+      configured: g.provider !== "offline-placeholder",
     };
-  } catch {
+  } catch (error) {
     return {
       provider: "none",
       model: "—",
-      label: "Generation unavailable — no API key configured",
+      label: error instanceof Error ? error.message : "Generation unavailable",
       configured: false,
     };
   }

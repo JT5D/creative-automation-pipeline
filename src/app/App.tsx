@@ -22,6 +22,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 export function App() {
   const [brief, setBrief] = useState("");
+  const [locale, setLocale] = useState<string>("all");
   const [provider, setProvider] = useState<ProviderStatus | null>(null);
   const [run, setRun] = useState<RunState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +102,7 @@ export function App() {
         <section className="panel wide">
           <h2>3 · Creative results</h2>
           <p className="hint">Actual exported files, served from disk.</p>
-          <Results report={run?.report} />
+          <Results report={run?.report} locale={locale} onLocale={setLocale} />
         </section>
       </main>
 
@@ -150,11 +151,33 @@ function Timeline({
   );
 }
 
-function Results({ report }: { report?: CampaignReport }) {
+function Results({
+  report,
+  locale,
+  onLocale,
+}: {
+  report?: CampaignReport;
+  locale: string;
+  onLocale: (l: string) => void;
+}) {
   if (!report) return <p className="empty">Exported creatives appear here.</p>;
+
+  const locales = report.markets.map((m) => m.locale);
 
   return (
     <div className="results">
+      {locales.length > 1 && (
+        <div className="locales">
+          <button className={locale === "all" ? "on" : ""} onClick={() => onLocale("all")}>
+            All markets
+          </button>
+          {locales.map((l) => (
+            <button key={l} className={locale === l ? "on" : ""} onClick={() => onLocale(l)}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
       {report.products.map((product) => (
         <div key={product.productId} className="product">
           <div className="product-head">
@@ -175,11 +198,14 @@ function Results({ report }: { report?: CampaignReport }) {
           </p>
 
           <div className="grid">
-            {product.creatives.map((c) => (
-              <figure key={c.ratio} className={`card ${c.ratio}`}>
-                <img src={`/outputs/${c.outputPath}`} alt={`${product.productName} ${c.ratio}`} />
+            {product.creatives
+              .filter((c) => locale === "all" || c.locale === locale)
+              .map((c) => (
+              <figure key={`${c.ratio}-${c.locale}`} className={`card ${c.ratio}`}>
+                <img src={`/outputs/${c.outputPath}`} alt={`${product.productName} ${c.ratio} ${c.locale}`} />
                 <figcaption>
                   <strong>{c.ratio.replace("x", ":")}</strong>
+                  <span className="loc">{c.locale}</span>
                   <span>{c.width}×{c.height}</span>
                   <span className={`v ${c.validation.status}`}>{c.validation.status}</span>
                 </figcaption>
@@ -202,7 +228,13 @@ function Results({ report }: { report?: CampaignReport }) {
 
 function SourceBadge({ source }: { source: string }) {
   const label =
-    source === "reused" ? "REUSED" : source === "generated" ? "GENERATED" : "GENERATED · CACHED";
+    source === "reused"
+      ? "REUSED"
+      : source === "generated"
+        ? "GENERATED"
+        : source === "placeholder"
+          ? "PLACEHOLDER · NO MODEL CALLED"
+          : "GENERATED · CACHED";
   return <span className={`badge ${source}`}>{label}</span>;
 }
 
@@ -210,8 +242,10 @@ function Summary({ report }: { report: CampaignReport }) {
   const m = report.metrics;
   const stats: [string, string | number][] = [
     ["Products processed", m.productsProcessed],
+    ["Markets", m.marketsProcessed],
     ["Approved heroes reused", m.approvedAssetsReused],
     ["Heroes generated", m.heroesGenerated + m.heroesFromCache],
+    ...(m.heroesPlaceholder ? ([["Offline placeholders", m.heroesPlaceholder]] as [string, number][]) : []),
     ["Channel variants created", m.variantsCreated],
     ["Validation passed", `${m.validationPassed} / ${m.variantsCreated}`],
     ["Paid generation calls", m.generationRequests],
@@ -231,7 +265,9 @@ function Summary({ report }: { report: CampaignReport }) {
       <p className="path">
         outputs/{report.campaignId}/ · mode <code>{report.mode}</code> ·{" "}
         {report.provider.provider} · {report.provider.model}
-        {report.locale && <> · rendered locale <code>{report.locale}</code></>}
+        {report.markets.length > 1 && (
+          <> · {report.markets.length} markets: <code>{report.markets.map((x) => x.locale).join(", ")}</code></>
+        )}
       </p>
     </footer>
   );

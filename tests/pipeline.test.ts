@@ -5,12 +5,31 @@ import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js";
-import { TestDoubleHeroGenerator } from "../src/providers/local.js";
+import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
+import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
 import { parseBrief, runCampaign } from "../src/pipeline.js";
 import { sanitizeId } from "../src/report.js";
 import { RATIOS } from "../src/schema.js";
 import { findProhibited, preflight } from "../src/validation.js";
 import { fitText, wrapText } from "../src/textLayout.js";
+
+/**
+ * Reports as a real provider so the pipeline takes the "generated" path.
+ * The offline placeholder deliberately does not, which is what the separate
+ * placeholder test below asserts.
+ */
+class FakeApiGenerator implements HeroGenerator {
+  readonly provider = "test-api";
+  readonly model = "fake-model-1";
+  calls = 0;
+  private readonly renderer = new TestDoubleHeroGenerator();
+
+  async generateHero(input: HeroRequest) {
+    this.calls++;
+    const result = await this.renderer.generateHero(input);
+    return { ...result, provider: this.provider, model: this.model };
+  }
+}
 
 let workdir: string;
 let assets: string;
@@ -195,19 +214,90 @@ describe("ratio templates", () => {
   });
 });
 
+describe("localization", () => {
+  const multiMarket = () =>
+    briefYaml() +
+    `
+markets:
+  - locale: en-GB
+    message: Wake up to visibly brighter skin
+    callToAction: Discover now
+  - locale: de-DE
+    message: Wach auf mit sichtbar strahlenderer Haut
+    callToAction: Jetzt entdecken
+`;
+
+  it("multiplies creatives per market without any extra generation", async () => {
+    const single = new FakeApiGenerator();
+    const singleReport = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: single,
+    });
+
+    const multi = new FakeApiGenerator();
+    const multiReport = await runCampaign(parseBrief(multiMarket()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: multi,
+    });
+
+    expect(singleReport.metrics.marketsProcessed).toBe(1);
+    expect(multiReport.metrics.marketsProcessed).toBe(2);
+    expect(multiReport.metrics.variantsCreated).toBe(singleReport.metrics.variantsCreated * 2);
+
+    // The whole point: twice the output, identical spend.
+    expect(multi.calls).toBe(single.calls);
+    expect(multiReport.metrics.generationRequests).toBe(1);
+  });
+
+  it("writes one file per locale and rasterizes that market's own copy", async () => {
+    const report = await runCampaign(parseBrief(multiMarket()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+    });
+
+    const locales = new Set(report.products[0].creatives.map((c) => c.locale));
+    expect(locales).toEqual(new Set(["en-GB", "de-DE"]));
+
+    for (const creative of report.products[0].creatives) {
+      const abs = path.join(outputs, creative.outputPath);
+      expect(creative.outputPath).toContain(creative.locale.toLowerCase());
+      expect((await stat(abs)).size).toBeGreaterThan(1000);
+      expect(creative.validation.checks.find((c) => c.id === "message.rendered")?.status).toBe("pass");
+    }
+  });
+
+  it("screens prohibited claims in every market, not just the default", async () => {
+    const badFrench =
+      briefYaml() +
+      `
+markets:
+  - locale: en-GB
+    message: Wake up to visibly brighter skin
+  - locale: de-DE
+    message: Das Wunder das alles cure
+`;
+    const result = await preflight(parseBrief(badFrench));
+    expect(result.status).toBe("fail");
+    expect(result.checks.find((c) => c.id === "legal.prohibitedWords")?.status).toBe("fail");
+  });
+});
+
 describe("end-to-end campaign run", () => {
   it("reuses one hero, generates the other, and writes every channel variant", async () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
       mode: "final", // bypass cache so the generator is genuinely exercised
-      generator: new TestDoubleHeroGenerator(),
+      generator: new FakeApiGenerator(),
     });
 
     expect(report.metrics.productsProcessed).toBe(2);
     expect(report.metrics.approvedAssetsReused).toBe(1);
     expect(report.metrics.heroesGenerated).toBe(1);
-    // Derived, not hardcoded: adding a channel format must never change cost.
-    const expectedVariants = 2 * Object.keys(RATIOS).length;
+    // Derived, not hardcoded: adding a format or a market must never add cost.
+    const expectedVariants = 2 * Object.keys(RATIOS).length * report.metrics.marketsProcessed;
     expect(report.metrics.variantsCreated).toBe(expectedVariants);
     expect(report.metrics.generationRequests).toBe(1);
 
@@ -216,7 +306,7 @@ describe("end-to-end campaign run", () => {
     expect(a.hero.source).toBe("reused");
     expect(a.hero.sourceAssetPath).toContain("approved-hero.png");
     expect(b.hero.source).toBe("generated");
-    expect(b.hero.generation?.provider).toBe("test-double");
+    expect(b.hero.generation?.provider).toBe("test-api");
 
     // Every declared output is a real file at exactly the declared size.
     for (const product of report.products) {
@@ -236,7 +326,7 @@ describe("end-to-end campaign run", () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
       mode: "final",
-      generator: new TestDoubleHeroGenerator(),
+      generator: new FakeApiGenerator(),
     });
 
     for (const product of report.products) {
@@ -251,7 +341,7 @@ describe("end-to-end campaign run", () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
       mode: "final",
-      generator: new TestDoubleHeroGenerator(),
+      generator: new FakeApiGenerator(),
     });
 
     const onDisk = JSON.parse(
@@ -271,7 +361,7 @@ describe("end-to-end campaign run", () => {
     await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
       mode: "final",
-      generator: new TestDoubleHeroGenerator(),
+      generator: new FakeApiGenerator(),
       onEvent: (e) => events.push(e.event),
     });
 
@@ -284,14 +374,23 @@ describe("end-to-end campaign run", () => {
     );
   });
 
+  it("never reports the offline placeholder as generative output", async () => {
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new TestDoubleHeroGenerator(),
+    });
+
+    const b = report.products.find((p) => p.productId === "product-b")!;
+    expect(b.hero.source).toBe("placeholder");
+    expect(report.metrics.heroesPlaceholder).toBe(1);
+    expect(report.metrics.heroesGenerated).toBe(0);
+    // A placeholder costs nothing, so it must never inflate the spend count.
+    expect(report.metrics.generationRequests).toBe(0);
+  });
+
   it("refuses to spend on generation when preflight fails", async () => {
-    let calls = 0;
-    const counting = new (class extends TestDoubleHeroGenerator {
-      async generateHero(input: Parameters<TestDoubleHeroGenerator["generateHero"]>[0]) {
-        calls++;
-        return super.generateHero(input);
-      }
-    })();
+    const counting = new FakeApiGenerator();
 
     const bad = parseBrief(
       briefYaml().replace(
@@ -303,6 +402,6 @@ describe("end-to-end campaign run", () => {
     await expect(
       runCampaign(bad, { outputRoot: outputs, mode: "final", generator: counting }),
     ).rejects.toThrow(/preflight failed/i);
-    expect(calls).toBe(0);
+    expect(counting.calls).toBe(0);
   });
 });

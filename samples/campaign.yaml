@@ -19,11 +19,31 @@ toneOfVoice: Calm, clinical, warm. Understated luxury — never hype.
 # number, clearly labelled, never an invented measurement.
 manualMinutesPerCreative: 25
 
-# Optional pre-translated copy, signed off by the market team.
-# When present this is what gets rasterized. Translation is deliberately data,
-# not a runtime model call — localized legal copy needs human approval.
-locale: de-DE
-localizedMessage: Wach auf mit sichtbar strahlenderer Haut
+# ── Markets ──────────────────────────────────────────────────────────────────
+# Every market multiplies the output and costs NOTHING extra: the hero is
+# generated once, then localized copy is composited per market.
+#
+# Copy is supplied per market by the people accountable for it. Translation is
+# deliberately data, not a runtime model call — localized claims carry legal
+# weight in each jurisdiction and need human sign-off.
+markets:
+  - locale: en-GB
+    name: United Kingdom
+    message: Wake up to visibly brighter skin
+    callToAction: Discover now
+    disclaimer: Individual results may vary. Dermatologist tested.
+
+  - locale: de-DE
+    name: Germany
+    message: Wach auf mit sichtbar strahlenderer Haut
+    callToAction: Jetzt entdecken
+    disclaimer: Ergebnisse können variieren. Dermatologisch getestet.
+
+  - locale: fr-FR
+    name: France
+    message: Réveillez-vous avec une peau visiblement plus éclatante
+    callToAction: Découvrir
+    disclaimer: Les résultats peuvent varier. Testé sous contrôle dermatologique.
 
 brand:
   name: Lumen Botanicals

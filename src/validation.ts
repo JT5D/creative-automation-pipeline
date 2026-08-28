@@ -2,6 +2,7 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 import type {
   CampaignBrief,
+  Market,
   Product,
   RatioKey,
   ValidationCheck,
@@ -59,7 +60,13 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
   }
 
   // Legal / MLR scan across every piece of copy that can reach a final image.
-  const copy = [brief.message, brief.localizedMessage, brief.brand.disclaimer]
+  // Screen every string that can reach a rendered creative, in every market.
+  const copy = [
+    brief.message,
+    brief.callToAction,
+    brief.brand.disclaimer,
+    ...(brief.markets ?? []).flatMap((m) => [m.message, m.callToAction, m.disclaimer]),
+  ]
     .filter(Boolean)
     .join(" ");
   const hits = findProhibited(copy, brief.brand.prohibitedWords);
@@ -132,8 +139,9 @@ export function validateCreative(args: {
   product: Product;
   rendered: ComposedCreative;
   ratio: RatioKey;
+  market: Market;
 }): ValidationResult {
-  const { brief, rendered, ratio } = args;
+  const { brief, rendered, ratio, market } = args;
   const expected = RATIOS[ratio];
   const checks: ValidationCheck[] = [];
 
@@ -201,17 +209,18 @@ export function validateCreative(args: {
     });
   }
 
-  if (brief.callToAction) {
+  const expectedCta = market.callToAction ?? brief.callToAction;
+  if (expectedCta) {
     checks.push({
       id: "creative.callToAction",
       status: rendered.ctaRendered ? "pass" : "fail",
       message: rendered.ctaRendered
-        ? `Call to action rendered ("${brief.callToAction}")`
+        ? `Call to action rendered ("${expectedCta}")`
         : "Call to action in brief but absent from the creative",
     });
   }
 
-  if (brief.brand.disclaimer) {
+  if (market.disclaimer ?? brief.brand.disclaimer) {
     checks.push({
       id: "legal.disclaimer",
       status: rendered.disclaimerRendered ? "pass" : "fail",

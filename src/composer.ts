@@ -1,9 +1,11 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
+import { FONT_FAMILY } from "./fonts.js";
 import type {
   Brand,
   CampaignBrief,
   CanonicalHeroAsset,
+  Market,
   Product,
   RatioKey,
 } from "./schema.js";
@@ -15,6 +17,7 @@ export type ComposeInput = {
   product: Product;
   hero: CanonicalHeroAsset;
   ratio: RatioKey;
+  market: Market;
 };
 
 export type ComposedCreative = {
@@ -177,14 +180,15 @@ export function templateFor(ratio: RatioKey): Template {
 }
 
 export async function composeVariant(input: ComposeInput): Promise<ComposedCreative> {
-  const { brief, hero, ratio } = input;
+  const { brief, hero, ratio, market } = input;
   const brand = brief.brand;
   const { width, height } = RATIOS[ratio];
   const tpl = templateFor(ratio);
 
-  // Localized copy wins when the marketer supplied it. Translation is data in
-  // the brief, never a runtime model call -- legal copy needs human sign-off.
-  const message = brief.localizedMessage?.trim() || brief.message;
+  // Copy comes from the market, which the market team signed off on.
+  const message = market.message;
+  const callToAction = market.callToAction ?? brief.callToAction;
+  const disclaimer = market.disclaimer ?? brand.disclaimer;
 
   // 1. Base canvas in the brand colour, so any uncovered area is on-brand.
   const canvas = sharp({
@@ -224,7 +228,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     // A short top scrim so the corner lockup stays legible over a bright hero.
     const topSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="300">
       <defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="0.42"/>
+        <stop offset="0%" stop-color="#000000" stop-opacity="0.55"/>
         <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
       </linearGradient></defs>
       <rect width="${width}" height="300" fill="url(#t)"/>
@@ -273,7 +277,8 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     fit,
     textColor,
     accent: brand.secondaryColor,
-    callToAction: brief.callToAction,
+    callToAction,
+    disclaimer,
   });
 
   const textPng = await sharp(Buffer.from(textLayer)).png().toBuffer();
@@ -296,12 +301,12 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     copyFits: fit.fits,
     textInkRatio,
     logoRendered: Boolean(logoBuffer),
-    disclaimerRendered: Boolean(brand.disclaimer),
-    ctaRendered: Boolean(brief.callToAction?.trim()),
+    disclaimerRendered: Boolean(disclaimer),
+    ctaRendered: Boolean(callToAction?.trim()),
     enforceSafeZone: tpl.enforceSafeZone,
     textBounds: {
       top: logoBuffer ? tpl.logo.top : tpl.copy.top - 34,
-      bottom: textBlockBottom(tpl, fit, Boolean(brand.disclaimer), brief.callToAction),
+      bottom: textBlockBottom(tpl, fit, Boolean(disclaimer), callToAction),
       left: tpl.copy.left,
       right: tpl.copy.left + tpl.copy.width,
     },
@@ -338,12 +343,13 @@ function buildTextLayer(args: {
   textColor: string;
   accent: string;
   callToAction?: string;
+  disclaimer?: string;
 }): string {
-  const { brand, width, height, tpl, fit, textColor, accent, callToAction } = args;
+  const { brand, width, height, tpl, fit, textColor, accent, callToAction, disclaimer } = args;
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
     tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;
-  const font = "'Helvetica Neue', Helvetica, Arial, 'DejaVu Sans', sans-serif";
+  const font = `${FONT_FAMILY}, 'Helvetica Neue', Helvetica, Arial, sans-serif`;
 
   const lines = fit.lines
     .map(
@@ -379,16 +385,16 @@ function buildTextLayer(args: {
       `letter-spacing="0.6" fill="#141815">${escapeXml(cta)}</text>`;
   }
 
-  const disclaimer = brand.disclaimer
+  const disclaimerSvg = disclaimer
     ? `<text x="${tpl.copy.left}" y="${tpl.disclaimerY}" font-family="${font}" ` +
-      `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(brand.disclaimer)}</text>`
+      `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(disclaimer)}</text>`
     : "";
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
     ${rule}
     ${lines}
     ${ctaSvg}
-    ${disclaimer}
+    ${disclaimerSvg}
   </svg>`;
 }
 

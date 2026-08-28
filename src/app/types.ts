@@ -6,7 +6,8 @@ export type ValidationCheck = {
 export type ValidationResult = { status: "pass" | "warning" | "fail"; checks: ValidationCheck[] };
 
 export type Creative = {
-  ratio: "1x1" | "9x16" | "16x9";
+  ratio: "1x1" | "4x5" | "9x16" | "16x9";
+  locale: string;
   width: number;
   height: number;
   outputPath: string;
@@ -17,7 +18,7 @@ export type Creative = {
 
 export type Hero = {
   productId: string;
-  source: "reused" | "generated" | "generated_cached";
+  source: "reused" | "generated" | "generated_cached" | "placeholder";
   localPath: string;
   width: number;
   height: number;
@@ -45,17 +46,18 @@ export type CampaignReport = {
   region: string;
   audience: string;
   message: string;
-  renderedMessage: string;
-  locale?: string;
+  markets: { locale: string; message: string }[];
   mode: "dev" | "final";
   provider: { provider: string; model: string };
   durationMs: number;
   preflight: ValidationResult;
   metrics: {
     productsProcessed: number;
+    marketsProcessed: number;
     approvedAssetsReused: number;
     heroesGenerated: number;
     heroesFromCache: number;
+    heroesPlaceholder: number;
     variantsCreated: number;
     validationPassed: number;
     validationWarnings: number;

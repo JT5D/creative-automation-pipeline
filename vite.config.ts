@@ -11,5 +11,10 @@ export default defineConfig({
     proxy: { "/api": API, "/outputs": API },
   },
   build: { outDir: "dist" },
-  test: { environment: "node", include: ["tests/**/*.test.ts"] },
+  test: {
+    environment: "node",
+    include: ["tests/**/*.test.ts"],
+    // Several tests render full campaigns (dozens of 2K composites).
+    testTimeout: 60_000,
+  },
 });

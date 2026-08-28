@@ -12,7 +12,13 @@ import {
   type CreativeRecord,
   type ProductRecord,
 } from "./report.js";
-import { CampaignBriefSchema, RATIOS, type CampaignBrief, type RatioKey } from "./schema.js";
+import {
+  CampaignBriefSchema,
+  RATIOS,
+  resolveMarkets,
+  type CampaignBrief,
+  type RatioKey,
+} from "./schema.js";
 import { preflight, preflightOrThrow, validateCreative } from "./validation.js";
 
 export type PipelineEvent = {
@@ -62,7 +68,12 @@ export async function runCampaign(
   // 1. Contract. An invalid brief never reaches the rest of the system.
   const brief =
     typeof rawBrief === "string" ? parseBrief(rawBrief) : CampaignBriefSchema.parse(rawBrief);
-  emit("brief_validated", { campaignId: brief.id, products: brief.products.length });
+  const markets = resolveMarkets(brief);
+  emit("brief_validated", {
+    campaignId: brief.id,
+    products: brief.products.length,
+    markets: markets.length,
+  });
 
   // 2. Everything checkable for free, checked before anything is paid for.
   const pre = await preflight(brief);
@@ -99,34 +110,40 @@ export async function runCampaign(
 
     const creatives: CreativeRecord[] = [];
 
+    // One hero, then every ratio x every market. Adding a format or a market
+    // multiplies the output and costs nothing -- the expensive step is done.
     for (const ratio of Object.keys(RATIOS) as RatioKey[]) {
-      const variantStart = Date.now();
-      emit("variant_composing", { productId: product.id, ratio });
+      for (const market of markets) {
+        const variantStart = Date.now();
+        emit("variant_composing", { productId: product.id, ratio, locale: market.locale });
 
-      const rendered = await composeVariant({ brief, product, hero, ratio });
-      const validation = validateCreative({ brief, product, rendered, ratio });
+        const rendered = await composeVariant({ brief, product, hero, ratio, market });
+        const validation = validateCreative({ brief, product, rendered, ratio, market });
 
-      const dir = path.join(productDir, ratio);
-      await mkdir(dir, { recursive: true });
-      const outputPath = path.join(dir, "final.png");
-      await writeFile(outputPath, rendered.buffer);
+        const dir = path.join(productDir, ratio);
+        await mkdir(dir, { recursive: true });
+        const outputPath = path.join(dir, `${sanitizeId(market.locale)}.png`);
+        await writeFile(outputPath, rendered.buffer);
 
-      emit("variant_saved", {
-        productId: product.id,
-        ratio,
-        status: validation.status,
-        outputPath: path.relative(outputRoot, outputPath),
-      });
+        emit("variant_saved", {
+          productId: product.id,
+          ratio,
+          locale: market.locale,
+          status: validation.status,
+          outputPath: path.relative(outputRoot, outputPath),
+        });
 
-      creatives.push({
-        ratio,
-        width: rendered.width,
-        height: rendered.height,
-        outputPath: path.relative(outputRoot, outputPath),
-        bytes: rendered.buffer.length,
-        validation,
-        durationMs: Date.now() - variantStart,
-      });
+        creatives.push({
+          ratio,
+          locale: market.locale,
+          width: rendered.width,
+          height: rendered.height,
+          outputPath: path.relative(outputRoot, outputPath),
+          bytes: rendered.buffer.length,
+          validation,
+          durationMs: Date.now() - variantStart,
+        });
+      }
     }
 
     products.push({

@@ -1,39 +1,22 @@
+import { measureText } from "./fonts.js";
+
 /**
  * Deterministic text layout.
  *
- * Sharp rasterizes SVG, and SVG gives us no text-measurement API, so we
- * measure with a per-character width table instead of a flat multiplier.
- * Approximate, but consistent -- and consistency is what matters: the same
- * copy always wraps identically, so output is reproducible run to run.
- *
- * Widths are fractions of font-size, sampled from a humanist sans (Helvetica
- * /Arial/DejaVu all sit within a few percent of these).
+ * SVG gives no text-measurement API, so wrapping has to be computed before the
+ * markup is written. Measurements come from the bundled font's own advance
+ * widths (see fonts.ts) -- this used to be a per-character width table tuned by
+ * eye, which was wrong often enough to clip a CTA label.
  */
-const NARROW = new Set([..."ijltfIr!|.,;:'`()[]{}/\\ "]);
-const WIDE = new Set([..."mwMW@%"]);
-const UPPER_EXTRA = 0.06;
+export type FitResult = {
+  lines: string[];
+  fontSize: number;
+  /** True when the copy fits inside maxLines at or above minFontSize. */
+  fits: boolean;
+};
 
-export function charWidth(ch: string, fontSize: number): number {
-  let factor = 0.52;
-  if (NARROW.has(ch)) factor = 0.28;
-  else if (WIDE.has(ch)) factor = 0.86;
-  else if (ch >= "0" && ch <= "9") factor = 0.55;
-  if (ch !== ch.toLowerCase() && ch !== ch.toUpperCase()) factor += 0;
-  if (ch === ch.toUpperCase() && ch !== ch.toLowerCase()) factor += UPPER_EXTRA;
-  return factor * fontSize;
-}
-
-/**
- * Bold faces set wider than regular at the same size. Ignoring that made the
- * CTA pill size to the regular-weight width and clip its own label, so weight
- * is now part of the measurement rather than an afterthought.
- */
-const BOLD_FACTOR = 1.10;
-
-export function measure(text: string, fontSize: number, weight = 400): number {
-  let w = 0;
-  for (const ch of text) w += charWidth(ch, fontSize);
-  return weight >= 600 ? w * BOLD_FACTOR : w;
+export function measure(text: string, fontSize: number, weight: 400 | 700 = 700): number {
+  return measureText(text, fontSize, weight);
 }
 
 /** Greedy wrap. A single word longer than the line is left intact, not broken. */
@@ -41,7 +24,7 @@ export function wrapText(
   text: string,
   maxWidth: number,
   fontSize: number,
-  weight = 400,
+  weight: 400 | 700 = 700,
 ): string[] {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
@@ -62,13 +45,6 @@ export function wrapText(
   return lines;
 }
 
-export type FitResult = {
-  lines: string[];
-  fontSize: number;
-  /** True when the copy fits inside maxLines at or above minFontSize. */
-  fits: boolean;
-};
-
 /**
  * Shrinks the headline until it fits the copy zone -- but stops at
  * minFontSize and reports failure rather than rendering something illegible.
@@ -80,7 +56,7 @@ export function fitText(
   maxLines: number,
   maxFontSize: number,
   minFontSize: number,
-  weight = 700,
+  weight: 400 | 700 = 700,
 ): FitResult {
   for (let size = maxFontSize; size >= minFontSize; size -= 2) {
     const lines = wrapText(text, maxWidth, size, weight);
@@ -93,8 +69,7 @@ export function fitText(
 /** WCAG relative luminance, used to pick readable text over any brand colour. */
 export function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "");
-  const full =
-    clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
   const [r, g, b] = [0, 2, 4].map((i) => {
     const v = parseInt(full.slice(i, i + 2), 16) / 255;
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
@@ -109,7 +84,7 @@ export function contrastRatio(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Picks whichever of the brand's own light/dark tones reads on a background. */
+/** Picks whichever tone reads on a given background. */
 export function readableTextColor(background: string): string {
   return relativeLuminance(background) > 0.45 ? "#101010" : "#FFFFFF";
 }

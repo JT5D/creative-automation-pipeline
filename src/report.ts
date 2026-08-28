@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { USD_PER_IMAGE_2K } from "./providers/gemini.js";
+import { resolveMarkets } from "./schema.js";
 import type {
   CampaignBrief,
   CanonicalHeroAsset,
@@ -10,6 +11,7 @@ import type {
 
 export type CreativeRecord = {
   ratio: RatioKey;
+  locale: string;
   width: number;
   height: number;
   outputPath: string;
@@ -31,8 +33,7 @@ export type CampaignReport = {
   region: string;
   audience: string;
   message: string;
-  renderedMessage: string;
-  locale?: string;
+  markets: { locale: string; message: string }[];
   mode: "dev" | "final";
   provider: { provider: string; model: string };
   startedAt: string;
@@ -41,9 +42,12 @@ export type CampaignReport = {
   preflight: ValidationResult;
   metrics: {
     productsProcessed: number;
+    marketsProcessed: number;
     approvedAssetsReused: number;
     heroesGenerated: number;
     heroesFromCache: number;
+    /** Rendered offline with no model call. Never counted as a generation. */
+    heroesPlaceholder: number;
     variantsCreated: number;
     validationPassed: number;
     validationWarnings: number;
@@ -92,8 +96,7 @@ export function createReport(args: {
     region: brief.region,
     audience: brief.audience,
     message: brief.message,
-    renderedMessage: brief.localizedMessage?.trim() || brief.message,
-    locale: brief.locale,
+    markets: resolveMarkets(brief).map((m) => ({ locale: m.locale, message: m.message })),
     mode,
     provider,
     startedAt: new Date(startedAt).toISOString(),
@@ -102,9 +105,11 @@ export function createReport(args: {
     preflight,
     metrics: {
       productsProcessed: products.length,
+    marketsProcessed: resolveMarkets(brief).length,
       approvedAssetsReused: products.filter((p) => p.hero.source === "reused").length,
       heroesGenerated: products.filter((p) => p.hero.source === "generated").length,
       heroesFromCache: products.filter((p) => p.hero.source === "generated_cached").length,
+    heroesPlaceholder: products.filter((p) => p.hero.source === "placeholder").length,
       variantsCreated: creatives.length,
       validationPassed: creatives.filter((c) => c.validation.status === "pass").length,
       validationWarnings: creatives.filter((c) => c.validation.status === "warning").length,

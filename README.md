@@ -1,9 +1,13 @@
 # Creative Automation Pipeline
 
 Turns one campaign brief into ready-to-ship social creatives across three
-channel formats — turns one campaign brief into ready-to-ship social creatives across four
-channel formats — reusing brand-approved assets wherever they exist, and
-calling a GenAI image model only for what is genuinely missing.
+channel formats — Turns one campaign brief into ready-to-ship social creatives across four
+channel formats and every target market — reusing brand-approved assets
+wherever they exist, and calling a GenAI image model only for what is
+genuinely missing.
+
+**Two products × four formats × three markets = 24 finished creatives, from
+one paid generation call, in 37 seconds.**
 
 Built for the Adobe Firefly Services FDE take-home exercise.
 
@@ -14,7 +18,7 @@ Campaign brief (YAML/JSON)
            ├─ approved asset on disk? .......... REUSE it, spend nothing
            └─ missing? ......................... GENERATE it with GenAI
                └─ CanonicalHeroAsset ........... origin no longer matters
-                   └─ 1:1 · 4:5 · 9:16 · 16:9 .. deterministic composition
+                   └─ 4 formats × N markets .... deterministic composition
                        └─ brand + legal checks
                            └─ PNG files + report.json
 ```
@@ -35,11 +39,12 @@ and spends model budget only where a human genuinely needs something new.
 
 | Pain point (from the brief) | What this does about it |
 |---|---|
-| Manual content creation overload | One brief → 8 finished creatives in ~5 seconds |
+| Manual content creation overload | One brief → 24 finished creatives in 37 seconds |
 | Inconsistent quality & messaging | Brand colour, logo, disclaimer and copy applied by code, identically, every time |
 | Slow approval cycles | Prohibited-claim scan runs *before* production, so non-compliant copy never reaches review |
 | Difficulty analyzing at scale | Every run writes a `report.json` with real provenance and per-check results |
 | Resource drain | Approved assets are reused automatically; the model is called only for the gap |
+| Relevance & personalization | Every market gets its own signed-off copy, CTA and disclaimer — at zero extra generation cost |
 
 ---
 
@@ -126,19 +131,23 @@ products:
 ```
 outputs/lumen-autumn-glow-de/
 ├── radiance-serum/
-│   ├── source/approved-hero.png        ← the asset that was reused
-│   ├── 1x1/final.png                   1080×1080   feed
-│   ├── 4x5/final.png                   1080×1350   portrait feed
-│   ├── 9x16/final.png                  1080×1920   story / reel
-│   └── 16x9/final.png                  1920×1080   landscape
+│   ├── source/approved-hero.png        ← the asset that was REUSED
+│   ├── 1x1/    en-gb.png  de-de.png  fr-fr.png     1080×1080  feed
+│   ├── 4x5/    en-gb.png  de-de.png  fr-fr.png     1080×1350  portrait feed
+│   ├── 9x16/   en-gb.png  de-de.png  fr-fr.png     1080×1920  story / reel
+│   └── 16x9/   en-gb.png  de-de.png  fr-fr.png     1920×1080  landscape
 ├── overnight-recovery-cream/
-│   ├── source/generated-hero.png       ← the asset the model produced
-│   ├── 1x1/final.png
-│   ├── 4x5/final.png
-│   ├── 9x16/final.png
-│   └── 16x9/final.png
+│   ├── source/generated-hero.png       ← the asset the model GENERATED
+│   ├── 1x1/ …  4x5/ …  9x16/ …  16x9/ …
 └── report.json
 ```
+
+![Story creative, de-DE](docs/images/sample-9x16-de.png)
+
+Product B's hero, above. No approved campaign image existed, so its packshot
+was sent to the model as an identity anchor — the real jar and lid are
+preserved, the campaign scene around it is generated. German copy, CTA and
+disclaimer come from that market's entry in the brief.
 
 ```
 CAMPAIGN COMPLETE  Lumen Botanicals — Autumn Glow (DACH)
@@ -146,9 +155,11 @@ CAMPAIGN COMPLETE  Lumen Botanicals — Autumn Glow (DACH)
   Products processed          2
   Approved heroes reused      1
   Heroes generated            1
-  Channel variants created    8
-  Validation passed           8 / 8
+  Markets                     3
+  Channel variants created    24
+  Validation passed           24 / 24
   Paid generation calls       1
+  Elapsed                     37.4s
 ```
 
 ---
@@ -198,7 +209,18 @@ channel formats are cut from that one asset locally with Sharp. Adding a fifth
 format would cost nothing, and a test asserts exactly that: variant count is
 derived from the `RATIOS` constant while `generationRequests` stays at 1.
 
-### 4. Each ratio is a template, not a resize
+### 4. Typography is bundled, and measured
+
+Rubik ships in `assets/fonts/` under the SIL Open Font License. That matters
+twice over. The creatives render identically on any machine, instead of
+whatever an evaluator's fontconfig falls back to. And because the font file is
+present, line breaking reads **real glyph advance widths** out of it rather
+than estimating them.
+
+That replaced a per-character width table tuned by eye. The estimate was wrong
+often enough to matter: a CTA pill sized from it clipped its own label.
+
+### 5. Each ratio is a template, not a resize
 
 | Format | Placement | Art direction |
 |---|---|---|
@@ -219,7 +241,22 @@ table, then auto-fitted. If the copy cannot fit at the minimum readable size it
 is **flagged rather than shrunk** — an illegible ad is a worse outcome than a
 flagged one.
 
-### 5. No text LLM at runtime
+### 6. Markets multiply output, not cost
+
+The hero is generated once per product. Every additional market composites
+localized copy onto that same asset, so going from one market to three turned
+8 creatives into 24 with **identical spend**. A test asserts exactly this:
+variant count derives from formats × markets while `generationRequests` stays
+at 1.
+
+Copy is supplied per market by the people accountable for it — message, CTA and
+disclaimer each sign-posted in the brief. Translation is deliberately *data*,
+not a runtime model call: a localized cosmetic claim is a regulatory statement
+in each jurisdiction, and it needs human sign-off, not a model's best guess.
+The prohibited-claim scan runs across every market's copy, not just the
+default one.
+
+### 7. No text LLM at runtime
 
 Brief parsing, validation, the legal scan, line wrapping, filenames and every
 report metric are plain TypeScript, Zod and Sharp. They are deterministic
@@ -230,7 +267,7 @@ Translation is the same principle: `localizedMessage` is *data supplied by the
 market team*, not a runtime translation call. Localized legal copy needs human
 sign-off.
 
-### 6. Checks that can actually fail
+### 8. Checks that can actually fail
 
 `message.rendered` is the check I care most about. It does not assert that the
 code drew text — it renders the text layer in isolation and measures the
@@ -246,6 +283,18 @@ npm run campaign -- samples/campaign-legal-fail.yaml
 Preflight rejects it *before* any generation is paid for.
 
 ---
+
+## The console
+
+```bash
+npm run dev      # → http://localhost:5173
+```
+
+![Pipeline console](docs/images/ui-run.png)
+
+Live pipeline events on the left, then every exported file served straight off
+disk with its own validation checks and provenance. What the gallery shows is
+the file that ships — not a re-render.
 
 ## Brand and legal checks
 
@@ -276,7 +325,18 @@ inference and is not presented as such.
   never counted as a generation request.
 - `MVP_MODE=final` bypasses the cache for a clean demo run.
 
-The golden demo costs exactly **one** image generation.
+The golden demo costs exactly **one** image generation — $0.134 for 24
+finished creatives.
+
+| Approach | Calls | Cost |
+|---|---|---|
+| Generate per product × format × market | 24 | $3.22 |
+| Generate one hero per product | 2 | $0.27 |
+| **This pipeline** (one product already approved) | **1** | **$0.134** |
+
+Pricing verified 2026-08-28 (`gemini-3-pro-image`, 2K). Generating per format
+would also have produced 24 visibly different products in one campaign — a
+brand-consistency failure, not just a budget one.
 
 ---
 
@@ -320,11 +380,11 @@ and is the right call on an entitled account.
 - `Lumen Botanicals` is a fictional brand invented for this exercise, as the
   FAQ permits.
 - `samples/assets/` holds the campaign's **input** assets, committed as
-  fixtures so no evaluator needs an API key to see the reuse path work. They
-  are inputs to the exercise, not pipeline outputs. The logo is drawn in code
-  by `npm run make:samples`; the two product images are generated by the same
-  script, which requires a billing-enabled key (image generation has no free
-  tier — see [Limitations](#limitations)).
+  fixtures so no evaluator needs an API key to see the reuse path work. The two
+  product images were themselves produced by `npm run make:samples` calling
+  `gemini-3-pro-image`; the logo is drawn in code by the same script. They are
+  inputs to the exercise, **not pipeline outputs**, and nothing in the demo
+  presents them as pipeline results.
 
 ## Limitations
 
@@ -443,7 +503,7 @@ adapter. Collecting API keys demonstrates procurement, not judgment.
 | Generate when assets are missing | `HeroGenerator` → `src/providers/gemini.ts` | Product B → `GENERATED`, provenance in report.json |
 | ≥ 3 aspect ratios | `RATIOS` + `templateFor()` in `src/composer.ts` | **4 delivered**: 1080×1080, 1080×1350, 1080×1920, 1920×1080 — verified by test |
 | Campaign message on final posts | `buildTextLayer()` → Sharp raster | `message.rendered` ink check per creative |
-| Localization (bonus) | `localizedMessage` / `locale` | de-DE copy rendered in the demo |
+| Localization (bonus) | `markets[]` + `resolveMarkets()` | en-GB · de-DE · fr-FR rendered in the demo, zero extra generation |
 | Runs locally | Vite UI + Express, or CLI | `npm run dev` · `npm run campaign` |
 | Outputs organized by product + ratio | `outputs/<campaign>/<product>/<ratio>/final.png` | tree above |
 | README | this file | — |

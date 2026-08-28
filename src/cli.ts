@@ -28,7 +28,7 @@ CAMPAIGN COMPLETE  ${report.campaignName}
 
   Products processed          ${m.productsProcessed}
   Approved heroes reused      ${m.approvedAssetsReused}
-  Heroes generated            ${m.heroesGenerated}${m.heroesFromCache ? `  (+${m.heroesFromCache} from cache)` : ""}
+  Heroes generated            ${m.heroesGenerated}${m.heroesFromCache ? `  (+${m.heroesFromCache} from cache)` : ""}${m.heroesPlaceholder ? `\n  Offline placeholders        ${m.heroesPlaceholder}  (no model called — set GEMINI_API_KEY for real generation)` : ""}
   Channel variants created    ${m.variantsCreated}
   Validation passed           ${m.validationPassed} / ${m.variantsCreated}
   Paid generation calls       ${m.generationRequests}

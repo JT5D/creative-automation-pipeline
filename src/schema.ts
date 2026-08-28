@@ -37,6 +37,19 @@ export const BrandSchema = z.object({
   prohibitedWords: z.array(z.string()).default([]),
 });
 
+/**
+ * One target market. Copy is supplied per market by the people accountable for
+ * it -- translation is data, not a runtime model call, because localized claims
+ * carry legal weight and need human sign-off.
+ */
+export const MarketSchema = z.object({
+  locale: z.string().min(1),
+  name: z.string().optional(),
+  message: z.string().min(1),
+  callToAction: z.string().optional(),
+  disclaimer: z.string().optional(),
+});
+
 export const CampaignBriefSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -62,19 +75,38 @@ export const CampaignBriefSchema = z.object({
    */
   manualMinutesPerCreative: z.number().positive().optional(),
 
-  /**
-   * Optional pre-translated copy supplied by the marketer. When present it is
-   * what gets rasterized. Translation is deliberately data, not a runtime LLM
-   * call -- localized legal copy is a human sign-off, not a model guess.
-   */
-  localizedMessage: z.string().optional(),
   locale: z.string().optional(),
+
+  /**
+   * Target markets. Every market multiplies the creative count and costs
+   * nothing extra -- the hero is generated once and localized copy is
+   * composited per market. Omit it and the brief runs as a single market
+   * built from the fields above.
+   */
+  markets: z.array(MarketSchema).optional(),
 
   brand: BrandSchema,
   products: z.array(ProductSchema).min(2, "A campaign needs at least 2 products"),
 });
 
 export type CampaignBrief = z.infer<typeof CampaignBriefSchema>;
+export type Market = z.infer<typeof MarketSchema>;
+
+/**
+ * Collapses the single-market and multi-market forms into one list, so the
+ * pipeline only ever deals with an array of markets.
+ */
+export function resolveMarkets(brief: CampaignBrief): Market[] {
+  if (brief.markets?.length) return brief.markets;
+  return [
+    {
+      locale: brief.locale ?? "en",
+      message: brief.message,
+      callToAction: brief.callToAction,
+      disclaimer: brief.brand.disclaimer,
+    },
+  ];
+}
 export type Product = z.infer<typeof ProductSchema>;
 export type Brand = z.infer<typeof BrandSchema>;
 
@@ -88,7 +120,7 @@ export type Brand = z.infer<typeof BrandSchema>;
  */
 export type CanonicalHeroAsset = {
   productId: string;
-  source: "reused" | "generated" | "generated_cached";
+  source: "reused" | "generated" | "generated_cached" | "placeholder";
 
   localPath: string;
   mimeType: string;

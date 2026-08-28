@@ -108,7 +108,8 @@ export async function resolveHero(
 
   return {
     productId: product.id,
-    source: "generated",
+    // A placeholder is never reported as generative output.
+    source: ctx.generator.provider === "offline-placeholder" ? "placeholder" : "generated",
     localPath: outPath,
     mimeType: generated.mimeType,
     width: meta.width ?? 0,
