@@ -1,11 +1,13 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { REQUESTED_IMAGE_SIZE } from "../pricing.js";
 import {
   type GeneratedHero,
   GenerationUnavailableError,
   type HeroGenerator,
   type HeroRequest,
   ProviderError,
+  safeProviderMessage,
 } from "./types.js";
 
 /**
@@ -26,7 +28,10 @@ const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"
  * actually looks at. Spending at the point of visible quality and saving on
  * the deterministic transforms is the whole cost strategy.
  *
- * Override with GEMINI_IMAGE_MODEL to trade quality for cost at scale.
+ * Override with GEMINI_IMAGE_MODEL to trade quality for cost at scale, but
+ * only with a model that can serve REQUESTED_IMAGE_SIZE -- `-lite` and the
+ * 2.5 generation are capped at 1K and would be rejected. src/pricing.ts
+ * derives the console's picker from exactly that constraint.
  */
 const DEFAULT_MODEL = "gemini-3-pro-image";
 
@@ -88,7 +93,7 @@ export class GeminiHeroGenerator implements HeroGenerator {
           type: "image",
           mime_type: "image/jpeg",
           aspect_ratio: "1:1",
-          image_size: "2K",
+          image_size: REQUESTED_IMAGE_SIZE,
         },
       }),
     });
@@ -96,7 +101,12 @@ export class GeminiHeroGenerator implements HeroGenerator {
     if (!res.ok) {
       const body = await res.text();
       throw new ProviderError(
-        `Gemini generation failed (HTTP ${res.status}): ${body.slice(0, 400)}`,
+        safeProviderMessage(
+          "Gemini",
+          res.status,
+          body,
+          res.headers.get("x-request-id") ?? undefined,
+        ),
         res.status,
       );
     }
