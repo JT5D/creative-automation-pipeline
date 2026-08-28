@@ -61,7 +61,10 @@ export function BriefPanel(props: Props) {
                 title={b.teaches}
               >
                 {b.label}
-                <em>{b.expect}</em>
+                {/* What the FULL brief produces — every format, every market.
+                    A test asserts each of these against a real run. The current
+                    selection is narrower by default; the hint below says so. */}
+                <em title="the full brief: every format, every market">{b.expect}</em>
               </button>
             ))}
           </div>
@@ -86,7 +89,7 @@ export function BriefPanel(props: Props) {
                 key={f.key}
                 className={selectedFormats.includes(f.key) ? "on" : ""}
                 onClick={() => onToggleFormat(f.key)}
-                title={`${f.width}×${f.height} · ${f.label}`}
+                title={`${f.width}×${f.height} · ${f.label}${f.required ? " · required by the exercise" : ""}`}
               >
                 {f.key.replace("x", ":")}
               </button>
@@ -112,6 +115,12 @@ export function BriefPanel(props: Props) {
           </div>
         )}
       </div>
+
+      <p className="hint">
+        1:1, 9:16 and 16:9 are the three the exercise requires, and one market covers the English
+        message — that is the run selected now. Adding 4:5 or another market multiplies the output
+        at <strong>no extra generation</strong>.
+      </p>
 
       <div className="actions">
         <button type="button" className="ghost" onClick={onEstimate} disabled={busy}>

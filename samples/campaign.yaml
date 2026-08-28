@@ -1,7 +1,5 @@
-# ─────────────────────────────────────────────────────────────────────────────
 # Campaign brief — the single input to the pipeline.
 # JSON is accepted too; both normalize to the same validated object.
-# ─────────────────────────────────────────────────────────────────────────────
 
 id: lumen-autumn-glow-de
 name: Lumen Botanicals — Autumn Glow (DACH)
@@ -19,7 +17,7 @@ toneOfVoice: Calm, clinical, warm. Understated luxury — never hype.
 # number, clearly labelled, never an invented measurement.
 manualMinutesPerCreative: 25
 
-# ── Markets ──────────────────────────────────────────────────────────────────
+# ── Markets ──
 # Every market multiplies the output and costs NOTHING extra: the hero is
 # generated once, then localized copy is composited per market.
 #
@@ -65,7 +63,7 @@ brand:
     - permanent results
 
 products:
-  # ── Product A ──────────────────────────────────────────────────────────────
+  # ── Product A ──
   # An approved campaign hero already exists, so the pipeline REUSES it
   # and spends nothing. Delete the file and this product takes the
   # generation path instead — the branch is a real filesystem check.
@@ -73,7 +71,7 @@ products:
     name: Radiance Vitamin C Serum
     approvedHeroPath: samples/assets/radiance-serum-hero.png
 
-  # ── Product B ──────────────────────────────────────────────────────────────
+  # ── Product B ──
   # No approved hero. A packshot exists, so it is handed to the model as an
   # identity anchor: the real product is composited into a new campaign scene
   # rather than hallucinated from a text description.
