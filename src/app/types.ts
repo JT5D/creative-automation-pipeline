@@ -65,6 +65,10 @@ export type CampaignReport = {
     validationFailed: number;
     generationRequests: number;
   };
+  assignmentProof: {
+    passed: boolean;
+    checks: { id: string; passed: boolean; message: string }[];
+  };
   products: ProductRecord[];
   failures: { productId: string; productName: string; stage: string; message: string }[];
   warnings: string[];
@@ -113,6 +117,8 @@ export type FormatOption = {
   label: string;
   width: number;
   height: number;
+  /** One of the three the exercise names. Selected by default. */
+  required: boolean;
 };
 
 export type PlannedProduct = {

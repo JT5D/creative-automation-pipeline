@@ -56,7 +56,10 @@ export function App() {
       .then((r) => r.json())
       .then((f: FormatOption[]) => {
         setFormats(f);
-        setSelectedFormats(f.map((x) => x.key));
+        // Default to exactly the formats the exercise asks for. 4:5 is one
+        // click away and demonstrates that scale is free -- but the first run
+        // a reviewer does should be unambiguously the assignment.
+        setSelectedFormats(f.filter((x) => x.required).map((x) => x.key));
       })
       .catch(() => {});
     fetch("/api/models")
@@ -78,8 +81,11 @@ export function App() {
     return [...new Set(found)];
   }, [brief]);
 
+  // One market by default -- the first in the brief, which is the English one.
+  // The exercise requires the message in English at minimum; the other markets
+  // are the localization bonus and cost nothing to add.
   useEffect(() => {
-    setSelectedLocales(locales);
+    setSelectedLocales(locales.slice(0, 1));
   }, [locales]);
 
   const loadBrief = useCallback((file: string) => {
@@ -191,8 +197,6 @@ export function App() {
         </div>
       </header>
 
-      <Insights data={insights} />
-
       <main className="columns">
         <BriefPanel
           library={library}
@@ -226,6 +230,9 @@ export function App() {
           <Results report={run?.report} />
         </section>
       </main>
+
+      {/* Cross-run learning is context for the run above, never the headline. */}
+      <Insights data={insights} />
     </div>
   );
 }

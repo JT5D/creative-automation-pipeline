@@ -4,12 +4,13 @@ Primary sources, checked 2026-08-28.
 
 ## The short answer
 
-**Adobe Firefly is the default provider. Gemini 3 Pro Image is the fallback
-that actually runs here, because no Firefly entitlement was available.**
+**Gemini 3 Pro Image is what runs here. Adobe Firefly Image Model 5 is the
+right production choice and the adapter is written, but there is no entitlement
+to execute it, so it is never selected implicitly.**
 
-`selectGenerator()` encodes exactly that order: Firefly if credentials exist,
-Gemini otherwise, and the choice is named in the UI, in `report.json` and in
-every provenance record.
+`selectGenerator()` requires the choice to be stated: one configured provider is
+used, two configured providers is an error asking for `IMAGE_PROVIDER`. An
+adapter nobody has run must not be able to win by accident.
 
 ## Why not simply pick the top of the leaderboard
 
@@ -43,8 +44,12 @@ On those axes Adobe wins, and it is not close:
 
 ## The finding that shapes the architecture
 
-Adobe's enterprise indemnification extends to outputs from **Firefly, Google
-and OpenAI models** accessed through Adobe's surface.
+Adobe indemnifies its own Firefly outputs, and **separately** covers certain
+copyright claims on outputs from *generally available* Google and OpenAI media
+models surfaced through **Firefly Creative Production for Enterprise** — not
+trademark, publicity or privacy claims, and not beta or preview models
+([product description](https://helpx.adobe.com/legal/product-descriptions/partner-model.html),
+verified 2026-08-28).
 
 That single fact resolves the "should we integrate every frontier vendor"
 question. A customer does not need six direct vendor contracts to use six
@@ -58,20 +63,21 @@ vendor keys demonstrates procurement, not judgment.
 This is why the repo asks for **one** credential and ships **one** non-Adobe
 adapter, rather than six.
 
-## Why Gemini 3 Pro Image as the fallback
+## Why Gemini 3 Pro Image is the one that runs
 
 | Model | 2K image | Note |
 |---|---|---|
 | `gemini-3-pro-image` | **$0.134** | the default here |
 | `gemini-3.1-flash-image` | $0.101 | workhorse tier |
-| `gemini-3.1-flash-lite-image` | $0.0336 | 1K only |
-| `gemini-2.5-flash-image` | $0.039 | legacy |
+| `gemini-3.1-flash-lite-image` | $0.0336 | **1K only** — cannot serve this pipeline's 2K hero, so the console does not offer it |
+| `gemini-2.5-flash-image` | $0.039 | legacy, capped at 1024×1024 — same exclusion |
 
 Source: ai.google.dev/gemini-api/docs/pricing, verified 2026-08-28.
 
-- It is **self-serve**. Any evaluator can get a free key in two minutes, which
+- It is **self-serve**. An evaluator can provision a key in minutes, which
   matters more than a couple of Elo points when the deliverable has to run on
-  someone else's machine.
+  someone else's machine. Billing must be enabled — no Gemini image model has a
+  free tier (verified 2026-08-28).
 - It accepts a **reference image**, which is the capability this pipeline
   actually depends on — see below.
 - The pipeline makes exactly **one** call per missing hero, so the frontier
@@ -98,8 +104,10 @@ on an entitled account:
 | **Adaptive Composite** | Harmonise an object into an existing background |
 
 `src/providers/firefly.ts` implements text-to-image against
-`/v4/images/generate-async`. Object Composite is the first thing I would wire
-next on an entitled account, and it is noted as such in the code.
+`/v4/images/generate-async` with `referenceBlobs: []`. Populating that array is
+Adobe's edit/reference mode, and Generate Object Composite is the first thing I
+would wire on an entitled account — it is exactly the "product exists,
+background does not" operation this pipeline needs.
 
 ## Reproducibility
 

@@ -11,6 +11,7 @@ import {
   createReport,
   type ProductFailure,
   type ProductRecord,
+  portablePath,
   sanitizeId,
   writeReport,
 } from "./report.js";
@@ -193,7 +194,14 @@ export async function runCampaign(
       products.push({
         productId: product.id,
         productName: product.name,
-        hero: { ...hero, localPath: path.relative(outputRoot, heroCopy) },
+        hero: {
+          ...hero,
+          // Everything published is relative: report.json has to be readable
+          // on a reviewer's machine, and an absolute path is both useless
+          // there and a small privacy leak.
+          localPath: path.relative(outputRoot, heroCopy),
+          sourceAssetPath: hero.sourceAssetPath && portablePath(hero.sourceAssetPath),
+        },
         creatives,
       });
     } catch (error) {

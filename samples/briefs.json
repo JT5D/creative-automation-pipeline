@@ -2,7 +2,7 @@
   {
     "file": "campaign.yaml",
     "label": "Autumn Glow — DACH",
-    "teaches": "The canonical run. One hero reused, one generated, three markets: 24 creatives from 1 model call.",
+    "teaches": "The canonical run. One hero reused, one generated. The console opens on the exercise's minimum — 1:1, 9:16, 16:9 in one market — for 6 creatives from 1 model call; select every format and market and the SAME single call yields 24.",
     "expect": "24 creatives · 1 generation"
   },
   {
@@ -26,7 +26,7 @@
   {
     "file": "campaign.json",
     "label": "Autumn Glow — JSON",
-    "teaches": "The same brief in JSON. Both formats normalize to one validated object.",
+    "teaches": "The same brief in JSON. Both formats normalize to one validated object. Counts shown are the full brief: every format, every market.",
     "expect": "24 creatives · 1 generation"
   }
 ]

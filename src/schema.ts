@@ -150,6 +150,14 @@ export const RATIOS = {
 
 export type RatioKey = keyof typeof RATIOS;
 
+/**
+ * The three the exercise names: "at least three aspect ratios (e.g., 1:1,
+ * 9:16, 16:9)". 4:5 is delivered as well because it is the highest-performing
+ * feed format, but only these three are load-bearing for compliance, and
+ * `assignmentProof` in the report checks for exactly them.
+ */
+export const REQUIRED_RATIOS: RatioKey[] = ["1x1", "9x16", "16x9"];
+
 export type ValidationCheck = {
   id: string;
   status: "pass" | "warning" | "fail";

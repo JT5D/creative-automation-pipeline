@@ -82,8 +82,10 @@ states that no keys are provided ("You may use any third-party tool and
 available API keys. No specific keys are provided.").
 
 It ships anyway because it makes the provider seam concrete rather than
-theoretical: set the two Firefly variables and `selectGenerator()` picks it,
-with no change to the resolver, composer, validator, or report.
+theoretical: set the two Firefly variables plus `IMAGE_PROVIDER=firefly` and it
+runs, with no change to the resolver, composer, validator, or report. It is
+never selected implicitly — an adapter nobody has executed must not be able to
+win by accident.
 
 Contract used:
 
@@ -96,19 +98,42 @@ Contract used:
 | Headers | `Authorization: Bearer <token>`, `x-api-key: <client id>` |
 | Pattern | submit → poll real job status → download presigned result → persist locally |
 
-**Image Model 5 is a breaking change** from Image3/Image4: it takes an explicit
-`size` object, and the older `aspectRatio` and `modelVersion` fields are gone.
-Several tutorial pages still show the old payload shape.
+**v3 and v4 take different bodies, and mixing them is the trap.** v3
+(`/v3/images/generate-async`) takes `size: { width, height }`. Image Model 5
+(`/v4/images/generate-async`) takes `modelId: "firefly_image"` plus
+`aspectRatio`, `numVariations`, `referenceBlobs` and an optional
+`modelSpecificPayload`. Adobe states the mode is decided by that array: *"the
+mode is determined by content in the `referenceBlobs` field"* — empty is
+generation, populated is edit/reference. An earlier version of this adapter sent
+a v3-shaped body to the v4 endpoint, which would have failed on the first real
+call.
 
-Where the live contract turns out to differ from this, the live contract wins
-and this file is the thing to correct.
+Body sent here, field by field:
+
+| Field | Value | Provenance |
+|---|---|---|
+| `prompt` | deterministic art direction | published Image5 example |
+| `modelId` | `"firefly_image"` | published Image5 example |
+| `numVariations` | `1` | published Image5 example |
+| `referenceBlobs` | `[]` | published Image5 example — empty selects generation |
+| `modelSpecificPayload.prompt_reasoner` | `"quality"` | published Image5 example |
+| `aspectRatio` | `"1:1"` | **UNVERIFIED VALUE.** The field is documented; Adobe's examples show only `"16:9"` and `"4:3"` and do not enumerate the allowed set |
+
+That last row is the one thing in this integration I cannot cite, and it is
+listed rather than buried. Where the live contract differs, the live contract
+wins and this file is what gets corrected.
+
+**Why raw `fetch` and not the official SDK.** `Firefly-Services/firefly-services-sdk-js`
+exists, but it was last published before Image Model 5 and adds a dependency to
+a path this repo cannot execute. 190 lines of `fetch` keep the wire contract
+visible, which is the part worth reviewing.
 
 ---
 
 ## Deliberately not integrated
 
-Adobe already sells these, and rebuilding them inside a take-home would be the
-wrong instinct:
+Adobe already sells these, and rebuilding them here would be the wrong
+instinct:
 
 | Capability | Adobe product that owns it |
 |---|---|

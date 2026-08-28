@@ -9,7 +9,7 @@ import { type PipelineEvent, runCampaign } from "./pipeline.js";
 import { MODEL_OPTIONS, PRICING_SOURCE } from "./pricing.js";
 import { providerStatus } from "./providers/index.js";
 import type { CampaignReport } from "./report.js";
-import { RATIOS } from "./schema.js";
+import { RATIOS, REQUIRED_RATIOS } from "./schema.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
 const OUTPUT_ROOT = path.resolve("outputs");
@@ -68,6 +68,11 @@ app.get("/api/models", (_req, res) => {
   res.json({ models: MODEL_OPTIONS, source: PRICING_SOURCE });
 });
 
+/**
+ * `required` is the exercise's own list, not a UI preference, which is why it
+ * comes from the server: the console defaults to exactly the formats the
+ * assignment asks for, and the extra one is an opt-in demonstration of scale.
+ */
 app.get("/api/formats", (_req, res) => {
   res.json(
     Object.entries(RATIOS).map(([key, v]) => ({
@@ -75,6 +80,7 @@ app.get("/api/formats", (_req, res) => {
       label: v.label,
       width: v.width,
       height: v.height,
+      required: REQUIRED_RATIOS.includes(key as (typeof REQUIRED_RATIOS)[number]),
     })),
   );
 });
@@ -163,9 +169,15 @@ app.get("/api/runs/:runId/report", (req, res) => {
   res.json(state.report);
 });
 
-app.listen(PORT, () => {
+/**
+ * Loopback only. This is a single-user local tool that holds a billing-enabled
+ * API key in memory; there is no reason for it to answer the network, and the
+ * proportional hardening for a local take-home is one argument, not an auth
+ * system. (The FAQ is explicit that deployment security is not required.)
+ */
+app.listen(PORT, "127.0.0.1", () => {
   const status = providerStatus();
-  console.log(`Creative pipeline server  →  http://localhost:${PORT}`);
+  console.log(`Creative pipeline server  →  http://127.0.0.1:${PORT}`);
   console.log(`Provider: ${status.label}`);
   console.log(`Outputs:  ${OUTPUT_ROOT}`);
 });

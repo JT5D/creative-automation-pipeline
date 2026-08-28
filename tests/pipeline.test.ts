@@ -9,9 +9,15 @@ import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js"
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
+import { MODEL_OPTIONS, priceFor, REQUESTED_IMAGE_SIZE } from "../src/pricing.js";
 import { selectGenerator } from "../src/providers/index.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
-import { type HeroGenerator, type HeroRequest, ProviderError } from "../src/providers/types.js";
+import {
+  type HeroGenerator,
+  type HeroRequest,
+  ProviderError,
+  safeProviderMessage,
+} from "../src/providers/types.js";
 import { sanitizeId } from "../src/report.js";
 import { withRetry } from "../src/retry.js";
 import { RATIOS } from "../src/schema.js";
@@ -616,9 +622,9 @@ describe("provider selection", () => {
     const before = process.env.GEMINI_IMAGE_MODEL;
     const g = selectGenerator(
       { GEMINI_API_KEY: "test-key" } as NodeJS.ProcessEnv,
-      "gemini-3.1-flash-lite-image",
+      "gemini-3.1-flash-image",
     );
-    expect(g.model).toBe("gemini-3.1-flash-lite-image");
+    expect(g.model).toBe("gemini-3.1-flash-image");
     expect(process.env.GEMINI_IMAGE_MODEL).toBe(before);
   });
 
@@ -627,13 +633,64 @@ describe("provider selection", () => {
     expect(g.provider).toBe("offline-placeholder");
   });
 
-  it("prefers Firefly when its credentials are present", () => {
-    const g = selectGenerator({
-      GEMINI_API_KEY: "k",
-      FIREFLY_SERVICES_CLIENT_ID: "id",
-      FIREFLY_SERVICES_CLIENT_SECRET: "secret",
-    } as NodeJS.ProcessEnv);
-    expect(g.provider).toBe("adobe-firefly");
+  it("takes the only provider that is configured", () => {
+    expect(selectGenerator({ GEMINI_API_KEY: "k" } as NodeJS.ProcessEnv).provider).toBe(
+      "google-gemini",
+    );
+    expect(
+      selectGenerator({
+        FIREFLY_SERVICES_CLIENT_ID: "id",
+        FIREFLY_SERVICES_CLIENT_SECRET: "secret",
+      } as NodeJS.ProcessEnv).provider,
+    ).toBe("adobe-firefly");
+  });
+
+  it("refuses to guess when both providers are configured", () => {
+    // Firefly used to win silently here, which meant the run that mattered
+    // could change provider because two variables happened to be set.
+    expect(() =>
+      selectGenerator({
+        GEMINI_API_KEY: "k",
+        FIREFLY_SERVICES_CLIENT_ID: "id",
+        FIREFLY_SERVICES_CLIENT_SECRET: "secret",
+      } as NodeJS.ProcessEnv),
+    ).toThrow(/IMAGE_PROVIDER/);
+
+    expect(
+      selectGenerator({
+        IMAGE_PROVIDER: "gemini",
+        GEMINI_API_KEY: "k",
+        FIREFLY_SERVICES_CLIENT_ID: "id",
+        FIREFLY_SERVICES_CLIENT_SECRET: "secret",
+      } as NodeJS.ProcessEnv).provider,
+    ).toBe("google-gemini");
+  });
+
+  it("never offers a model that cannot produce the size the adapter asks for", () => {
+    // gemini-3.1-flash-lite-image and gemini-2.5-flash-image are 1K-only
+    // (ai.google.dev/gemini-api/docs/pricing, 2026-08-28). Offering either in
+    // a picker that always requests 2K is a guaranteed API rejection.
+    for (const m of MODEL_OPTIONS) {
+      expect(m.maxImageSize).toBe(REQUESTED_IMAGE_SIZE);
+    }
+    expect(MODEL_OPTIONS.map((m) => m.id)).not.toContain("gemini-3.1-flash-lite-image");
+    // The catalog still prices them, so a hand-set override is costed honestly.
+    expect(priceFor("gemini-3.1-flash-lite-image")).toBe(0.0336);
+  });
+
+  it("redacts a provider body before it can reach the browser", () => {
+    // Assembled rather than written out: a literal credential-shaped string in
+    // a tracked file is exactly what the release gate's secret scan exists to
+    // reject, and it should reject it even when the key is fake.
+    const keyShaped = `AIza${"Sy0EXAMPLEKEYabcdefghijklmnop"}${"qrstuv"}`;
+    const msg = safeProviderMessage(
+      "Gemini",
+      400,
+      `API key not valid: ${keyShaped}. Check the header.`,
+    );
+    expect(msg).not.toMatch(/AIzaSy/);
+    expect(msg).toContain("[redacted]");
+    expect(msg).toContain("HTTP 400");
   });
 });
 
@@ -766,7 +823,7 @@ describe("end-to-end campaign run", () => {
   it("never reports the offline placeholder as generative output", async () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
-      mode: "final",
+      mode: "dev",
       generator: new TestDoubleHeroGenerator(),
     });
 
@@ -776,6 +833,63 @@ describe("end-to-end campaign run", () => {
     expect(report.metrics.heroesGenerated).toBe(0);
     // A placeholder costs nothing, so it must never inflate the spend count.
     expect(report.metrics.generationRequests).toBe(0);
+  });
+
+  it("refuses to fabricate a missing hero in final mode", async () => {
+    // The exercise requires a real model for a MISSING asset. The offline
+    // renderer is a setup convenience, so `final` must refuse it outright
+    // rather than produce a run that looks compliant and is not.
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new TestDoubleHeroGenerator(),
+    });
+
+    // Product A is a reused approved asset and needs no provider at all.
+    expect(report.products.map((p) => p.productId)).toEqual(["product-a"]);
+    expect(report.failures[0].productId).toBe("product-b");
+    expect(report.failures[0].message).toMatch(/requires a real GenAI provider/i);
+
+    expect(report.metrics.heroesPlaceholder).toBe(0);
+    expect(report.metrics.generationRequests).toBe(0);
+    expect(report.assignmentProof.passed).toBe(false);
+    expect(
+      report.assignmentProof.checks.find((c) => c.id === "real_genai_demonstrated")?.passed,
+    ).toBe(false);
+  });
+
+  it("proves the exercise's own requirements off the records it produced", async () => {
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+    });
+
+    expect(report.assignmentProof.passed).toBe(true);
+    // The three the exercise names, plus the facts that make them meaningful.
+    for (const id of [
+      "minimum_products",
+      "required_ratio_1x1",
+      "required_ratio_9x16",
+      "required_ratio_16x9",
+      "real_genai_demonstrated",
+      "no_placeholder_output",
+      "campaign_message_rasterized",
+      "no_failed_creative_validation",
+    ]) {
+      expect(report.assignmentProof.checks.find((c) => c.id === id)?.passed).toBe(true);
+    }
+  });
+
+  it("publishes provenance paths that work on another machine", async () => {
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "dev",
+      generator: new FakeApiGenerator(),
+    });
+    const reused = report.products.find((p) => p.hero.source === "reused")!;
+    expect(reused.hero.sourceAssetPath).toBeDefined();
+    expect(reused.hero.sourceAssetPath).not.toMatch(/^\//);
   });
 
   it("refuses to spend on generation when preflight fails", async () => {

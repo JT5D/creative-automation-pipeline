@@ -36,6 +36,30 @@ export interface HeroGenerator {
   generateHero(input: HeroRequest): Promise<GeneratedHero>;
 }
 
+/**
+ * Turns a provider's raw HTTP failure into something safe to show a browser.
+ *
+ * Provider bodies are attacker-adjacent and frequently echo the request back,
+ * so forwarding one verbatim risks putting a credential on screen and in the
+ * run log. This keeps what a human needs to act -- who refused, the status, a
+ * short reason -- and drops the rest.
+ */
+export function safeProviderMessage(
+  provider: string,
+  status: number,
+  body: string,
+  requestId?: string,
+): string {
+  const reason = body
+    // Anything shaped like a credential goes first, before truncation.
+    .replace(/AIza[\w-]{10,}|AQ\.[\w-]{10,}|sk-[\w-]{10,}|Bearer\s+[\w.-]{10,}/gi, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180);
+  const id = requestId ? ` [request ${requestId}]` : "";
+  return `${provider} refused the request (HTTP ${status})${id}: ${reason || "no detail returned"}`;
+}
+
 export class GenerationUnavailableError extends Error {
   constructor(message: string) {
     super(message);

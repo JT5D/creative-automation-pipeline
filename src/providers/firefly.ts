@@ -4,29 +4,42 @@ import {
   type HeroGenerator,
   type HeroRequest,
   ProviderError,
+  safeProviderMessage,
 } from "./types.js";
 
 /**
- * Adobe Firefly Services adapter (Image Model 5).
+ * Adobe Firefly Services adapter — Image Model 5, the current flagship.
  *
  * ─────────────────────────────────────────────────────────────────────────
- * HONESTY NOTE: this adapter is written against Adobe's published contract
- * but has NOT been executed against a live endpoint -- Firefly Services needs
- * an enterprise entitlement I do not hold. It ships because it demonstrates
- * that the provider seam is real: swapping Gemini for Firefly is this one
- * file plus two environment variables, and nothing downstream of the
- * canonical hero changes. It is selected automatically when Firefly
- * credentials are present. See docs/API_NOTES.md.
+ * HONESTY NOTE: this adapter has NOT been executed against a live endpoint.
+ * Firefly Services needs an enterprise entitlement I do not hold, and the
+ * assessment FAQ states no keys are provided. It ships because it makes the
+ * provider seam concrete: swapping Gemini for Firefly is this one file plus
+ * two environment variables, and nothing downstream of the canonical hero
+ * changes. It is never selected by accident -- IMAGE_PROVIDER=firefly is
+ * required. See docs/API_NOTES.md.
  * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Image Model 5 takes a different body from v3, and mixing the two is the
+ * trap here: v3 takes `size: { width, height }`, v4 takes `modelId` plus
+ * `aspectRatio`, and `referenceBlobs` is what selects generate-vs-edit mode
+ * ("the mode is determined by content in the referenceBlobs field" -- Adobe).
+ * An empty array is therefore text-to-image, and it is also the field that
+ * would carry an approved packshot on an entitled account.
  *
  * Contract sources (verified 2026-08-28):
  *   IMS token   POST https://ims-na1.adobelogin.com/ims/token/v3
  *   scopes      openid, AdobeID, session, additional_info,
  *               read_organizations, firefly_api, ff_apis
  *   generation  POST https://firefly-api.adobe.io/v4/images/generate-async
- *
- * Image Model 5 is a breaking change from Image3/Image4: it takes an explicit
- * `size`, and the old `aspectRatio` / `modelVersion` fields are gone.
+ *   body        { prompt, aspectRatio, modelId, numVariations, referenceBlobs,
+ *                 modelSpecificPayload } -- every field from a published
+ *                 Image5 example, except the `aspectRatio: "1:1"` VALUE:
+ *                 Adobe's examples show only "16:9" and "4:3" and the full
+ *                 enum is not published. That single unverified value is
+ *                 recorded in docs/API_NOTES.md rather than glossed over.
+ *   job         { jobId, statusUrl, cancelUrl }
+ *   result      { status: "succeeded", result: { outputs: [ { image: { url } } ] } }
  */
 const IMS_TOKEN_URL = "https://ims-na1.adobelogin.com/ims/token/v3";
 const GENERATE_URL = "https://firefly-api.adobe.io/v4/images/generate-async";
@@ -39,7 +52,8 @@ type CachedToken = { token: string; expiresAt: number };
 
 export class FireflyHeroGenerator implements HeroGenerator {
   readonly provider = "adobe-firefly";
-  readonly model = "image5";
+  /** The literal modelId sent, so provenance records the request, not a label. */
+  readonly model = "firefly_image";
 
   /** Held in server memory only. Never logged, never sent to the browser. */
   private cachedToken: CachedToken | null = null;
@@ -70,8 +84,12 @@ export class FireflyHeroGenerator implements HeroGenerator {
       }),
     });
 
+    // The body of a failed auth can echo the secret back. Never forward it.
     if (!res.ok) {
-      throw new Error(`Adobe IMS auth failed (HTTP ${res.status})`);
+      throw new ProviderError(
+        `Adobe IMS rejected the credentials (HTTP ${res.status})`,
+        res.status,
+      );
     }
 
     const json = (await res.json()) as { access_token: string; expires_in: number };
@@ -97,23 +115,29 @@ export class FireflyHeroGenerator implements HeroGenerator {
       headers,
       body: JSON.stringify({
         prompt: input.prompt,
+        modelId: this.model,
+        // Square canonical hero. Every channel format is cut from this one
+        // asset locally, so we never pay per ratio.
+        aspectRatio: "1:1",
         numVariations: 1, // Cost control: never fan out candidates.
-        size: { width: 2048, height: 2048 }, // Image5 takes explicit size.
+        // Empty = pure generation. Populated, this is the Object Composite
+        // path that would carry an approved packshot.
+        referenceBlobs: [],
+        // Image5's own quality lever. A campaign hero is the one image a
+        // reviewer actually looks at, so it is the right place to spend it.
+        modelSpecificPayload: { prompt_reasoner: "quality" },
       }),
     });
 
     if (!submit.ok) {
-      const body = await submit.text();
       throw new ProviderError(
-        `Firefly submit failed (HTTP ${submit.status}): ${body.slice(0, 400)}`,
+        safeProviderMessage("Adobe Firefly", submit.status, await submit.text()),
         submit.status,
       );
     }
 
     const job = (await submit.json()) as Record<string, unknown>;
-    const links = job.links as { self?: string } | undefined;
-    const statusUrl =
-      (job.statusUrl as string | undefined) ?? links?.self ?? (job.self as string | undefined);
+    const statusUrl = job.statusUrl as string | undefined;
     if (!statusUrl) {
       throw new Error(`Firefly returned no status URL. Keys: ${Object.keys(job).join(", ")}`);
     }
@@ -135,6 +159,9 @@ export class FireflyHeroGenerator implements HeroGenerator {
       bytes,
       mimeType: "image/png",
       provider: this.provider,
+      // Text-to-image only. Sending the packshot as a reference is Adobe's
+      // Generate Object Composite operation, which is the right call on an
+      // entitled account and is deliberately not guessed at here.
       operation: "text-to-image",
       model: this.model,
       requestId: typeof job.jobId === "string" ? job.jobId : undefined,
@@ -156,9 +183,9 @@ export class FireflyHeroGenerator implements HeroGenerator {
       const body = (await res.json()) as Record<string, unknown>;
       const status = String(body.status ?? "").toLowerCase();
 
-      if (status === "succeeded" || status === "done" || body.outputs) return body;
+      if (status === "succeeded") return body;
       if (status === "failed" || status === "error") {
-        throw new Error(`Firefly job failed: ${JSON.stringify(body).slice(0, 300)}`);
+        throw new Error(`Firefly job failed with status "${status}"`);
       }
 
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
