@@ -107,10 +107,11 @@
     <p class="eyebrow">Forward Deployed Engineer · Take-home exercise</p>
     <h1>Creative Automation Pipeline</h1>
     <p class="lede">
-      One campaign brief becomes <strong>24 finished, on-brand social creatives</strong> —
-      four channel formats across three markets — from a
-      <strong>single paid generation call</strong>, in 37 seconds.
-      Approved assets are reused; the model is called only for what is genuinely missing.
+      The exercise asks for two products across 1:1, 9:16 and 16:9. That is what the
+      console runs by default — <strong>6 finished creatives, one paid generation call,
+      24.9 seconds</strong>. Select every format and market and the same single call
+      produces <strong>24 creatives in 33.8 seconds</strong>, because generation happens
+      once per missing hero, not once per output.
     </p>
     <div class="byline">
       <span><b>James Tunick</b></span>
@@ -241,20 +242,24 @@
         <h3>Reproducible where it can be</h3>
         <p>
           Everything after the hero is byte-identical run to run — a test proves
-          it. Generation is the one step that is not, and Firefly is the only
-          one of the two providers that can close that gap: it takes a seed and
-          returns the one it used. That is a production requirement, not a
-          benchmark score.
+          it. Generation is the one step that is not. Adobe documents seed-based
+          reproducibility on its v3 generation API; Image Model 5's v4 schema was
+          not verified here, so this implementation neither claims nor sends it.
+          Gemini's image API exposes no seed at all. Recording the gap honestly
+          beats claiming it is closed.
         </p>
       </div>
       <div class="card">
-        <h3>Adobe-native by default</h3>
+        <h3>The provider is stated, never guessed</h3>
         <p>
-          Firefly is the default provider and is selected automatically when
-          credentials exist; Gemini is the fallback that runs here. Adobe's
-          enterprise indemnification covers Firefly, Google and OpenAI outputs
-          accessed through its surface — so the answer to model choice is one
-          governed surface, not six vendor contracts.
+          Gemini 3 Pro Image is what actually runs, and it is named in every
+          provenance record. The Adobe Firefly Image Model 5 adapter is written
+          but has no entitlement to run against, so it is never auto-selected —
+          an untested path must not be able to quietly win. Firefly remains the
+          right production choice: licensed training data, Content Credentials,
+          and indemnification Adobe extends to certain generally available Google
+          and OpenAI models surfaced through Firefly Creative Production for
+          Enterprise. One governed surface beats six vendor contracts.
         </p>
       </div>
     </div>
@@ -270,16 +275,16 @@
       <tr><td>Region · audience · message</td><td><span class="tick">✓</span> Required fields, plus objective, tone and call to action</td></tr>
       <tr><td>Reuse input assets</td><td><span class="tick">✓</span> Product A reused, driven by a real filesystem check</td></tr>
       <tr><td>Generate when missing</td><td><span class="tick">✓</span> Product B generated from its packshot as identity anchor</td></tr>
-      <tr><td>≥3 aspect ratios</td><td><span class="tick">✓</span> Four — 1:1, 4:5, 9:16, 16:9</td></tr>
+      <tr><td>≥3 aspect ratios</td><td><span class="tick">✓</span> Four — 1:1, 4:5, 9:16, 16:9 — and each run asserts the required three in <code>report.json → assignmentProof</code></td></tr>
       <tr><td>Message on final posts</td><td><span class="tick">✓</span> Rasterized into pixels, verified by ink measurement</td></tr>
       <tr><td>Localization <em>(bonus)</em></td><td><span class="tick">✓</span> en-GB · de-DE · fr-FR, at zero extra generation cost</td></tr>
-      <tr><td>Runs locally</td><td><span class="tick">✓</span> <code>npm run dev</code> or CLI — and with no API key at all</td></tr>
+      <tr><td>Runs locally</td><td><span class="tick">✓</span> <code>npm run dev</code> or CLI. It also runs with no API key at all, as a labelled offline preview — which deliberately does <em>not</em> satisfy the missing-asset GenAI requirement, and reports so</td></tr>
       <tr><td>Organized outputs</td><td><span class="tick">✓</span> By campaign / product / ratio / locale</td></tr>
       <tr><td>Brand compliance <em>(bonus)</em></td><td><span class="tick">✓</span> Logo, brand colour, WCAG contrast, safe zone</td></tr>
       <tr><td>Legal checks <em>(bonus)</em></td><td><span class="tick">✓</span> Prohibited-claim scan, run before any spend</td></tr>
       <tr><td>Logging / reporting <em>(bonus)</em></td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
       <tr><td>Comprehensive README</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
-      <tr><td>Engineering</td><td><span class="tick">✓</span> 73 tests including visual regression, CI on Node 20 and 22, a fresh-clone job that produces creatives with no API key, and a release gate</td></tr>
+      <tr><td>Engineering</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate — <code>npm run check</code></td></tr>
     </table>
   </div>
 </section>

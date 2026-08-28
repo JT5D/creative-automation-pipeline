@@ -2,13 +2,18 @@
 
 [![CI](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml)
 
-Turns one campaign brief into ready-to-ship social creatives across four
-channel formats and every target market — reusing brand-approved assets
-wherever they exist, and calling a GenAI image model only for what is
-genuinely missing.
+Turns one campaign brief into ready-to-ship social creatives across every
+channel format and target market — reusing brand-approved assets wherever they
+exist, and calling a GenAI image model only for what is genuinely missing.
 
-**Two products × four formats × three markets = 24 finished creatives, from
-one paid generation call, in 37 seconds.**
+**The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
+what the console runs by default: 6 finished creatives, one product reused, one
+generated, one paid model call, 24.9s.**
+
+**Then the same run with every format and market selected: 24 creatives, still
+one paid call, 33.8s** — because generation happens once per missing hero, not
+once per output. Both figures are measured runs, reported in
+[`docs/sample-output/report.json`](docs/sample-output/report.json).
 
 Built for the Adobe Firefly Services FDE take-home exercise.
 
@@ -51,16 +56,33 @@ the legal rules of each market.
 Most of that work is mechanical. This pipeline automates the mechanical part
 and spends model budget only where a human genuinely needs something new.
 
-**Business value**
+**The five business goals in the brief, and where each one is answered**
 
-| Pain point (from the brief) | What this does about it |
+| Business goal | Where it is answered | Honest status |
+|---|---|---|
+| 1 · Accelerate campaign velocity | `runCampaign()` — brief in, 24 validated creatives out in 33.8s | **Delivered** |
+| 2 · Ensure brand consistency | `src/validation.ts` — colour, logo, contrast, disclaimer and safe zone applied and checked by code, identically, every time | **Delivered** |
+| 3 · Maximize relevance & personalization | `markets[]` — per-market message, CTA and disclaimer rasterized into each export, at zero extra generation | **Delivered** |
+| 4 · Optimize marketing ROI | Cost side only: `report.json → successMetrics.efficiency` reports creatives per paid call, cost per creative and reuse rate | **Half.** CTR and conversion are post-publication and this pipeline never publishes, so no CTR number is invented here — see [Production extension path](#production-extension-path) |
+| 5 · Gain actionable insights | `outputs/runs.jsonl` + the console's cross-run strip: reuse rate, spend and time saved across every run | **Production-side.** These are *production* insights, not *performance* insights |
+
+**The five pain points**
+
+| Pain point | What this does about it |
 |---|---|
-| Manual content creation overload | One brief → 24 finished creatives in 37 seconds |
-| Inconsistent quality & messaging | Brand colour, logo, disclaimer and copy applied by code, identically, every time |
-| Slow approval cycles | Prohibited-claim scan runs *before* production, so non-compliant copy never reaches review |
-| Difficulty analyzing at scale | Every run writes a `report.json` with real provenance and per-check results |
-| Resource drain | Approved assets are reused automatically; the model is called only for the gap |
-| Relevance & personalization | Every market gets its own signed-off copy, CTA and disclaimer — at zero extra generation cost |
+| 1 · Manual content creation overload | One brief → 24 finished creatives, 1.41s each |
+| 2 · Inconsistent quality & messaging | Brand rules are code, not a style guide someone remembers |
+| 3 · Slow approval cycles | Prohibited-claim scan runs *before* production, so non-compliant copy never reaches review — and each product is badged `AUTO-CLEARED` or `REVIEW NEW HERO`, so a human only looks at what a model touched |
+| 4 · Difficulty analyzing at scale | Every run writes `report.json` with real provenance and per-check results; every run appends to `runs.jsonl` |
+| 5 · Resource drain | Approved assets are reused automatically; the model is called only for the gap |
+
+**The three data sources the brief names**
+
+| Data source | Here |
+|---|---|
+| User inputs — briefs and assets uploaded manually | `samples/*.yaml` / `*.json` and `samples/assets/`, editable live in the console |
+| Storage — *"can be Azure, AWS or Dropbox"* | Local filesystem, behind `findApprovedHero()`. That one function is the seam; notably Firefly's own v4 API accepts output storage on exactly those domains (amazonaws.com, windows.net, dropboxusercontent.com, storage.googleapis.com), so the production swap is a storage target, not a redesign |
+| GenAI — best-fit APIs for hero images and variations | `HeroGenerator` → Gemini 3 Pro Image (runs here) or Adobe Firefly Image Model 5 (written, not entitled). Resized and localized variations are produced **deterministically**, not by a model — see [Key design decisions](#key-design-decisions) §3 |
 
 ---
 
@@ -76,11 +98,19 @@ npm run dev               # → http://localhost:5173
 
 ### The one credential you need
 
-A free Google AI Studio key is enough: <https://aistudio.google.com/apikey>
+A Google AI Studio API key **with billing enabled**:
+<https://aistudio.google.com/apikey>
 
 ```env
 GEMINI_API_KEY=your-key-here
 ```
+
+Every Gemini image model lists its free tier as "Not available"
+([pricing](https://ai.google.dev/gemini-api/docs/pricing), verified
+2026-08-28), so a free-tier key returns `HTTP 429 … limit: 0`. The repo still
+runs with no key at all — it renders a labelled **offline preview** — but that
+preview deliberately cannot satisfy the exercise's "generate missing assets with
+a GenAI image model" requirement, and `report.json` says so.
 
 Verify it before demoing — this checks the key *and* that the configured model
 id actually exists, against the live model list:
@@ -97,7 +127,8 @@ FIREFLY_SERVICES_CLIENT_ID=...
 FIREFLY_SERVICES_CLIENT_SECRET=...
 ```
 
-If these are set they take priority automatically. See
+Set `IMAGE_PROVIDER=firefly` to select it. Nothing is auto-selected when both
+providers are configured — see
 [Provider strategy](#provider-strategy-and-an-honest-limitation) for what is
 and is not verified here.
 </details>
@@ -125,8 +156,16 @@ id: lumen-autumn-glow-de
 region: Germany (DACH)
 audience: Urban professionals 28–45 who buy dermatologist-tested skincare
 message: Wake up to visibly brighter skin
-locale: de-DE
-localizedMessage: Wach auf mit sichtbar strahlenderer Haut
+
+# Each market supplies its own signed-off copy. Omit `markets` entirely and the
+# brief runs as a single market built from the fields above.
+markets:
+  - locale: en-GB
+    message: Wake up to visibly brighter skin
+    callToAction: Discover now
+  - locale: de-DE
+    message: Wach auf mit sichtbar strahlenderer Haut
+    callToAction: Jetzt entdecken
 
 brand:
   name: Lumen Botanicals
@@ -177,8 +216,13 @@ CAMPAIGN COMPLETE  Lumen Botanicals — Autumn Glow (DACH)
   Channel variants created    24
   Validation passed           24 / 24
   Paid generation calls       1
-  Elapsed                     37.4s
+  Elapsed                     33.8s
 ```
+
+Run the exercise's minimum instead — the console's default, 1:1 · 9:16 · 16:9
+in one market — and the same brief produces **6 creatives from the same single
+paid call in 24.9s**. The generation cost does not move, because it is a
+function of missing heroes, not of outputs.
 
 ---
 
@@ -321,6 +365,32 @@ numbers are the ones underneath it: **one API call, 34 seconds, $0.134.**
 Across runs, the console tracks the same three plus **reuse rate**, which is
 what makes the cost curve bend as a catalogue matures.
 
+## The run proves the assignment, so the README does not have to
+
+`report.json` carries an `assignmentProof` block: eight facts, each counted off
+the products and creatives that exist on disk, not claimed in prose.
+
+```json
+"assignmentProof": {
+  "passed": true,
+  "checks": [
+    { "id": "minimum_products",            "passed": true, "message": "2 products produced (minimum 2)" },
+    { "id": "required_ratio_1x1",          "passed": true, "message": "1:1 produced for 2/2 products" },
+    { "id": "required_ratio_9x16",         "passed": true, "message": "9:16 produced for 2/2 products" },
+    { "id": "required_ratio_16x9",         "passed": true, "message": "16:9 produced for 2/2 products" },
+    { "id": "real_genai_demonstrated",     "passed": true, "message": "1 missing hero(es) generated by google-gemini" },
+    { "id": "no_placeholder_output",       "passed": true, "message": "no offline placeholder in any output" },
+    { "id": "campaign_message_rasterized", "passed": true, "message": "campaign message measured in the pixels of 24/24 creatives" },
+    { "id": "no_failed_creative_validation", "passed": true, "message": "every creative passed validation" }
+  ]
+}
+```
+
+The interesting case is the one that fails. An offline preview produces real,
+correctly-sized, validated files — and still reports `passed: false`, because
+`real_genai_demonstrated` is false. That is the difference between a pipeline
+that runs and a pipeline that meets the brief, and it is machine-readable.
+
 ## Example output, without running anything
 
 [`docs/sample-output/`](docs/sample-output) holds a real run so a reviewer can
@@ -339,7 +409,7 @@ a freshly generated one both normalize into one type:
 ```ts
 type CanonicalHeroAsset = {
   productId: string;
-  source: "reused" | "generated" | "generated_cached";
+  source: "reused" | "generated" | "generated_cached" | "placeholder";
   localPath: string; width: number; height: number;
   generation?: { provider; operation; model; prompt; durationMs; requestId };
 };
@@ -401,10 +471,10 @@ overlay would have covered the entire message. See
 [`docs/CREATIVE_STANDARDS.md`](docs/CREATIVE_STANDARDS.md) for the correction
 and the source.
 
-Text is wrapped by a deterministic layout pass with a per-character width
-table, then auto-fitted. If the copy cannot fit at the minimum readable size it
-is **flagged rather than shrunk** — an illegible ad is a worse outcome than a
-flagged one.
+Text is wrapped by a deterministic layout pass using the bundled font's own
+glyph advance widths (§4), then auto-fitted. If the copy cannot fit at the
+minimum readable size it is **flagged rather than shrunk** — an illegible ad is
+a worse outcome than a flagged one.
 
 ### 6. Markets multiply output, not cost
 
@@ -428,9 +498,9 @@ report metric are plain TypeScript, Zod and Sharp. They are deterministic
 problems, and a language model would make them slower, more expensive and
 non-reproducible without making them better.
 
-Translation is the same principle: `localizedMessage` is *data supplied by the
-market team*, not a runtime translation call. Localized legal copy needs human
-sign-off.
+Translation is the same principle: each entry in `markets[]` carries copy
+*supplied by the market team*, not produced by a runtime translation call.
+Localized legal copy needs human sign-off.
 
 ### 8. Checks that can actually fail
 
@@ -527,16 +597,26 @@ interface HeroGenerator {
 Three implementations: **Gemini** (default), **Firefly Services**, and a
 deterministic test double used only by the test suite.
 
-`selectGenerator()` picks from the credentials actually present — Firefly
-first, then Gemini — and there is no silent fallback. Whichever provider runs
-is named in the UI, in `report.json`, and in every provenance record.
+`selectGenerator()` requires the choice to be **stated**. If exactly one
+provider is configured it is used; if both are, the run fails and asks for
+`IMAGE_PROVIDER=gemini|firefly` rather than guessing which one should spend
+money. There is no runtime fallback, and whichever provider runs is named in
+the UI, in `report.json`, and in every provenance record.
+
+An earlier version let Firefly win simply because two environment variables
+happened to be present. For an adapter that has never been executed, that meant
+the run that mattered could silently change provider — so it was removed.
 
 > **The Firefly adapter has not been executed against a live endpoint.**
 > Firefly Services needs an enterprise entitlement, and the assessment FAQ
-> states no keys are provided. It is written against Adobe's published contract
-> (IMS server-to-server auth, `/v4/images/generate-async`, real job polling) and
-> is selected automatically when credentials exist, but I have not run it, and I
-> am not going to claim I have. See [`docs/API_NOTES.md`](docs/API_NOTES.md).
+> states no keys are provided. It targets Image Model 5 — IMS server-to-server
+> auth, `POST /v4/images/generate-async`, `modelId: "firefly_image"`,
+> `referenceBlobs` (empty = generate, populated = edit), real job polling — and
+> every field comes from a published Adobe example except the
+> `aspectRatio: "1:1"` *value*, which Adobe's examples do not enumerate. That
+> single unverified value is recorded in
+> [`docs/API_NOTES.md`](docs/API_NOTES.md) rather than glossed over. It is only
+> ever used when `IMAGE_PROVIDER=firefly` is set explicitly.
 
 When a packshot exists, it is sent to the model as an identity anchor so the
 **real product is composited into a new scene** rather than hallucinated from a
@@ -564,9 +644,6 @@ and is the right call on an entitled account.
 
 ## Limitations
 
-- Text is rasterized through SVG, so glyph metrics depend on installed fonts.
-  Layout is measured with a width table rather than real font metrics, which is
-  approximate but reproducible. A bundled font would remove this.
 - `position: "attention"` cropping is a Sharp heuristic, not product detection.
   A production system would use Firefly Expand or a product-aware crop.
 - The prohibited-word scan is literal matching. It catches the claims a legal
@@ -643,8 +720,8 @@ Full reasoning and sources: [`docs/MODEL_STRATEGY.md`](docs/MODEL_STRATEGY.md).
 
 | Model | Where it fits |
 |---|---|
-| **Adobe Firefly / Image 5** | The default. Licensed training data, enterprise IP indemnification, C2PA provenance |
-| **Gemini 3 Pro Image** | What runs here — self-serve, strong reference-image adherence, $0.134 / 2K image |
+| **Adobe Firefly / Image Model 5** | The right production choice: licensed training data, enterprise IP indemnification, C2PA Content Credentials. Adapter written, never executed — no entitlement |
+| **Gemini 3 Pro Image** | What actually runs here — self-serve, strong reference-image adherence, $0.134 / 2K image |
 | **GPT Image 2** | Tops the blind-vote leaderboards by ~97 Elo; precision editing and in-image text |
 | **FLUX.2 / Kontext** | Style and composition-driven workflows |
 | **Ideogram** | Typography-led graphic design |
@@ -655,11 +732,16 @@ decision turns on. A Fortune 100 brand running a regulated skincare campaign
 optimises for commercial safety, IP indemnification, provenance and product
 identity — not aesthetic preference votes.
 
-The finding that shapes the architecture: Adobe's enterprise indemnification
-covers outputs from **Firefly, Google and OpenAI models accessed through
-Adobe's surface**. A customer therefore does not need six vendor contracts to
-use six frontier models — they need one governed surface that already carries
-entitlement, regional availability and legal cover.
+The finding that shapes the architecture, stated at the width Adobe actually
+states it: Firefly's own models carry Adobe's Firefly indemnification, and
+**separately**, Adobe indemnifies certain copyright claims on outputs from
+*generally available* Google and OpenAI media models surfaced through **Firefly
+Creative Production for Enterprise** — not trademark, publicity or privacy
+claims, and not beta or preview models
+([product description](https://helpx.adobe.com/legal/product-descriptions/partner-model.html),
+verified 2026-08-28). A customer therefore does not need six vendor contracts to
+use several frontier models — they need one governed surface that already
+carries entitlement, regional availability and legal cover.
 
 That is why this repo asks for **one** credential and ships **one** non-Adobe
 adapter. Collecting API keys demonstrates procurement, not judgment.
@@ -674,14 +756,15 @@ adapter. Collecting API keys demonstrates procurement, not judgment.
 | ≥ 2 products | `.min(2)` on the products array | test: *rejects a brief with fewer than two products* |
 | Target region / market | `region` (required) | `Germany (DACH)` in report.json |
 | Target audience | `audience` (required) | rendered in report.json |
-| Campaign message | `message` (+ optional `localizedMessage`) | rasterized into all 6 outputs |
+| Campaign message | `message`, plus per-market copy in `markets[]` | rasterized into every output, verified by ink measurement |
 | Accept input assets, reuse when available | `findApprovedHero()` in `src/assetResolver.ts` | Product A → `REUSED`; test asserts `generationRequests === 1` |
+| Generated with a **real** GenAI model, not a stand-in | `MVP_MODE=final` refuses the offline renderer for a missing hero | `report.json → assignmentProof.real_genai_demonstrated`; test: *refuses to fabricate a missing hero in final mode* |
 | Generate when assets are missing | `HeroGenerator` → `src/providers/gemini.ts` | Product B → `GENERATED`, provenance in report.json |
-| ≥ 3 aspect ratios | `RATIOS` + `templateFor()` in `src/composer.ts` | **4 delivered**: 1080×1080, 1080×1350, 1080×1920, 1920×1080 — verified by test |
+| ≥ 3 aspect ratios | `RATIOS` + `templateFor()` in `src/composer.ts`; `REQUIRED_RATIOS` names the three the exercise asks for | **4 delivered**: 1080×1080, 1080×1350, 1080×1920, 1920×1080 — verified by test, and asserted per run by `assignmentProof` |
 | Campaign message on final posts | `buildTextLayer()` → Sharp raster | `message.rendered` ink check per creative |
 | Localization (bonus) | `markets[]` + `resolveMarkets()` | en-GB · de-DE · fr-FR rendered in the demo, zero extra generation |
 | Runs locally | Vite UI + Express, or CLI | `npm run dev` · `npm run campaign` |
-| Outputs organized by product + ratio | `outputs/<campaign>/<product>/<ratio>/final.png` | tree above |
+| Outputs organized by product + ratio | `outputs/<campaign>/<product>/<ratio>/<locale>.png` | tree above |
 | README | this file | — |
 | Brand compliance checks (bonus) | `src/validation.ts` | logo, brand colour, contrast, disclaimer |
 | Legal content checks (bonus) | prohibited-word scan, word-boundary matched | `samples/campaign-legal-fail.yaml` fails preflight |
@@ -696,26 +779,26 @@ message rebuilt per product per format. This automates the mechanical part and
 spends model budget only on the gap.
 
 **0:20 – 0:40 · Brief.** Two products, region, audience, message, brand rules.
-Product A has an approved hero. Product B does not.
+Product A has an approved hero. Product B does not. The console opens on the
+exercise's minimum: 1:1, 9:16, 16:9, one market.
 
 **0:40 – 1:10 · Asset resolution.** Run it. Product A logs `REUSED` — zero
 spend on an asset the brand already approved. Product B has no hero, so its
 packshot goes to the model as an identity anchor and comes back `GENERATED`.
 One paid call, driven by a real filesystem check.
 
-**1:10 – 1:45 · Channel production.** One canonical hero becomes 1:1, 4:5, 9:16
-and 16:9 — each an intentional template, not a resize. The 9:16 keeps its copy
-inside Meta's published safe zone. Campaign text is rasterized into the pixels,
-in German, from the brief.
+**1:10 – 1:40 · Six required creatives.** 1:1, 9:16 and 16:9 for both products
+— each an intentional template, not a resize. The 9:16 keeps its copy inside
+Meta's published safe zone. Campaign text is rasterized into the pixels.
+`Assignment proof passed · 8 checks`, asserted from the files on disk.
 
-**1:45 – 2:10 · Validation and provenance.** Eight outputs, each with dimension,
-ink-coverage, safe-zone, contrast, logo, disclaimer and legal checks. Then show
-the legal gate failing on a bad brief, before any spend.
+**1:40 – 2:00 · Scale is free.** Add 4:5 and two more markets: 24 creatives,
+still one paid call, still $0.134. Then show the legal gate refusing a
+non-compliant brief before any spend.
 
-**2:10 – 2:30 · Architecture.** One reused, one generated, eight variants, one
-paid call. The DAM seam and the provider seam are each one small file — swap in
-a customer's Firefly Creative Production workflows and their DAM, and the
-campaign-production contract does not move.
+**2:00 – 2:30 · Architecture.** The DAM seam and the provider seam are each one
+small file — swap in a customer's storage and Firefly Creative Production
+workflows, and the campaign-production contract does not move.
 
 ---
 
@@ -725,16 +808,16 @@ campaign-production contract does not move.
 src/
   schema.ts          Zod brief contract + CanonicalHeroAsset
   assetResolver.ts   reuse-or-generate decision + deterministic prompt
-  composer.ts        Sharp composition, three ratio templates
+  composer.ts        Sharp composition, four ratio templates
   textLayout.ts      wrapping, auto-fit, WCAG contrast
   validation.ts      preflight + per-creative checks
   report.ts          report.json
   pipeline.ts        runCampaign() — the whole flow, top to bottom
-  server.ts          4 routes, in-memory run state
+  server.ts          local API on 127.0.0.1, in-memory run state
   cli.ts             thin wrapper over the same runCampaign()
   providers/         HeroGenerator: gemini · firefly · test double
   app/               one-screen React console
-tests/               73 tests, no network calls
+tests/               84 tests, no network calls
   baselines/         committed visual signatures
 samples/             campaign briefs + input assets
 docs/
