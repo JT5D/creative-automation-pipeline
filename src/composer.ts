@@ -48,16 +48,17 @@ export type ComposedCreative = {
 };
 
 /**
- * Per-format art direction.
+ * Per-format art direction. Each is a deliberate layout, not a resize.
  *
- * Every template keeps the hero crop within ~10% of square, which is the whole
- * reason a single 1:1 generation is enough for all three channels: the product
- * never gets sliced by an aggressive re-crop. The copy zone is a deliberate
- * design decision per format, not a resize.
+ *   1:1   full-bleed hero, copy over a bottom scrim          (feed)
+ *   4:5   same treatment, taller canvas                      (portrait feed)
+ *   9:16  full-bleed hero, copy inside the Meta safe zone    (story / reel)
+ *   16:9  hero right, brand copy panel left                  (landscape)
  *
- *   1:1   full-bleed hero, copy over a bottom scrim        (feed)
- *   9:16  hero on top, solid brand copy panel beneath      (story)
- *   16:9  hero on the right, brand copy panel on the left  (landscape)
+ * 9:16 is the demanding one: fitting a square hero to it costs about 41% of the
+ * image's width. That is exactly why the crop is centred and why the art
+ * direction insists on negative space on all sides -- the product has to
+ * survive that crop, and one generation has to serve every format.
  */
 /**
  * Meta's published safe zone for 9:16 placements: leave roughly 14% of the
@@ -94,8 +95,17 @@ type Template = {
    * on 9:16, inside the Meta safe zone. A test pins that.
    */
   ctaGap: number;
-  /** Y coordinate of the disclaimer baseline. */
+  /**
+   * Y coordinate of the disclaimer baseline.
+   *
+   * Bottom-anchored on every format except the story, where the Meta safe zone
+   * pushes copy up the frame and a fixed baseline stranded the legal line in
+   * open photo, mid-frame and low contrast. There it follows the CTA instead,
+   * so headline, CTA and disclaimer read as one block on the scrim.
+   */
   disclaimerY: number;
+  /** Story only: place the disclaimer under the CTA rather than at disclaimerY. */
+  disclaimerFollowsCta: boolean;
   /** True when this format must honour the Meta 9:16 safe zone. */
   enforceSafeZone: boolean;
   scrim: false | "bottom" | "top";
@@ -118,6 +128,7 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
+      disclaimerFollowsCta: false,
       enforceSafeZone: false,
       scrim: "bottom",
       maxLines: 3,
@@ -136,6 +147,7 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
+      disclaimerFollowsCta: false,
       enforceSafeZone: false,
       scrim: "bottom",
       maxLines: 3,
@@ -156,6 +168,7 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: safe.top + 34, maxWidth: 260 },
       ctaGap: 52,
       disclaimerY: safe.bottom - 40,
+      disclaimerFollowsCta: true,
       enforceSafeZone: true,
       scrim: "top",
       maxLines: 3,
@@ -178,6 +191,7 @@ export function templateFor(ratio: RatioKey): Template {
     logo: { left: margin, top: 200, maxWidth: 240 },
     ctaGap: 48,
     disclaimerY: height - 46,
+    disclaimerFollowsCta: false,
     enforceSafeZone: false,
     scrim: false,
     maxLines: 4,
@@ -242,9 +256,19 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
 
   const layers: Layer[] = [];
 
-  // 2. Hero, cover-fitted into its zone. `cover` crops rather than distorts.
+  // 2. Hero, cover-fitted into its zone. `cover` crops rather than distorts,
+  //    and the crop is CENTRED on purpose.
+  //
+  //    This used sharp's `attention` saliency heuristic, which on 9:16 has to
+  //    discard about 41% of a square hero's width and chose a region that cut
+  //    the product in half. The art direction already guarantees the invariant
+  //    that heuristic was guessing at -- "the product is the hero: centred ...
+  //    with generous negative space on all sides so the image can be re-cropped
+  //    to square, vertical and landscape without cutting the product" -- so a
+  //    centre crop honours the prompt instead of second-guessing it, and it is
+  //    deterministic, which `attention` is not.
   const heroBuffer = await sharp(await readFile(hero.localPath))
-    .resize(tpl.hero.width, tpl.hero.height, { fit: "cover", position: "attention" })
+    .resize(tpl.hero.width, tpl.hero.height, { fit: "cover", position: "centre" })
     .toBuffer();
   layers.push({ input: heroBuffer, left: tpl.hero.left, top: tpl.hero.top });
 
@@ -355,24 +379,36 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   };
 }
 
-/** Lowest pixel any text element occupies, used by the safe-zone check. */
+/**
+ * Lowest pixel any text element occupies, used by the safe-zone check.
+ *
+ * It has to mirror buildTextLayer exactly. When the disclaimer follows the CTA
+ * the block grows with the headline, so the bottom cannot be read off a fixed
+ * coordinate -- getting that wrong would have the safe-zone check measuring a
+ * line that is no longer there.
+ */
 export function textBlockBottom(
   tpl: Template,
   fit: { lines: string[]; fontSize: number },
   hasDisclaimer: boolean,
   callToAction?: string,
 ): number {
-  if (hasDisclaimer) return tpl.disclaimerY;
+  if (hasDisclaimer && !tpl.disclaimerFollowsCta) return tpl.disclaimerY;
 
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
     tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;
 
-  if (!callToAction?.trim()) return headlineBottom;
+  const ctaBottom = callToAction?.trim()
+    ? headlineBottom +
+      tpl.ctaGap +
+      Math.round(
+        Math.max(24, fit.fontSize * 0.36) +
+          Math.round(Math.max(24, fit.fontSize * 0.36) * 0.62) * 2,
+      )
+    : headlineBottom;
 
-  const ctaFont = Math.round(Math.max(24, fit.fontSize * 0.36));
-  const boxH = Math.round(ctaFont + Math.round(ctaFont * 0.62) * 2);
-  return headlineBottom + tpl.ctaGap + boxH;
+  return hasDisclaimer ? ctaBottom + 46 : ctaBottom;
 }
 
 function buildTextLayer(args: {
@@ -409,6 +445,7 @@ function buildTextLayer(args: {
   // reads as "this is the action", and how real social placements treat it.
   const cta = callToAction?.trim();
   let ctaSvg = "";
+  let ctaBottom = headlineBottom;
   if (cta) {
     const ctaFont = Math.round(Math.max(24, fit.fontSize * 0.36));
     const padX = Math.round(ctaFont * 0.9);
@@ -417,6 +454,7 @@ function buildTextLayer(args: {
     const boxW = Math.round(textW + padX * 2);
     const boxH = Math.round(ctaFont + padY * 2);
     const boxY = headlineBottom + tpl.ctaGap;
+    ctaBottom = boxY + boxH;
     ctaSvg =
       `<rect x="${tpl.copy.left}" y="${boxY}" width="${boxW}" height="${boxH}" ` +
       `rx="${Math.round(boxH / 2)}" fill="${accent}"/>` +
@@ -425,8 +463,11 @@ function buildTextLayer(args: {
       `letter-spacing="0.6" fill="#141815">${escapeXml(cta)}</text>`;
   }
 
+  // Bottom-anchored, except on the story where it rides with the copy block.
+  const disclaimerY = tpl.disclaimerFollowsCta ? ctaBottom + 46 : tpl.disclaimerY;
+
   const disclaimerSvg = disclaimer
-    ? `<text x="${tpl.copy.left}" y="${tpl.disclaimerY}" font-family="${font}" ` +
+    ? `<text x="${tpl.copy.left}" y="${disclaimerY}" font-family="${font}" ` +
       `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(disclaimer)}</text>`
     : "";
 

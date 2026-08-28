@@ -65,6 +65,17 @@ export type CampaignReport = {
     validationFailed: number;
     generationRequests: number;
   };
+  /** The three the assessment FAQ names, computed in src/report.ts. */
+  successMetrics: {
+    timeSaved?: { minutes: number; baselineMinutesPerCreative: number; basis: string };
+    campaignsGenerated: { campaigns: number; creatives: number; markets: number };
+    efficiency: {
+      creativesPerGenerationCall: number | null;
+      costPerCreativeUsd: number | null;
+      reuseRate: number;
+      secondsPerCreative: number;
+    };
+  };
   assignmentProof: {
     passed: boolean;
     checks: { id: string; passed: boolean; message: string }[];

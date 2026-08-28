@@ -70,7 +70,13 @@ export type CampaignReport = {
    * The three metrics the assessment FAQ names when asked what matters most:
    * "time saved, number of campaigns generated, and overall efficiency."
    * Reported together, in that language, rather than left for a reader to
-   * assemble from the raw counters above.
+   * assemble from the raw counters above, and shown in the console.
+   *
+   * Against the brief's business goals: time saved and campaigns generated are
+   * goal 1 (campaign velocity); efficiency is the cost half of goal 4 (ROI).
+   * The other half of goal 4 -- CTR and conversions -- is deliberately absent.
+   * This pipeline never publishes, so it cannot measure them, and a fabricated
+   * conversion rate would be the easiest and worst lie in the project.
    */
   successMetrics: {
     /** Illustrative, from the baseline the brief supplies. Absent without one. */

@@ -647,8 +647,13 @@ and is the right call on an entitled account.
 
 ## Limitations
 
-- `position: "attention"` cropping is a Sharp heuristic, not product detection.
-  A production system would use Firefly Expand or a product-aware crop.
+- The hero crop is **centred**, which is right because the art direction demands
+  a centred product with negative space on all sides — but that is a convention
+  the prompt enforces, not product detection. An off-centre approved asset would
+  still crop badly. Adobe's Firefly Expand (generative reframing) or a
+  product-aware crop is the production answer; this repo deliberately does not
+  guess. It previously used Sharp's `attention` saliency heuristic here, which
+  sliced the product out of the 9:16 frame.
 - The prohibited-word scan is literal matching. It catches the claims a legal
   team enumerates; it does not do semantic claim detection.
 - Run state is in memory, so restarting the server forgets past runs. The

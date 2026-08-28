@@ -928,3 +928,41 @@ body {
   color: var(--accent);
   border-color: rgba(201, 162, 39, 0.45);
 }
+
+/*
+ * The three success metrics the client named. Sits directly under the
+ * assignment proof: what was produced, then what it was worth.
+ */
+.success {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin: 0 0 14px;
+}
+.success > div {
+  background: var(--panel-2);
+  padding: 11px 14px;
+}
+.success dt {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--muted);
+}
+.success dd {
+  margin: 4px 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+.success span {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}

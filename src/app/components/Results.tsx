@@ -21,6 +21,8 @@ export function Results({ report }: { report?: CampaignReport }) {
     <>
       <AssignmentProof proof={report.assignmentProof} />
 
+      <SuccessMetrics report={report} />
+
       <div className="metrics">
         <Metric v={m.productsProcessed} l="Products" />
         <Metric v={m.marketsProcessed} l="Markets" />
@@ -104,6 +106,56 @@ export function Results({ report }: { report?: CampaignReport }) {
       )}
     </>
   );
+}
+
+/**
+ * The three success metrics the client asked for, in the client's own words:
+ * "time saved, number of campaigns generated, and overall efficiency."
+ *
+ * Every figure is read from `report.successMetrics`, which is counted off the
+ * run. Time saved is the soft one and is labelled as such -- it is derived from
+ * the baseline the brief supplies, not from a stopwatch. There is deliberately
+ * no CTR or conversion figure here: this pipeline never publishes, so it has no
+ * way to know one, and inventing it would be the easiest lie in the project.
+ */
+function SuccessMetrics({ report }: { report: CampaignReport }) {
+  const { timeSaved, campaignsGenerated: c, efficiency: e } = report.successMetrics;
+  return (
+    <dl className="success">
+      {timeSaved && (
+        <div>
+          <dt>Time saved</dt>
+          <dd>{formatMinutes(timeSaved.minutes)}</dd>
+          <span>
+            illustrative, vs {timeSaved.baselineMinutesPerCreative} min/creative in the brief
+          </span>
+        </div>
+      )}
+      <div>
+        <dt>Campaigns generated</dt>
+        <dd>
+          {c.campaigns} campaign · {c.creatives} creatives
+        </dd>
+        <span>
+          across {c.markets} market{c.markets === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div>
+        <dt>Efficiency</dt>
+        <dd>
+          {e.creativesPerGenerationCall ?? "—"} per paid call
+          {e.costPerCreativeUsd !== null && ` · $${e.costPerCreativeUsd.toFixed(4)} each`}
+        </dd>
+        <span>
+          {Math.round(e.reuseRate * 100)}% of heroes reused · {e.secondsPerCreative}s per creative
+        </span>
+      </div>
+    </dl>
+  );
+}
+
+function formatMinutes(min: number): string {
+  return min >= 90 ? `${(min / 60).toFixed(1)} hours` : `${Math.round(min)} min`;
 }
 
 /**
