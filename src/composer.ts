@@ -45,6 +45,8 @@ export type ComposedCreative = {
   textBounds: { top: number; bottom: number; left: number; right: number };
   enforceSafeZone: boolean;
   textColor: string;
+  /** True when the copy sits on the photograph under a scrim, not on a panel. */
+  scrimmed: boolean;
 };
 
 /**
@@ -373,6 +375,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     disclaimerRendered: Boolean(disclaimer),
     ctaRendered: Boolean(callToAction?.trim()),
     enforceSafeZone: tpl.enforceSafeZone,
+    scrimmed: Boolean(tpl.scrim),
     textBounds: {
       top: logoBuffer ? tpl.logo.top : tpl.copy.top - 34,
       bottom: textBlockBottom(tpl, fit, Boolean(disclaimer), callToAction),

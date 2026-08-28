@@ -673,6 +673,20 @@ and is the right call on an entitled account.
   product-aware crop is the production answer; this repo deliberately does not
   guess. It previously used Sharp's `attention` saliency heuristic here, which
   sliced the product out of the 9:16 frame.
+- Text is laid out by hand — wrapping, auto-fit and glyph metrics in
+  `textLayout.ts` and `fonts.ts`. The current best-practice stack for
+  programmatic social creative is [Satori](https://github.com/vercel/satori)
+  (HTML/CSS → SVG) feeding Sharp, which is what Vercel's OG image generation
+  uses. It would delete the hand-rolled layout and the fontconfig shim. I did
+  not adopt it here because auto-fit-to-legibility-floor still has to be written
+  either way, and because I wanted line breaking to read real advance widths so
+  the failure mode is a flagged creative rather than a clipped one. It is the
+  first thing I would change with more time.
+- The contrast check reports only on the brand-panel format, where the
+  background is a colour the brief names. On full-bleed formats the copy sits on
+  a photograph, so legibility is handled earlier — the scrim is sized from the
+  measured luminance of the band the copy will occupy — and is not re-expressed
+  as a WCAG ratio afterwards.
 - The prohibited-word scan is literal matching. It catches the claims a legal
   team enumerates; it does not do semantic claim detection.
 - Run state is in memory, so restarting the server forgets past runs. The

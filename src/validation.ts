@@ -176,12 +176,24 @@ const legibilityCheck: CreativeCheck = ({ rendered }) => ({
 });
 
 /**
- * WCAG 2.2 AA wants 4.5:1 for normal text but only 3:1 for large text
- * (>=18.66px bold, or >=24px regular). Campaign headlines are far into the
- * large band, so holding them to the small-text bar would report a failure the
- * standard does not require.
+ * Text/background contrast, but only where "background" is a colour we can name.
+ *
+ * WCAG 2.2 AA wants 4.5:1 for normal text and 3:1 for large text (>=18.66px
+ * bold, or >=24px regular); campaign headlines sit far into the large band, so
+ * holding them to the small-text bar would report a failure the standard does
+ * not require.
+ *
+ * It returns null on the full-bleed formats, and that is the honest answer
+ * rather than a missing one. There the copy sits on a photograph, not on
+ * brand.primaryColor, so comparing the two measures a background that is not
+ * behind the copy -- it would pass over a white image. Legibility there is
+ * guaranteed differently and earlier: composer.ts samples the luminance of the
+ * band the copy will occupy and sizes the scrim to that specific photograph.
+ * Measuring it after the fact is worth doing and is noted as a limitation; a
+ * check that cannot go red is worse than an absent one.
  */
 const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
+  if (rendered.scrimmed) return null;
   const ratio = contrastRatio(rendered.textColor, brief.brand.primaryColor);
   const isLargeText = rendered.fontSize >= 24;
   const threshold = isLargeText ? 3 : 4.5;
