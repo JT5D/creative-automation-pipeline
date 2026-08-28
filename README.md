@@ -468,8 +468,11 @@ often enough to matter: a CTA pill sized from it clipped its own label.
 | **9:16** 1080×1920 | Story / Reel | Full-bleed hero, copy inside Meta's published safe zone |
 | **16:9** 1920×1080 | Landscape | Hero right, solid brand copy panel left |
 
-The 9:16 template is built against Meta's published safe zone — 14% top, 35%
-bottom, 6% sides free of text and logos. My first version put the headline and
+The 9:16 template is built against Meta's **unified** 9:16 safe zone — 14% top,
+35% bottom, 6% sides free of text and logos. Meta consolidated Facebook and
+Instagram Stories and Reels into that single spec in March 2026, taking the most
+restrictive bottom, so one 9:16 export is safe across all four vertical
+placements. My first version put the headline and
 CTA inside the bottom 35%, where the platform's own profile icon and CTA
 overlay would have covered the entire message. See
 [`docs/CREATIVE_STANDARDS.md`](docs/CREATIVE_STANDARDS.md) for the correction
@@ -547,6 +550,12 @@ text/background contrast vs WCAG AA · logo composited · disclaimer present ·
 no prohibited term in rendered copy.
 
 Prohibited terms match on word boundaries, so `cure` does not trip on `secure`.
+
+This is an **MLR screen** — medical, legal and regulatory review — which is the
+gate a dermatologist-tested skincare claim has to clear in every market before
+it can run. It is the reason the check happens at *preflight*, before a single
+credit is spent: copy that legal will reject should never reach production, let
+alone a paid model call. `samples/campaign-legal-fail.yaml` proves it goes red.
 
 These are transparent, deterministic production rules. This is not AI brand
 inference and is not presented as such.

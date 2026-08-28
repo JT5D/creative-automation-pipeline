@@ -61,13 +61,17 @@ export type ComposedCreative = {
  * survive that crop, and one generation has to serve every format.
  */
 /**
- * Meta's published safe zone for 9:16 placements: leave roughly 14% of the
- * top, 35% of the bottom and 6% of each side free of text, logos and other
- * key creative elements, so nothing important is covered by the profile icon
- * or the platform's own call-to-action.
+ * Meta's UNIFIED 9:16 safe zone: 14% top (~270px), 6% each side (~65px) and up
+ * to 35% bottom (~672px) kept free of text, logos and other key elements, so
+ * nothing important sits under the profile icon, caption tray or the
+ * platform's own call-to-action.
  *
- * Source: Meta Ads Guide, Instagram Stories / Reels image ad specs (checked
- * 2026-08-28). Stories and Reels share these values.
+ * In March 2026 Meta consolidated Facebook Stories, Facebook Reels, Instagram
+ * Stories and Instagram Reels into this single spec, taking the most
+ * restrictive bottom (Reels, 35%) rather than the older Stories-only 20%.
+ * Designing to it means ONE 9:16 export is safe across all four vertical
+ * placements -- which is the whole point of generating the hero once.
+ * Checked 2026-08-28.
  *
  * The photograph itself is full-bleed -- the restriction is on text and logos,
  * not on the image.
