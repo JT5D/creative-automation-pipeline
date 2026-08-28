@@ -30,6 +30,7 @@ export type Hero = {
     prompt: string;
     durationMs: number;
     requestId?: string;
+    seed?: number;
   };
 };
 

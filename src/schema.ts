@@ -138,6 +138,13 @@ export type CanonicalHeroAsset = {
     prompt: string;
     durationMs: number;
     requestId?: string;
+    /**
+     * The generation seed, when the provider exposes one. Firefly returns a
+     * seed and accepts it back, so a hero can be regenerated identically.
+     * Gemini's image API has no seed today, so this is absent there -- and
+     * absent is the honest answer, not a fabricated number.
+     */
+    seed?: number;
   };
 };
 

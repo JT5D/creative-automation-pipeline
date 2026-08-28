@@ -101,6 +101,42 @@ on an entitled account:
 `/v4/images/generate-async`. Object Composite is the first thing I would wire
 next on an entitled account, and it is noted as such in the code.
 
+## Reproducibility — where Adobe is genuinely ahead
+
+A generated hero is not a one-off. A brand may need the same image again a year
+later: a legal re-review, an audit, a re-render at a new size, a market that
+adopts the campaign late. That requires the generation to be repeatable.
+
+**Adobe Firefly supports seeds.** The request takes `"seeds": [1842533538]`, and
+the response returns the seed it used at `result.outputs[].seed`. Adobe's
+documentation states that "using the same seed, prompt, and other presets,
+would generate the same image every time."
+
+**Gemini's image API does not expose a seed.** There is no seed, temperature or
+determinism control documented for image generation — only `thinking_level`.
+Re-running the same prompt gives a different picture.
+
+Both checked 2026-08-28. Adobe documents seeds on the v3 endpoint; I have not
+found a v4 statement either way, so the adapter sends `seeds` only when a seed
+is asked for, and a version that ignores it simply degrades to ordinary
+generation.
+
+This is a concrete production capability, not a benchmark score, and it is the
+kind of thing that decides an enterprise choice:
+
+| | Firefly | Gemini image |
+|---|---|---|
+| Reproduce an exact prior generation | **yes, via seed** | no |
+| Seed recorded in provenance | **yes** | n/a |
+| Regenerate for audit or re-render | **yes** | re-prompt and accept a new image |
+
+`CanonicalHeroAsset.generation.seed` carries it when the provider returns one,
+and is **absent** when it does not — absent being the honest answer rather than
+a fabricated number. Everything downstream of the hero is already deterministic
+in this pipeline: the same hero and brief always produce byte-identical
+creatives, which a test asserts. Seeds close the one remaining gap, and only
+Adobe can close it today.
+
 ## Models deliberately not integrated
 
 FLUX, Ideogram, Midjourney, Runway, Kling, Veo, Seedance — all credible, none

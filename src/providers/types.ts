@@ -11,6 +11,11 @@ export type HeroRequest = {
   prompt: string;
   /** Approved packshot used as an identity anchor when one exists. */
   referenceAssetPath?: string;
+  /**
+   * Reproduce a previous generation. Honoured by providers that support seeds;
+   * ignored, never faked, by those that do not.
+   */
+  seed?: number;
 };
 
 export type GeneratedHero = {
@@ -20,6 +25,8 @@ export type GeneratedHero = {
   operation: NonNullable<CanonicalHeroAsset["generation"]>["operation"];
   model?: string;
   requestId?: string;
+  /** Present only when the provider actually returned one. */
+  seed?: number;
   durationMs: number;
 };
 

@@ -111,6 +111,7 @@ export async function resolveHero(
     prompt,
     durationMs: generated.durationMs,
     requestId: generated.requestId,
+    seed: generated.seed,
   };
   await writeFile(path.join(ctx.cacheDir, `${cacheKey}.json`), JSON.stringify(generation, null, 2));
 

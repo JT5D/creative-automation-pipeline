@@ -238,7 +238,8 @@ function provenance(product: ProductRecord): string {
     return `Reused approved asset · ${h.sourceAssetPath?.split("/").pop() ?? ""}`;
   }
   const g = h.generation;
-  return `${g?.provider} · ${g?.model} · ${g?.operation} · ${((g?.durationMs ?? 0) / 1000).toFixed(1)}s`;
+  const seed = g?.seed !== undefined ? ` · seed ${g.seed}` : "";
+  return `${g?.provider} · ${g?.model} · ${g?.operation} · ${((g?.durationMs ?? 0) / 1000).toFixed(1)}s${seed}`;
 }
 
 function SourceBadge({ source }: { source: string }) {
