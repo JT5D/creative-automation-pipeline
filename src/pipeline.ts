@@ -42,11 +42,31 @@ export type RunOptions = {
   model?: string;
 };
 
-/** Accepts JSON or YAML text; both normalize to the same validated object. */
+/**
+ * Accepts JSON or YAML text; both normalize to the same validated object.
+ *
+ * Validation failures are rewritten into something a marketer can act on. Zod's
+ * raw output is a JSON dump of issue objects, and anyone editing a brief in the
+ * console would have seen that wall of text rather than "products: a campaign
+ * needs at least 2 products".
+ */
 export function parseBrief(raw: string): CampaignBrief {
   const trimmed = raw.trim();
+  if (!trimmed) throw new Error("The brief is empty.");
+
   const data = trimmed.startsWith("{") ? JSON.parse(trimmed) : parseYaml(trimmed);
-  return CampaignBriefSchema.parse(data);
+  const result = CampaignBriefSchema.safeParse(data);
+  if (result.success) return result.data;
+
+  const problems = result.error.issues.map((issue) => {
+    const field = issue.path.join(".") || "brief";
+    return `${field}: ${issue.message}`;
+  });
+  throw new Error(
+    problems.length === 1
+      ? `Invalid brief — ${problems[0]}`
+      : `Invalid brief:\n  · ${problems.join("\n  · ")}`,
+  );
 }
 
 export async function loadBriefFile(file: string): Promise<CampaignBrief> {

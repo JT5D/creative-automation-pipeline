@@ -100,6 +100,25 @@ products:
     expect(() => parseBrief(oneProduct)).toThrow(/at least 2 products/i);
   });
 
+  it("explains what is wrong in words a marketer can act on", () => {
+    // Zod's raw output is a JSON dump of issue objects; anyone editing a brief
+    // in the console would have seen that instead of a sentence.
+    try {
+      parseBrief("id: x\nname: X\nbrand: { name: B }\nproducts: []");
+      throw new Error("should have rejected");
+    } catch (e) {
+      const message = (e as Error).message;
+      expect(message).toContain("Invalid brief");
+      expect(message).toContain("region");
+      expect(message).not.toContain("{");
+      expect(message).not.toContain("code");
+    }
+  });
+
+  it("says so plainly when the brief is empty", () => {
+    expect(() => parseBrief("   ")).toThrow(/brief is empty/i);
+  });
+
   it("rejects a brief missing a required campaign field", () => {
     expect(() => parseBrief(briefYaml().replace("region: Germany (DACH)\n", ""))).toThrow();
   });
