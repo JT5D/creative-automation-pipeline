@@ -226,6 +226,30 @@ states.
 No database — an append-only JSONL file is enough, and it is inspectable with
 `cat`.
 
+## Visual regression
+
+Every other test checks that something is *true* of an output: the right size,
+ink where the copy should be, the safe zone respected. None of them would
+notice a headline sliding on top of the lockup — that creative still has the
+right dimensions and plenty of ink.
+
+So each creative is also reduced to a coarse grid of mean luminance and
+compared against a committed signature. Anti-aliasing noise disappears at that
+resolution; a moved element does not.
+
+```bash
+npm run test:baseline    # regenerate, deliberately, after eyeballing the output
+```
+
+The thresholds come from measurement, not taste. Re-rendering the same brief
+twice drifts by exactly **0** — composition is deterministic. Sliding a copy
+band 100px drifts by 0.74. The tolerance sits between the two, and one of the
+tests **proves the check can fail** by shifting a band and asserting the
+signature notices. A regression test that cannot fail is decoration.
+
+This closes the gap that let the cache bug through: a green suite is not
+evidence the output is right unless something is actually looking at it.
+
 ## Key design decisions
 
 ### 1. Asset origin is a boundary concern
@@ -620,7 +644,8 @@ src/
   cli.ts             thin wrapper over the same runCampaign()
   providers/         HeroGenerator: gemini · firefly · test double
   app/               one-screen React console
-tests/               44 tests, no network calls
+tests/               73 tests, no network calls
+  baselines/         committed visual signatures
 samples/             campaign briefs + input assets
 docs/
   API_NOTES.md         verified API contracts, including one the docs omit
