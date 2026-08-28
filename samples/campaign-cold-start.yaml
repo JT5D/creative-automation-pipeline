@@ -1,0 +1,38 @@
+# A different brand, launching from nothing.
+#
+# Neither product has an approved hero and neither has a packshot, so both are
+# generated from text alone: 2 model calls for 8 creatives. This is the
+# expensive end of the range, and it is here to show the cost scaling honestly
+# rather than only demoing the flattering case.
+#
+# It also proves nothing in the pipeline is hardcoded to one brand — different
+# palette, different category, different copy, same code path.
+id: nordvik-first-drop
+name: Nordvik — First Drop
+
+region: Nordics
+audience: Speciality coffee drinkers 25–40 who buy direct from roasters
+message: Slow-steeped for eighteen hours
+objective: Launch awareness for a new direct-to-consumer roastery
+callToAction: Taste the first batch
+toneOfVoice: Cold, still, Scandinavian. Quiet confidence, no exclamation marks.
+manualMinutesPerCreative: 25
+
+brand:
+  name: Nordvik
+  primaryColor: "#12263A"
+  secondaryColor: "#D08C4A"
+  disclaimer: Roasted in small batches. Contains caffeine.
+  prohibitedWords:
+    - healthiest
+    - detox
+    - cures
+    - guaranteed
+
+products:
+  # No approvedHeroPath and no referenceAssetPath -> pure text-to-image.
+  - id: single-origin-cold-brew
+    name: Single-Origin Cold Brew
+
+  - id: oat-barista-blend
+    name: Oat Barista Blend

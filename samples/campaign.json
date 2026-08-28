@@ -1,0 +1,63 @@
+{
+  "id": "lumen-autumn-glow-de-json",
+  "name": "Lumen Botanicals — Autumn Glow (DACH, JSON form)",
+  "region": "Germany (DACH)",
+  "audience": "Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare",
+  "message": "Wake up to visibly brighter skin",
+  "objective": "Drive first-purchase conversion for the autumn skincare range in DACH",
+  "callToAction": "Jetzt entdecken",
+  "toneOfVoice": "Calm, clinical, warm. Understated luxury — never hype.",
+  "manualMinutesPerCreative": 25,
+  "markets": [
+    {
+      "locale": "en-GB",
+      "name": "United Kingdom",
+      "message": "Wake up to visibly brighter skin",
+      "callToAction": "Discover now",
+      "disclaimer": "Individual results may vary. Dermatologist tested."
+    },
+    {
+      "locale": "de-DE",
+      "name": "Germany",
+      "message": "Wach auf mit sichtbar strahlenderer Haut",
+      "callToAction": "Jetzt entdecken",
+      "disclaimer": "Ergebnisse können variieren. Dermatologisch getestet."
+    },
+    {
+      "locale": "fr-FR",
+      "name": "France",
+      "message": "Réveillez-vous avec une peau visiblement plus éclatante",
+      "callToAction": "Découvrir",
+      "disclaimer": "Les résultats peuvent varier. Testé sous contrôle dermatologique."
+    }
+  ],
+  "brand": {
+    "name": "Lumen Botanicals",
+    "logoPath": "samples/assets/lumen-logo.png",
+    "primaryColor": "#14322B",
+    "secondaryColor": "#C9A227",
+    "disclaimer": "Individual results may vary. Dermatologist tested.",
+    "prohibitedWords": [
+      "cure",
+      "cures",
+      "miracle",
+      "clinically proven",
+      "anti-aging",
+      "eliminates wrinkles",
+      "guaranteed",
+      "permanent results"
+    ]
+  },
+  "products": [
+    {
+      "id": "radiance-serum",
+      "name": "Radiance Vitamin C Serum",
+      "approvedHeroPath": "samples/assets/radiance-serum-hero.png"
+    },
+    {
+      "id": "overnight-recovery-cream",
+      "name": "Overnight Recovery Cream",
+      "referenceAssetPath": "samples/assets/overnight-cream-packshot.png"
+    }
+  ]
+}

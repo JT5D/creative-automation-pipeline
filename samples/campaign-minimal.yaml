@@ -1,0 +1,25 @@
+# The smallest brief the contract accepts, and the cheapest possible run.
+#
+# Both products already have an approved hero, so the pipeline generates
+# NOTHING: 8 creatives, zero model calls, zero spend, about one second.
+# This is the case a real catalogue hits most often once assets exist.
+id: lumen-restock-uk
+name: Lumen Botanicals — Restock (UK)
+
+region: United Kingdom
+audience: Existing customers who bought in the last 90 days
+message: Back in stock
+
+brand:
+  name: Lumen Botanicals
+  primaryColor: "#14322B"
+  secondaryColor: "#C9A227"
+
+products:
+  - id: radiance-serum
+    name: Radiance Vitamin C Serum
+    approvedHeroPath: samples/assets/radiance-serum-hero.png
+
+  - id: overnight-recovery-cream
+    name: Overnight Recovery Cream
+    approvedHeroPath: samples/assets/overnight-cream-packshot.png
