@@ -94,6 +94,7 @@ You never need both. No cloud account, no database, no deployment.
 npm run dev                                   # UI + API
 npm run campaign -- samples/campaign.yaml     # same pipeline, CLI
 npm run campaign -- samples/campaign.json     # identical brief, JSON form
+npm run campaign -- samples/campaign.yaml --dry-run   # what it costs, spending nothing
 npm run verify                                # typecheck + tests + build
 ```
 
@@ -183,6 +184,46 @@ Read down the right-hand column and the economics are the whole argument: cost
 tracks *how much a brand has already approved*, not how many creatives it
 wants. A test asserts each brief produces exactly what it advertises, so the
 library cannot drift into a sales pitch.
+
+## Knowing the cost before you spend it
+
+`--dry-run` resolves exactly the way a real run does — the same
+`findApprovedHero` against the same filesystem — then stops. Nothing is
+generated and no provider is constructed, so the reuse/generate split it
+reports is the split that will actually happen.
+
+```
+DRY RUN  Lumen Botanicals — Autumn Glow (DACH)
+
+  Preflight                   PASS
+  Formats × markets           4 × 3  (en-GB, de-DE, fr-FR)
+  Creatives to produce        24
+  Heroes to generate          1  · gemini-3-pro-image
+  Estimated spend             $0.134
+
+  Radiance Vitamin C Serum       REUSE     radiance-serum-hero.png
+  Overnight Recovery Cream       GENERATE  from packshot reference
+```
+
+The console has the same thing behind an **Estimate** button, alongside toggles
+for which formats and markets to produce and a model picker that shows each
+tier's published price. A test asserts the estimate matches what the real run
+then does, because an estimate that can drift from the bill is worse than none.
+
+## Learning across runs
+
+Every run appends one line to `outputs/runs.jsonl`, and the console shows the
+aggregate: runs, campaigns, creatives, spend, cost per creative — and **reuse
+rate**, the share of heroes served from already-approved assets.
+
+Reuse rate is the number worth watching. It is what makes the cost curve bend
+as a catalogue matures: the same brief costs less every quarter, because more
+of it is already approved. The per-run report answers *what happened*; this
+answers *whether it is getting better*, which is the goal the brief actually
+states.
+
+No database — an append-only JSONL file is enough, and it is inspectable with
+`cat`.
 
 ## Key design decisions
 

@@ -66,6 +66,8 @@ export type CampaignReport = {
   };
   products: ProductRecord[];
   warnings: string[];
+  estimatedCostUsd?: { generations: number; unitPriceUsd: number; totalUsd: number; source: string };
+  estimatedTimeSaved?: { baselineMinutesPerCreative: number; savedMinutes: number; basis: string };
 };
 
 export type PipelineEvent = {
@@ -95,4 +97,59 @@ export type BriefSummary = {
   label: string;
   teaches: string;
   expect: string;
+};
+
+export type ModelOption = { id: string; label: string; usdPer2K: number; note: string };
+
+export type FormatOption = {
+  key: "1x1" | "4x5" | "9x16" | "16x9";
+  label: string;
+  width: number;
+  height: number;
+};
+
+export type PlannedProduct = {
+  productId: string;
+  productName: string;
+  action: "reuse" | "generate";
+  sourceAssetPath?: string;
+  usingReference: boolean;
+};
+
+export type CampaignEstimate = {
+  campaignId: string;
+  campaignName: string;
+  preflight: ValidationResult;
+  blocked: boolean;
+  model: string;
+  ratios: string[];
+  locales: string[];
+  products: PlannedProduct[];
+  variants: number;
+  generations: number;
+  estimatedCostUsd?: { generations: number; unitPriceUsd: number; totalUsd: number; source: string };
+  estimatedTimeSaved?: { baselineMinutesPerCreative: number; savedMinutes: number; basis: string };
+};
+
+export type Insights = {
+  runs: number;
+  campaigns: number;
+  creatives: number;
+  generationRequests: number;
+  reuseRate: number;
+  totalCostUsd: number;
+  costPerCreativeUsd: number;
+  totalSavedMinutes: number;
+  avgDurationMs: number;
+  history: {
+    at: string;
+    campaignName: string;
+    mode: string;
+    model: string;
+    variants: number;
+    reused: number;
+    generationRequests: number;
+    costUsd: number;
+    durationMs: number;
+  }[];
 };

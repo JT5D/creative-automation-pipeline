@@ -3,6 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { resolveHero } from "./assetResolver.js";
 import { composeVariant } from "./composer.js";
+import { recordRun } from "./history.js";
 import { selectGenerator, type HeroGenerator } from "./providers/index.js";
 import {
   createReport,
@@ -32,6 +33,10 @@ export type RunOptions = {
   mode?: "dev" | "final";
   generator?: HeroGenerator;
   onEvent?: (event: PipelineEvent) => void;
+  /** Produce only these formats. Omit for all of them. */
+  ratios?: RatioKey[];
+  /** Produce only these markets. Omit for every market in the brief. */
+  locales?: string[];
 };
 
 /** Accepts JSON or YAML text; both normalize to the same validated object. */
@@ -68,11 +73,23 @@ export async function runCampaign(
   // 1. Contract. An invalid brief never reaches the rest of the system.
   const brief =
     typeof rawBrief === "string" ? parseBrief(rawBrief) : CampaignBriefSchema.parse(rawBrief);
-  const markets = resolveMarkets(brief);
+  const allMarkets = resolveMarkets(brief);
+  const markets = options.locales?.length
+    ? allMarkets.filter((m) => options.locales!.includes(m.locale))
+    : allMarkets;
+
+  const allRatios = Object.keys(RATIOS) as RatioKey[];
+  const ratios = options.ratios?.length
+    ? allRatios.filter((r) => options.ratios!.includes(r))
+    : allRatios;
+
+  if (markets.length === 0) throw new Error("No markets selected");
+  if (ratios.length === 0) throw new Error("No formats selected");
   emit("brief_validated", {
     campaignId: brief.id,
     products: brief.products.length,
     markets: markets.length,
+    formats: ratios.length,
   });
 
   // 2. Everything checkable for free, checked before anything is paid for.
@@ -112,7 +129,7 @@ export async function runCampaign(
 
     // One hero, then every ratio x every market. Adding a format or a market
     // multiplies the output and costs nothing -- the expensive step is done.
-    for (const ratio of Object.keys(RATIOS) as RatioKey[]) {
+    for (const ratio of ratios) {
       for (const market of markets) {
         const variantStart = Date.now();
         emit("variant_composing", { productId: product.id, ratio, locale: market.locale });
@@ -156,6 +173,7 @@ export async function runCampaign(
 
   const report = createReport({
     brief,
+    markets,
     products,
     preflight: pre,
     mode,
@@ -166,6 +184,7 @@ export async function runCampaign(
   });
 
   await writeReport(report, outputRoot);
+  await recordRun(report, outputRoot);
   emit("report_written", { path: path.join(sanitizeId(brief.id), "report.json") });
   emit("complete", {
     variants: report.metrics.variantsCreated,

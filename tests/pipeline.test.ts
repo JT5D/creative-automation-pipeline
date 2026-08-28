@@ -8,6 +8,8 @@ import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
 import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
+import { estimateCampaign } from "../src/estimate.js";
+import { readInsights } from "../src/history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
 import { sanitizeId } from "../src/report.js";
 import { RATIOS } from "../src/schema.js";
@@ -332,6 +334,122 @@ describe("the sample brief library", () => {
       }),
     ).rejects.toThrow(/preflight failed/i);
     expect(counting.calls).toBe(0);
+  });
+});
+
+describe("dry run", () => {
+  it("reports the same reuse/generate split the real run takes, and spends nothing", async () => {
+    const estimate = await estimateCampaign(parseBrief(briefYaml()));
+
+    expect(estimate.blocked).toBe(false);
+    expect(estimate.products.find((p) => p.productId === "product-a")?.action).toBe("reuse");
+    expect(estimate.products.find((p) => p.productId === "product-b")?.action).toBe("generate");
+    expect(estimate.generations).toBe(1);
+
+    // The estimate must match what actually happens, or it is worthless.
+    const generator = new FakeApiGenerator();
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator,
+    });
+    expect(report.metrics.generationRequests).toBe(estimate.generations);
+    expect(report.metrics.variantsCreated).toBe(estimate.variants);
+  });
+
+  it("prices the run from the published table, per model", async () => {
+    const pro = await estimateCampaign(parseBrief(briefYaml()), { model: "gemini-3-pro-image" });
+    const lite = await estimateCampaign(parseBrief(briefYaml()), {
+      model: "gemini-3.1-flash-lite-image",
+    });
+
+    expect(pro.estimatedCostUsd?.totalUsd).toBeCloseTo(0.134, 4);
+    expect(lite.estimatedCostUsd?.totalUsd).toBeCloseTo(0.0336, 4);
+    // An unpriced model must report nothing rather than guess.
+    const unknown = await estimateCampaign(parseBrief(briefYaml()), { model: "some-new-model" });
+    expect(unknown.estimatedCostUsd).toBeUndefined();
+  });
+
+  it("narrows the plan when formats or markets are deselected", async () => {
+    const all = await estimateCampaign(parseBrief(briefYaml()));
+    const narrowed = await estimateCampaign(parseBrief(briefYaml()), { ratios: ["1x1", "16x9"] });
+
+    expect(narrowed.ratios).toEqual(["1x1", "16x9"]);
+    expect(narrowed.variants).toBe(all.variants / 2);
+    // Fewer formats must not change what has to be generated.
+    expect(narrowed.generations).toBe(all.generations);
+  });
+
+  it("flags a non-compliant brief without calling anything", async () => {
+    const estimate = await estimateCampaign(
+      parseBrief(
+        briefYaml().replace(
+          "message: Wake up to visibly brighter skin",
+          "message: A miracle that will cure dull skin",
+        ),
+      ),
+    );
+    expect(estimate.blocked).toBe(true);
+    expect(estimate.preflight.status).toBe("fail");
+  });
+});
+
+describe("selective production", () => {
+  it("produces only the formats and markets asked for", async () => {
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
+    });
+
+    expect(report.metrics.variantsCreated).toBe(2); // 2 products x 1 format x 1 market
+    for (const p of report.products) {
+      expect(p.creatives.every((c) => c.ratio === "1x1")).toBe(true);
+    }
+  });
+
+  it("refuses an empty selection rather than silently producing nothing", async () => {
+    await expect(
+      runCampaign(parseBrief(briefYaml()), {
+        outputRoot: outputs,
+        mode: "final",
+        generator: new FakeApiGenerator(),
+        ratios: ["9x16"],
+        locales: ["nope-XX"],
+      }),
+    ).rejects.toThrow(/no markets selected/i);
+  });
+});
+
+describe("run history", () => {
+  it("accumulates across runs and computes a reuse rate", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-history-"));
+
+    await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir, mode: "final", generator: new FakeApiGenerator(), ratios: ["1x1"],
+    });
+    await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir, mode: "final", generator: new FakeApiGenerator(), ratios: ["1x1"],
+    });
+
+    const insights = await readInsights(dir);
+    expect(insights.runs).toBe(2);
+    expect(insights.campaigns).toBe(1);
+    expect(insights.creatives).toBe(4);
+    expect(insights.generationRequests).toBe(2);
+    // One of two heroes reused each run.
+    expect(insights.reuseRate).toBeCloseTo(0.5, 2);
+
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("reports an empty history without failing", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-empty-"));
+    const insights = await readInsights(dir);
+    expect(insights.runs).toBe(0);
+    expect(insights.reuseRate).toBe(0);
+    await rm(dir, { recursive: true, force: true });
   });
 });
 

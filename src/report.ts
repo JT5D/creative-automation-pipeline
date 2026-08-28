@@ -1,7 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { USD_PER_IMAGE_2K } from "./providers/gemini.js";
-import { resolveMarkets } from "./schema.js";
+import { costEstimate, timeSavedEstimate } from "./pricing.js";
 import type {
   CampaignBrief,
   CanonicalHeroAsset,
@@ -79,6 +78,8 @@ export type CampaignReport = {
 /** Every number here is counted off the records we actually produced. */
 export function createReport(args: {
   brief: CampaignBrief;
+  /** The markets actually produced, which may be a subset of the brief's. */
+  markets: { locale: string; message: string }[];
   products: ProductRecord[];
   preflight: ValidationResult;
   mode: "dev" | "final";
@@ -87,7 +88,7 @@ export function createReport(args: {
   completedAt: number;
   warnings: string[];
 }): CampaignReport {
-  const { brief, products, preflight, mode, provider, startedAt, completedAt } = args;
+  const { brief, markets, products, preflight, mode, provider, startedAt, completedAt } = args;
   const creatives = products.flatMap((p) => p.creatives);
 
   return {
@@ -96,7 +97,7 @@ export function createReport(args: {
     region: brief.region,
     audience: brief.audience,
     message: brief.message,
-    markets: resolveMarkets(brief).map((m) => ({ locale: m.locale, message: m.message })),
+    markets: markets.map((m) => ({ locale: m.locale, message: m.message })),
     mode,
     provider,
     startedAt: new Date(startedAt).toISOString(),
@@ -105,7 +106,7 @@ export function createReport(args: {
     preflight,
     metrics: {
       productsProcessed: products.length,
-    marketsProcessed: resolveMarkets(brief).length,
+    marketsProcessed: markets.length,
       approvedAssetsReused: products.filter((p) => p.hero.source === "reused").length,
       heroesGenerated: products.filter((p) => p.hero.source === "generated").length,
       heroesFromCache: products.filter((p) => p.hero.source === "generated_cached").length,
@@ -119,11 +120,11 @@ export function createReport(args: {
     },
     products,
     warnings: args.warnings,
-    estimatedCostUsd: estimateCost(
+    estimatedCostUsd: costEstimate(
       provider.model,
       products.filter((p) => p.hero.source === "generated").length,
     ),
-    estimatedTimeSaved: estimateTimeSaved(
+    estimatedTimeSaved: timeSavedEstimate(
       brief.manualMinutesPerCreative,
       creatives.length,
       completedAt - startedAt,
@@ -131,35 +132,6 @@ export function createReport(args: {
   };
 }
 
-function estimateCost(model: string, generations: number) {
-  const unitPriceUsd = USD_PER_IMAGE_2K[model];
-  if (unitPriceUsd === undefined) return undefined;
-  return {
-    generations,
-    unitPriceUsd,
-    totalUsd: Number((generations * unitPriceUsd).toFixed(4)),
-    source: "ai.google.dev/gemini-api/docs/pricing, 2K output, verified 2026-08-28",
-  };
-}
-
-function estimateTimeSaved(
-  baseline: number | undefined,
-  variants: number,
-  durationMs: number,
-) {
-  if (!baseline) return undefined;
-  const manualMinutes = baseline * variants;
-  const pipelineMinutes = durationMs / 60_000;
-  return {
-    baselineMinutesPerCreative: baseline,
-    manualMinutes,
-    pipelineMinutes: Number(pipelineMinutes.toFixed(3)),
-    savedMinutes: Number((manualMinutes - pipelineMinutes).toFixed(2)),
-    basis:
-      "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, " +
-      "minus measured pipeline runtime. Not a measured comparison.",
-  };
-}
 
 export async function writeReport(
   report: CampaignReport,

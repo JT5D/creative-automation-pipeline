@@ -29,17 +29,7 @@ const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"
  */
 const DEFAULT_MODEL = "gemini-3-pro-image";
 
-/**
- * Verified per-image output pricing, ai.google.dev/gemini-api/docs/pricing,
- * checked 2026-08-28. Used only for a clearly-labelled cost estimate in
- * report.json -- never presented as a billed amount.
- */
-export const USD_PER_IMAGE_2K: Record<string, number> = {
-  "gemini-3-pro-image": 0.134,
-  "gemini-3.1-flash-image": 0.101,
-  "gemini-3.1-flash-lite-image": 0.0336,
-  "gemini-2.5-flash-image": 0.039,
-};
+
 
 const MIME_BY_EXT: Record<string, string> = {
   ".png": "image/png",

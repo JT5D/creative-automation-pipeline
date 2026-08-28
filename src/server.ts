@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import express from "express";
+import { estimateCampaign } from "./estimate.js";
+import { readInsights } from "./history.js";
 import { runCampaign, type PipelineEvent } from "./pipeline.js";
+import { MODEL_OPTIONS, PRICING_SOURCE } from "./pricing.js";
+import { RATIOS } from "./schema.js";
 import { providerStatus } from "./providers/index.js";
 import type { CampaignReport } from "./report.js";
 
@@ -59,6 +63,47 @@ app.get("/api/briefs/:file", async (req, res) => {
   }
 });
 
+/** Model choices with published prices, so the picker cannot invent a number. */
+app.get("/api/models", (_req, res) => {
+  res.json({ models: MODEL_OPTIONS, source: PRICING_SOURCE });
+});
+
+app.get("/api/formats", (_req, res) => {
+  res.json(
+    Object.entries(RATIOS).map(([key, v]) => ({
+      key,
+      label: v.label,
+      width: v.width,
+      height: v.height,
+    })),
+  );
+});
+
+/** Cross-run learning: reuse rate, spend and time saved over every run so far. */
+app.get("/api/insights", async (_req, res) => {
+  res.json(await readInsights(OUTPUT_ROOT));
+});
+
+/** What a run would produce and cost. Spends nothing and calls no provider. */
+app.post("/api/estimate", async (req, res) => {
+  const raw = typeof req.body?.brief === "string" ? req.body.brief : null;
+  if (!raw) {
+    res.status(400).json({ error: "Body must be { brief: string }" });
+    return;
+  }
+  try {
+    res.json(
+      await estimateCampaign(raw, {
+        model: req.body?.model,
+        ratios: req.body?.ratios,
+        locales: req.body?.locales,
+      }),
+    );
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+  }
+});
+
 app.post("/api/runs", async (req, res) => {
   const raw = typeof req.body?.brief === "string" ? req.body.brief : null;
   if (!raw) {
@@ -78,8 +123,15 @@ app.post("/api/runs", async (req, res) => {
   // Respond immediately; the UI polls for real events as they are emitted.
   res.status(202).json({ runId });
 
+  // A model chosen in the UI applies to this process's generator only.
+  if (typeof req.body?.model === "string" && req.body.model) {
+    process.env.GEMINI_IMAGE_MODEL = req.body.model;
+  }
+
   runCampaign(raw, {
     outputRoot: OUTPUT_ROOT,
+    ratios: req.body?.ratios,
+    locales: req.body?.locales,
     onEvent: (event) => state.events.push(event),
   })
     .then((report) => {
