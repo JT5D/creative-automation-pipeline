@@ -23,8 +23,10 @@ step "No stray build output tracked"
 if git ls-files | grep -qE '^(outputs/|node_modules/|dist/|\.cache/|\.baseline-run/)'; then
   fail "build output or dependencies are tracked"
 fi
-if git ls-files | grep -qE '(^|/)(report\.json|runs\.jsonl)$'; then
-  fail "a generated run artifact is tracked"
+# A run artifact is only a problem where it was produced. docs/sample-output/
+# holds one on purpose, so a reviewer can see a real result without cloning.
+if git ls-files | grep -vE '^docs/sample-output/' | grep -qE '(^|/)(report\.json|runs\.jsonl)$'; then
+  fail "a generated run artifact is tracked outside docs/sample-output/"
 fi
 
 step "Sample briefs match their advertised results"
