@@ -101,41 +101,24 @@ on an entitled account:
 `/v4/images/generate-async`. Object Composite is the first thing I would wire
 next on an entitled account, and it is noted as such in the code.
 
-## Reproducibility — where Adobe is genuinely ahead
+## Reproducibility
 
-A generated hero is not a one-off. A brand may need the same image again a year
-later: a legal re-review, an audit, a re-render at a new size, a market that
-adopts the campaign late. That requires the generation to be repeatable.
+Everything downstream of the hero is deterministic: the same hero and brief
+produce byte-identical creatives, and a test asserts it. The generation itself
+is the one non-repeatable step.
 
-**Adobe Firefly supports seeds.** The request takes `"seeds": [1842533538]`, and
-the response returns the seed it used at `result.outputs[].seed`. Adobe's
-documentation states that "using the same seed, prompt, and other presets,
-would generate the same image every time."
+Adobe documents **seed-based reproducibility on the v3 generation API** —
+`"seeds": [n]` in, `result.outputs[].seed` back, with the same seed, prompt and
+presets reproducing the image. Image 5 uses a breaking **v4** schema, and seed
+support there was **not verified in this proof-of-concept**, so this
+implementation does not claim it and does not send the field.
 
-**Gemini's image API does not expose a seed.** There is no seed, temperature or
-determinism control documented for image generation — only `thinking_level`.
-Re-running the same prompt gives a different picture.
+Gemini's image API documents no seed, temperature or determinism control at
+all, so that gap cannot be closed on the provider this repo actually runs.
 
-Both checked 2026-08-28. Adobe documents seeds on the v3 endpoint; I have not
-found a v4 statement either way, so the adapter sends `seeds` only when a seed
-is asked for, and a version that ignores it simply degrades to ordinary
-generation.
-
-This is a concrete production capability, not a benchmark score, and it is the
-kind of thing that decides an enterprise choice:
-
-| | Firefly | Gemini image |
-|---|---|---|
-| Reproduce an exact prior generation | **yes, via seed** | no |
-| Seed recorded in provenance | **yes** | n/a |
-| Regenerate for audit or re-render | **yes** | re-prompt and accept a new image |
-
-`CanonicalHeroAsset.generation.seed` carries it when the provider returns one,
-and is **absent** when it does not — absent being the honest answer rather than
-a fabricated number. Everything downstream of the hero is already deterministic
-in this pipeline: the same hero and brief always produce byte-identical
-creatives, which a test asserts. Seeds close the one remaining gap, and only
-Adobe can close it today.
+Recording it honestly: reproducible generation is a real enterprise
+requirement, Adobe has documented a mechanism for it, and verifying that
+mechanism on Image 5 needs an entitled account this project does not have.
 
 ## Models deliberately not integrated
 

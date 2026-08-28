@@ -508,14 +508,13 @@ brand-consistency failure, not just a budget one.
 ## Reproducibility
 
 Everything downstream of the hero is deterministic: the same hero and brief
-produce byte-identical creatives every time, and a test asserts it. The one
-non-deterministic step is the generation itself.
+produce byte-identical creatives, and a test asserts it. Generation is the one
+step that is not.
 
-**Firefly can close that gap and Gemini cannot.** Firefly accepts a seed and
-returns the one it used, so a hero can be regenerated identically for an audit
-or a late-joining market. Gemini's image API exposes no seed at all. The
-provenance record carries `seed` when the provider returns one and omits it
-when there is none — see [`docs/MODEL_STRATEGY.md`](docs/MODEL_STRATEGY.md).
+Adobe documents seed-based reproducibility on the **v3** generation API. Image 5
+uses a breaking **v4** schema and seed support there was not verified here, so
+this implementation neither claims nor sends it. Gemini's image API exposes no
+seed at all. See [`docs/MODEL_STRATEGY.md`](docs/MODEL_STRATEGY.md).
 
 ## Provider strategy, and an honest limitation
 

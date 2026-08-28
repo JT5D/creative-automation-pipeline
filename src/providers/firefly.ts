@@ -99,12 +99,6 @@ export class FireflyHeroGenerator implements HeroGenerator {
         prompt: input.prompt,
         numVariations: 1, // Cost control: never fan out candidates.
         size: { width: 2048, height: 2048 }, // Image5 takes explicit size.
-        // Adobe documents `seeds` as an array of integers, and returns the
-        // seed it used on each output. Same seed + prompt + presets reproduces
-        // the image, which is what makes a generated hero re-renderable a year
-        // later for an audit. Documented on v3; sent here only when asked for,
-        // so a v4 that ignores it degrades to normal generation.
-        ...(input.seed !== undefined ? { seeds: [input.seed] } : {}),
       }),
     });
 
@@ -144,7 +138,6 @@ export class FireflyHeroGenerator implements HeroGenerator {
       operation: "text-to-image",
       model: this.model,
       requestId: typeof job.jobId === "string" ? job.jobId : undefined,
-      seed: findSeed(result),
       durationMs: Date.now() - startedAt,
     };
   }
@@ -173,29 +166,6 @@ export class FireflyHeroGenerator implements HeroGenerator {
 
     throw new Error(`Firefly job timed out after ${POLL_TIMEOUT_MS}ms`);
   }
-}
-
-/**
- * Reads the seed Firefly used, documented at `result.outputs[].seed`. Walks for
- * it rather than indexing, so a shape change loses the seed instead of throwing
- * -- and a missing seed is reported as missing, never invented.
- */
-export function findSeed(node: unknown): number | undefined {
-  if (!node || typeof node !== "object") return undefined;
-  if (Array.isArray(node)) {
-    for (const item of node) {
-      const found = findSeed(item);
-      if (found !== undefined) return found;
-    }
-    return undefined;
-  }
-  const obj = node as Record<string, unknown>;
-  if (typeof obj.seed === "number") return obj.seed;
-  for (const value of Object.values(obj)) {
-    const found = findSeed(value);
-    if (found !== undefined) return found;
-  }
-  return undefined;
 }
 
 /** Walks a job result for the first http(s) URL that looks like an image. */
