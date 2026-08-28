@@ -15,7 +15,10 @@ one paid call, 33.8s** — because generation happens once per missing hero, not
 once per output. Both figures are measured runs, reported in
 [`docs/sample-output/report.json`](docs/sample-output/report.json).
 
-Built for the Adobe Firefly Services FDE take-home exercise.
+A working proof-of-concept: it runs locally, calls a real image model, and
+writes real files. What it is not is a deployed system — storage is local, there
+is no queue, and the [production extension path](#production-extension-path)
+says exactly which parts a customer's stack would replace.
 
 ```
 Campaign brief (YAML/JSON)
@@ -692,7 +695,7 @@ stays exactly as it is.
 This repo is the first vertical slice of a larger creative-operations system.
 The full design covers ingest and format conversion, generation, multi-format
 export, scheduled multi-platform publishing and a staging dashboard. The
-take-home deliberately implements the **production spine** of that design —
+this repo deliberately implements the **production spine** of that design —
 brief in, validated on-brand creatives out — and nothing downstream of it.
 
 | Stage in the wider design | Status here |

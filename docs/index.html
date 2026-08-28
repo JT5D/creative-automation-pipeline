@@ -104,7 +104,7 @@
 
 <header>
   <div class="wrap">
-    <p class="eyebrow">Forward Deployed Engineer · Take-home exercise</p>
+    <p class="eyebrow">Creative operations · Working pipeline</p>
     <h1>Creative Automation Pipeline</h1>
     <p class="lede">
       The exercise asks for two products across 1:1, 9:16 and 16:9. That is what the
@@ -268,23 +268,23 @@
 
 <section>
   <div class="wrap">
-    <h2>Against the brief</h2>
+    <h2>What it does, and what it refuses to do</h2>
     <table>
-      <tr><th>Requirement</th><th>Delivered</th></tr>
-      <tr><td>Campaign brief, ≥2 products</td><td><span class="tick">✓</span> YAML or JSON, one Zod schema, structured to the 4A's standard</td></tr>
-      <tr><td>Region · audience · message</td><td><span class="tick">✓</span> Required fields, plus objective, tone and call to action</td></tr>
-      <tr><td>Reuse input assets</td><td><span class="tick">✓</span> Product A reused, driven by a real filesystem check</td></tr>
-      <tr><td>Generate when missing</td><td><span class="tick">✓</span> Product B generated from its packshot as identity anchor</td></tr>
-      <tr><td>≥3 aspect ratios</td><td><span class="tick">✓</span> Four — 1:1, 4:5, 9:16, 16:9 — and each run asserts the required three in <code>report.json → assignmentProof</code></td></tr>
-      <tr><td>Message on final posts</td><td><span class="tick">✓</span> Rasterized into pixels, verified by ink measurement</td></tr>
-      <tr><td>Localization <em>(bonus)</em></td><td><span class="tick">✓</span> en-GB · de-DE · fr-FR, at zero extra generation cost</td></tr>
+      <tr><th>Capability</th><th>How it works</th></tr>
+      <tr><td>Structured campaign brief</td><td><span class="tick">✓</span> YAML or JSON, one Zod schema, structured to the 4A's standard</td></tr>
+      <tr><td>Region, audience, message</td><td><span class="tick">✓</span> Required fields, plus objective, tone and call to action</td></tr>
+      <tr><td>Reuse approved assets</td><td><span class="tick">✓</span> Product A reused, driven by a real filesystem check</td></tr>
+      <tr><td>Generate only what is missing</td><td><span class="tick">✓</span> Product B generated from its packshot as identity anchor</td></tr>
+      <tr><td>Channel formats</td><td><span class="tick">✓</span> Four — 1:1, 4:5, 9:16, 16:9 — and each run asserts its own coverage in <code>report.json → assignmentProof</code></td></tr>
+      <tr><td>Campaign message in the pixels</td><td><span class="tick">✓</span> Rasterized into pixels, verified by ink measurement</td></tr>
+      <tr><td>Localization</td><td><span class="tick">✓</span> en-GB · de-DE · fr-FR, at zero extra generation cost</td></tr>
       <tr><td>Runs locally</td><td><span class="tick">✓</span> <code>npm run dev</code> or CLI. It also runs with no API key at all, as a labelled offline preview — which deliberately does <em>not</em> satisfy the missing-asset GenAI requirement, and reports so</td></tr>
       <tr><td>Organized outputs</td><td><span class="tick">✓</span> By campaign / product / ratio / locale</td></tr>
-      <tr><td>Brand compliance <em>(bonus)</em></td><td><span class="tick">✓</span> Logo, brand colour, WCAG contrast, safe zone</td></tr>
-      <tr><td>Legal checks <em>(bonus)</em></td><td><span class="tick">✓</span> Prohibited-claim scan, run before any spend</td></tr>
-      <tr><td>Logging / reporting <em>(bonus)</em></td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
-      <tr><td>Comprehensive README</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
-      <tr><td>Engineering</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate — <code>npm run check</code></td></tr>
+      <tr><td>Brand compliance</td><td><span class="tick">✓</span> Logo, brand colour, WCAG contrast, safe zone</td></tr>
+      <tr><td>Legal / MLR checks</td><td><span class="tick">✓</span> Prohibited-claim scan, run before any spend</td></tr>
+      <tr><td>Logging and reporting</td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
+      <tr><td>Documentation</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
+      <tr><td>Engineering discipline</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate — <code>npm run check</code></td></tr>
     </table>
   </div>
 </section>
@@ -301,27 +301,12 @@
   </div>
 </section>
 
-<section>
-  <div class="wrap">
-    <h2>Interview availability — week of 31 August</h2>
-    <div class="avail">
-      <div class="slot"><div class="d">Monday 31 Aug</div><div class="t">After 11:00 AM ET</div></div>
-      <div class="slot"><div class="d">Tuesday 1 Sep</div><div class="t">After 11:00 AM ET</div></div>
-      <div class="slot"><div class="d">Wednesday 2 Sep</div><div class="t">After 11:00 AM ET</div></div>
-      <div class="slot"><div class="d">Thursday 3 Sep</div><div class="t">After 11:00 AM ET</div></div>
-    </div>
-    <p style="margin-top:22px">
-      Flexible on any of the above. Reachable at
-      <a href="mailto:James@H3M.ai">James@H3M.ai</a> or 917-446-8116.
-    </p>
-  </div>
-</section>
-
 <footer>
   <div class="wrap">
     Source, setup instructions and full design notes:
     <a href="https://github.com/JT5D/creative-automation-pipeline">github.com/JT5D/creative-automation-pipeline</a>
-    · Lumen Botanicals is a fictional brand created for this exercise.
+    · Built by <a href="mailto:James@H3M.ai">James Tunick</a>
+    · Lumen Botanicals is a fictional brand used for the sample campaign.
   </div>
 </footer>
 

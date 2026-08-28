@@ -132,8 +132,8 @@ visible, which is the part worth reviewing.
 
 ## Deliberately not integrated
 
-Adobe already sells these, and rebuilding them inside a take-home would be the
-wrong instinct:
+Adobe already sells these, and rebuilding them here would be the wrong
+instinct:
 
 | Capability | Adobe product that owns it |
 |---|---|
