@@ -36,6 +36,20 @@ export function Results({ report }: { report?: CampaignReport }) {
         )}
       </div>
 
+      {report.failures.length > 0 && (
+        <div className="failures">
+          <strong>{report.failures.length} product(s) did not complete</strong>
+          <ul>
+            {report.failures.map((f) => (
+              <li key={f.productId}>
+                <b>{f.productName}</b> — {f.message}
+              </li>
+            ))}
+          </ul>
+          <p>Everything below shipped anyway.</p>
+        </div>
+      )}
+
       <div className="filters">
         {locales.length > 1 && (
           <Chips value={locale} onChange={setLocale} options={locales} allLabel="All markets" />

@@ -54,6 +54,7 @@ export type CampaignReport = {
   preflight: ValidationResult;
   metrics: {
     productsProcessed: number;
+    productsFailed: number;
     marketsProcessed: number;
     approvedAssetsReused: number;
     heroesGenerated: number;
@@ -66,6 +67,7 @@ export type CampaignReport = {
     generationRequests: number;
   };
   products: ProductRecord[];
+  failures: { productId: string; productName: string; stage: string; message: string }[];
   warnings: string[];
   estimatedCostUsd?: {
     generations: number;

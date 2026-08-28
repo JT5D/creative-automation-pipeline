@@ -271,6 +271,29 @@ decoration.
 This closes the gap that let the cache bug through: a green suite is not
 evidence the output is right unless something is actually looking at it.
 
+## When something fails
+
+A client running hundreds of campaigns a month cannot lose a batch to one
+provider hiccup. Before this was handled, a single HTTP 503 on the second
+product threw the whole run away — including every creative that had already
+been composed.
+
+Now each product is isolated. A transient failure — a rate limit or a server
+fault — is retried with exponential backoff. A permanent one, a malformed
+request or a rejected key, is **not** retried, because it will fail identically
+and only spend quota to do it. If a product still cannot be resolved, it is
+recorded in `report.json` and the run continues:
+
+```
+  processed 1 · failed 1 · creatives 4
+  failures: [ 'Oat Barista Blend: HTTP 503: unavailable' ]
+```
+
+Exit codes carry the outcome so this composes into a batch script: **0** every
+product succeeded, **2** partial success, **1** the run could not start. A
+pipeline that always exits 0 is a renderer; one that can refuse, and one that
+can partially succeed, is a system you can schedule.
+
 ## Key design decisions
 
 ### 1. Asset origin is a boundary concern

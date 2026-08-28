@@ -14,6 +14,14 @@ export type CreativeRecord = {
   durationMs: number;
 };
 
+/** A product the run could not complete, and why. */
+export type ProductFailure = {
+  productId: string;
+  productName: string;
+  stage: "resolve" | "compose";
+  message: string;
+};
+
 export type ProductRecord = {
   productId: string;
   productName: string;
@@ -36,6 +44,7 @@ export type CampaignReport = {
   preflight: ValidationResult;
   metrics: {
     productsProcessed: number;
+    productsFailed: number;
     marketsProcessed: number;
     approvedAssetsReused: number;
     heroesGenerated: number;
@@ -49,6 +58,8 @@ export type CampaignReport = {
     generationRequests: number;
   };
   products: ProductRecord[];
+  /** Products that failed. Empty on a clean run; the run still completes. */
+  failures: ProductFailure[];
   warnings: string[];
   /**
    * Estimated spend for this run: generation calls x published list price for
@@ -81,6 +92,7 @@ export function createReport(args: {
   /** The markets actually produced, which may be a subset of the brief's. */
   markets: { locale: string; message: string }[];
   products: ProductRecord[];
+  failures: ProductFailure[];
   preflight: ValidationResult;
   mode: "dev" | "final";
   provider: { provider: string; model: string };
@@ -88,7 +100,8 @@ export function createReport(args: {
   completedAt: number;
   warnings: string[];
 }): CampaignReport {
-  const { brief, markets, products, preflight, mode, provider, startedAt, completedAt } = args;
+  const { brief, markets, products, failures, preflight, mode, provider, startedAt, completedAt } =
+    args;
   const creatives = products.flatMap((p) => p.creatives);
 
   return {
@@ -106,6 +119,7 @@ export function createReport(args: {
     preflight,
     metrics: {
       productsProcessed: products.length,
+      productsFailed: failures.length,
       marketsProcessed: markets.length,
       approvedAssetsReused: products.filter((p) => p.hero.source === "reused").length,
       heroesGenerated: products.filter((p) => p.hero.source === "generated").length,
@@ -119,6 +133,7 @@ export function createReport(args: {
       generationRequests: products.filter((p) => p.hero.source === "generated").length,
     },
     products,
+    failures,
     warnings: args.warnings,
     estimatedCostUsd: costEstimate(
       provider.model,

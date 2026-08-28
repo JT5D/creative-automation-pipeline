@@ -3,6 +3,7 @@ import {
   GenerationUnavailableError,
   type HeroGenerator,
   type HeroRequest,
+  ProviderError,
 } from "./types.js";
 
 /**
@@ -109,7 +110,10 @@ export class FireflyHeroGenerator implements HeroGenerator {
 
     if (!submit.ok) {
       const body = await submit.text();
-      throw new Error(`Firefly submit failed (HTTP ${submit.status}): ${body.slice(0, 400)}`);
+      throw new ProviderError(
+        `Firefly submit failed (HTTP ${submit.status}): ${body.slice(0, 400)}`,
+        submit.status,
+      );
     }
 
     const job = (await submit.json()) as Record<string, unknown>;

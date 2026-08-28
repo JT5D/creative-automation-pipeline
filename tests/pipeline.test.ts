@@ -11,8 +11,9 @@ import { readInsights } from "../src/history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
 import { selectGenerator } from "../src/providers/index.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
-import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
+import { type HeroGenerator, type HeroRequest, ProviderError } from "../src/providers/types.js";
 import { sanitizeId } from "../src/report.js";
+import { withRetry } from "../src/retry.js";
 import { RATIOS } from "../src/schema.js";
 import { fitText, wrapText } from "../src/textLayout.js";
 import { findProhibited, preflight } from "../src/validation.js";
@@ -426,6 +427,110 @@ describe("selective production", () => {
         locales: ["nope-XX"],
       }),
     ).rejects.toThrow(/no markets selected/i);
+  });
+});
+
+describe("resilience", () => {
+  /** Fails a chosen product; succeeds on the rest. */
+  class PartialGenerator implements HeroGenerator {
+    readonly provider = "partial";
+    readonly model = "partial-1";
+    private readonly inner = new TestDoubleHeroGenerator();
+    constructor(private readonly failFor: string) {}
+    async generateHero(input: HeroRequest) {
+      if (input.productId === this.failFor) {
+        throw new ProviderError("HTTP 503: model temporarily unavailable", 503);
+      }
+      const r = await this.inner.generateHero(input);
+      return { ...r, provider: this.provider, model: this.model };
+    }
+  }
+
+  it("keeps the creatives that succeeded when one product fails", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-partial-"));
+    const brief = parseBrief(`
+id: partial-run
+name: Partial
+region: DE
+audience: A
+message: M
+brand: { name: B }
+products:
+  - { id: good-one, name: Good One }
+  - { id: bad-one, name: Bad One }
+`);
+
+    const report = await runCampaign(brief, {
+      outputRoot: dir,
+      mode: "final",
+      generator: new PartialGenerator("bad-one"),
+      ratios: ["1x1"],
+    });
+
+    expect(report.metrics.productsProcessed).toBe(1);
+    expect(report.metrics.productsFailed).toBe(1);
+    expect(report.metrics.variantsCreated).toBe(1);
+    expect(report.failures[0].productId).toBe("bad-one");
+    expect(report.failures[0].message).toContain("503");
+
+    // The creative that worked is a real file, not a casualty of the other one.
+    await expect(
+      stat(path.join(dir, report.products[0].creatives[0].outputPath)),
+    ).resolves.toBeTruthy();
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("still fails loudly when nothing at all succeeds", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-total-"));
+    class AlwaysFails implements HeroGenerator {
+      readonly provider = "nope";
+      readonly model = "nope-1";
+      async generateHero(): Promise<never> {
+        throw new ProviderError("HTTP 500", 500);
+      }
+    }
+    await expect(
+      runCampaign(
+        parseBrief(`
+id: doomed
+name: Doomed
+region: DE
+audience: A
+message: M
+brand: { name: B }
+products:
+  - { id: a, name: A }
+  - { id: b, name: B }
+`),
+        {
+          outputRoot: dir,
+          mode: "final",
+          generator: new AlwaysFails(),
+          ratios: ["1x1"],
+        },
+      ),
+    ).rejects.toThrow(/every product failed/i);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("retries a transient failure and gives up on a permanent one", async () => {
+    let calls = 0;
+    const flaky = async () => {
+      calls++;
+      if (calls < 3) throw new ProviderError("rate limited", 429);
+      return "ok";
+    };
+    expect(await withRetry(flaky, { sleep: async () => {} })).toBe("ok");
+    expect(calls).toBe(3);
+
+    let permanentCalls = 0;
+    const permanent = async () => {
+      permanentCalls++;
+      throw new ProviderError("bad request", 400);
+    };
+    await expect(withRetry(permanent, { sleep: async () => {} })).rejects.toThrow(/bad request/);
+    // A 400 will fail identically every time; retrying only spends quota.
+    expect(permanentCalls).toBe(1);
   });
 });
 

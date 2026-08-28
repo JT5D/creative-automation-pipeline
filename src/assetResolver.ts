@@ -3,6 +3,7 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import type { HeroGenerator } from "./providers/index.js";
+import { withRetry } from "./retry.js";
 import type { CampaignBrief, CanonicalHeroAsset, Product } from "./schema.js";
 
 export type ResolveContext = {
@@ -89,16 +90,28 @@ export async function resolveHero(
     usingReference: Boolean(reference),
   });
 
-  const generated = await ctx.generator.generateHero({
-    productId: product.id,
-    productName: product.name,
-    campaignMessage: ctx.brief.message,
-    region: ctx.brief.region,
-    audience: ctx.brief.audience,
-    brandName: ctx.brief.brand.name,
-    prompt,
-    referenceAssetPath: reference,
-  });
+  const generated = await withRetry(
+    () =>
+      ctx.generator.generateHero({
+        productId: product.id,
+        productName: product.name,
+        campaignMessage: ctx.brief.message,
+        region: ctx.brief.region,
+        audience: ctx.brief.audience,
+        brandName: ctx.brief.brand.name,
+        prompt,
+        referenceAssetPath: reference,
+      }),
+    {
+      onRetry: (attempt, delayMs, error) =>
+        ctx.emit("generation_retry", {
+          productId: product.id,
+          attempt,
+          delayMs,
+          reason: error.message.slice(0, 120),
+        }),
+    },
+  );
 
   const outPath = path.join(ctx.cacheDir, `${cacheKey}.png`);
   await mkdir(ctx.cacheDir, { recursive: true });

@@ -5,6 +5,7 @@ import {
   GenerationUnavailableError,
   type HeroGenerator,
   type HeroRequest,
+  ProviderError,
 } from "./types.js";
 
 /**
@@ -94,7 +95,10 @@ export class GeminiHeroGenerator implements HeroGenerator {
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Gemini generation failed (HTTP ${res.status}): ${body.slice(0, 400)}`);
+      throw new ProviderError(
+        `Gemini generation failed (HTTP ${res.status}): ${body.slice(0, 400)}`,
+        res.status,
+      );
     }
 
     const json = (await res.json()) as Record<string, unknown>;
