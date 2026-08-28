@@ -42,7 +42,7 @@ configureFontconfig();
 const cache = new Map<number, opentype.Font>();
 
 /** 400 and 700 are the two weights the templates use. */
-export function loadFont(weight: 400 | 700): opentype.Font {
+function loadFont(weight: 400 | 700): opentype.Font {
   const cached = cache.get(weight);
   if (cached) return cached;
   const file = weight >= 700 ? "Rubik-Bold.ttf" : "Rubik-Regular.ttf";

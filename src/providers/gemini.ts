@@ -134,7 +134,7 @@ export class GeminiHeroGenerator implements HeroGenerator {
  * betting on one path, walk the response for the first node that carries base64
  * image bytes. Cheap, and immune to the response shape moving under us.
  */
-export function findFirstImage(node: unknown): { data: string; mimeType: string } | null {
+function findFirstImage(node: unknown): { data: string; mimeType: string } | null {
   if (!node || typeof node !== "object") return null;
 
   if (Array.isArray(node)) {

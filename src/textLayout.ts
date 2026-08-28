@@ -15,10 +15,6 @@ export type FitResult = {
   fits: boolean;
 };
 
-export function measure(text: string, fontSize: number, weight: 400 | 700 = 700): number {
-  return measureText(text, fontSize, weight);
-}
-
 /** Greedy wrap. A single word longer than the line is left intact, not broken. */
 export function wrapText(
   text: string,
@@ -34,7 +30,7 @@ export function wrapText(
 
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
-    if (measure(candidate, fontSize, weight) <= maxWidth || !current) {
+    if (measureText(candidate, fontSize, weight) <= maxWidth || !current) {
       current = candidate;
     } else {
       lines.push(current);

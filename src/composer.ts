@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
-import { FONT_FAMILY } from "./fonts.js";
+import { FONT_FAMILY, measureText } from "./fonts.js";
 
 /**
  * Derived from composite()'s own signature rather than reaching into sharp's
@@ -16,7 +16,7 @@ import type {
   RatioKey,
 } from "./schema.js";
 import { RATIOS } from "./schema.js";
-import { escapeXml, fitText, measure, readableTextColor } from "./textLayout.js";
+import { escapeXml, fitText, readableTextColor } from "./textLayout.js";
 
 export type ComposeInput = {
   brief: CampaignBrief;
@@ -379,7 +379,7 @@ function buildTextLayer(args: {
     const ctaFont = Math.round(Math.max(24, fit.fontSize * 0.36));
     const padX = Math.round(ctaFont * 0.9);
     const padY = Math.round(ctaFont * 0.62);
-    const textW = measure(cta, ctaFont, 700);
+    const textW = measureText(cta, ctaFont, 700);
     const boxW = Math.round(textW + padX * 2);
     const boxH = Math.round(ctaFont + padY * 2);
     const boxY = headlineBottom + tpl.ctaGap;

@@ -93,6 +93,7 @@ You never need both. No cloud account, no database, no deployment.
 ```bash
 npm run dev                                   # UI + API
 npm run campaign -- samples/campaign.yaml     # same pipeline, CLI
+npm run campaign -- samples/campaign.json     # identical brief, JSON form
 npm run verify                                # typecheck + tests + build
 ```
 
