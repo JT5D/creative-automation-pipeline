@@ -2,6 +2,7 @@ import "dotenv/config";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import "../src/fonts.js";
 import { selectGenerator } from "../src/providers/index.js";
 
 /**
@@ -26,15 +27,32 @@ const BRAND = { deep: "#14322B", gold: "#C9A227", cream: "#F4F1EA" };
  * tone so it holds over any background. An earlier two-colour version put gold
  * under the wordmark, which disappeared against a sunlit wall. Brand systems
  * ship a reversed variant for exactly this reason.
+ *
+ * The mark is a leaf inside a ring: the ring is the "lumen", the leaf is the
+ * "botanicals". It replaced a cross inside a ring, which was a mistake worth
+ * recording — a cross-in-circle is the visual language of pharmacy and first
+ * aid, and this brand sells a *cosmetic*. Its own brief bans "clinically
+ * proven" and hedges to "Dermatologist tested" precisely to stay clear of
+ * medical claims, so leading the lockup with a medical symbol undercut the
+ * compliance position the copy was working to hold. It also meant nothing:
+ * neither light nor plant.
+ *
+ * The typeface is the bundled one. The previous version asked for
+ * "Helvetica, Arial", neither of which ships here — on this machine fontconfig
+ * found a system Helvetica, and on a Linux CI box it would have silently
+ * substituted something else. Same class of bug as the font chain described in
+ * assets/fonts/LICENSE.md, in the one asset that had escaped the fix.
  */
 async function makeLogo() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200">
     <rect width="640" height="200" fill="none"/>
-    <circle cx="92" cy="100" r="52" fill="none" stroke="${BRAND.cream}" stroke-width="7"/>
-    <path d="M92 58 L92 142 M60 100 L124 100" stroke="${BRAND.cream}" stroke-width="7" stroke-linecap="round"/>
-    <text x="176" y="92" font-family="Helvetica, Arial, sans-serif" font-size="52"
+    <circle cx="92" cy="100" r="52" fill="none" stroke="${BRAND.cream}" stroke-width="6"/>
+    <path d="M92 64 C118 84 118 116 92 136 C66 116 66 84 92 64 Z"
+          fill="none" stroke="${BRAND.cream}" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M92 78 L92 130" stroke="${BRAND.cream}" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <text x="176" y="92" font-family="Rubik" font-size="52"
           font-weight="700" letter-spacing="6" fill="${BRAND.cream}">LUMEN</text>
-    <text x="178" y="136" font-family="Helvetica, Arial, sans-serif" font-size="25"
+    <text x="178" y="136" font-family="Rubik" font-size="25"
           letter-spacing="10.5" fill="${BRAND.cream}" opacity="0.82">BOTANICALS</text>
   </svg>`;
   const out = path.join(ASSETS, "lumen-logo.png");
@@ -65,6 +83,12 @@ async function main() {
   console.log("\nBuilding sample input assets\n");
 
   await makeLogo();
+
+  // The logo is pure SVG, so it can be redrawn without touching a paid model.
+  if (process.argv.includes("--logo-only")) {
+    console.log("\n  logo only — skipping generation\n");
+    return;
+  }
 
   const generator = selectGenerator();
   console.log(`  · provider        ${generator.provider} · ${generator.model}\n`);

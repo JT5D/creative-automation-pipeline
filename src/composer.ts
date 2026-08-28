@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
-import { FONT_FAMILY, measureText } from "./fonts.js";
+import { DISPLAY_FAMILY, FONT_FAMILY, measureText } from "./fonts.js";
 
 /**
  * Derived from composite()'s own signature rather than reaching into sharp's
@@ -36,8 +36,10 @@ export type ComposedCreative = {
   fontSize: number;
   lines: string[];
   copyFits: boolean;
-  /** Opaque-pixel ratio of the isolated text layer. Proof glyphs really drew. */
+  /** Opaque-pixel ratio of the whole text layer. */
   textInkRatio: number;
+  /** Opaque-pixel ratio of the HEADLINE alone -- proof the campaign message drew. */
+  headlineInkRatio: number;
   logoRendered: boolean;
   disclaimerRendered: boolean;
   ctaRendered: boolean;
@@ -45,33 +47,40 @@ export type ComposedCreative = {
   textBounds: { top: number; bottom: number; left: number; right: number };
   enforceSafeZone: boolean;
   textColor: string;
+  /** True when the copy sits on the photograph under a scrim, not on a panel. */
+  scrimmed: boolean;
 };
 
 /**
- * Per-format art direction.
+ * Per-format art direction. Each is a deliberate layout, not a resize.
  *
- * Every template keeps the hero crop within ~10% of square, which is the whole
- * reason a single 1:1 generation is enough for all three channels: the product
- * never gets sliced by an aggressive re-crop. The copy zone is a deliberate
- * design decision per format, not a resize.
+ *   1:1   full-bleed hero, copy over a bottom scrim          (feed)
+ *   4:5   same treatment, taller canvas                      (portrait feed)
+ *   9:16  full-bleed hero, copy inside the Meta safe zone    (story / reel)
+ *   16:9  hero right, brand copy panel left                  (landscape)
  *
- *   1:1   full-bleed hero, copy over a bottom scrim        (feed)
- *   9:16  hero on top, solid brand copy panel beneath      (story)
- *   16:9  hero on the right, brand copy panel on the left  (landscape)
+ * 9:16 is the demanding one: fitting a square hero to it costs about 41% of the
+ * image's width. That is exactly why the crop is centred and why the art
+ * direction insists on negative space on all sides -- the product has to
+ * survive that crop, and one generation has to serve every format.
  */
 /**
- * Meta's published safe zone for 9:16 placements: leave roughly 14% of the
- * top, 35% of the bottom and 6% of each side free of text, logos and other
- * key creative elements, so nothing important is covered by the profile icon
- * or the platform's own call-to-action.
+ * Meta's UNIFIED 9:16 safe zone: 14% top (~270px), 6% each side (~65px) and up
+ * to 35% bottom (~672px) kept free of text, logos and other key elements, so
+ * nothing important sits under the profile icon, caption tray or the
+ * platform's own call-to-action.
  *
- * Source: Meta Ads Guide, Instagram Stories / Reels image ad specs (checked
- * 2026-08-28). Stories and Reels share these values.
+ * In March 2026 Meta consolidated Facebook Stories, Facebook Reels, Instagram
+ * Stories and Instagram Reels into this single spec, taking the most
+ * restrictive bottom (Reels, 35%) rather than the older Stories-only 20%.
+ * Designing to it means ONE 9:16 export is safe across all four vertical
+ * placements -- which is the whole point of generating the hero once.
+ * Checked 2026-08-28.
  *
  * The photograph itself is full-bleed -- the restriction is on text and logos,
  * not on the image.
  */
-export const STORY_SAFE_ZONE = { top: 0.14, bottom: 0.35, sides: 0.06 } as const;
+const STORY_SAFE_ZONE = { top: 0.14, bottom: 0.35, sides: 0.06 } as const;
 
 export function safeBoundsFor(width: number, height: number) {
   return {
@@ -94,8 +103,17 @@ type Template = {
    * on 9:16, inside the Meta safe zone. A test pins that.
    */
   ctaGap: number;
-  /** Y coordinate of the disclaimer baseline. */
+  /**
+   * Y coordinate of the disclaimer baseline.
+   *
+   * Bottom-anchored on every format except the story, where the Meta safe zone
+   * pushes copy up the frame and a fixed baseline stranded the legal line in
+   * open photo, mid-frame and low contrast. There it follows the CTA instead,
+   * so headline, CTA and disclaimer read as one block on the scrim.
+   */
   disclaimerY: number;
+  /** Story only: place the disclaimer under the CTA rather than at disclaimerY. */
+  disclaimerFollowsCta: boolean;
   /** True when this format must honour the Meta 9:16 safe zone. */
   enforceSafeZone: boolean;
   scrim: false | "bottom" | "top";
@@ -118,6 +136,7 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
+      disclaimerFollowsCta: false,
       enforceSafeZone: false,
       scrim: "bottom",
       maxLines: 3,
@@ -136,6 +155,7 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
+      disclaimerFollowsCta: false,
       enforceSafeZone: false,
       scrim: "bottom",
       maxLines: 3,
@@ -156,6 +176,7 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: safe.top + 34, maxWidth: 260 },
       ctaGap: 52,
       disclaimerY: safe.bottom - 40,
+      disclaimerFollowsCta: true,
       enforceSafeZone: true,
       scrim: "top",
       maxLines: 3,
@@ -178,6 +199,7 @@ export function templateFor(ratio: RatioKey): Template {
     logo: { left: margin, top: 200, maxWidth: 240 },
     ctaGap: 48,
     disclaimerY: height - 46,
+    disclaimerFollowsCta: false,
     enforceSafeZone: false,
     scrim: false,
     maxLines: 4,
@@ -242,9 +264,19 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
 
   const layers: Layer[] = [];
 
-  // 2. Hero, cover-fitted into its zone. `cover` crops rather than distorts.
+  // 2. Hero, cover-fitted into its zone. `cover` crops rather than distorts,
+  //    and the crop is CENTRED on purpose.
+  //
+  //    This used sharp's `attention` saliency heuristic, which on 9:16 has to
+  //    discard about 41% of a square hero's width and chose a region that cut
+  //    the product in half. The art direction already guarantees the invariant
+  //    that heuristic was guessing at -- "the product is the hero: centred ...
+  //    with generous negative space on all sides so the image can be re-cropped
+  //    to square, vertical and landscape without cutting the product" -- so a
+  //    centre crop honours the prompt instead of second-guessing it, and it is
+  //    deterministic, which `attention` is not.
   const heroBuffer = await sharp(await readFile(hero.localPath))
-    .resize(tpl.hero.width, tpl.hero.height, { fit: "cover", position: "attention" })
+    .resize(tpl.hero.width, tpl.hero.height, { fit: "cover", position: "centre" })
     .toBuffer();
   layers.push({ input: heroBuffer, left: tpl.hero.left, top: tpl.hero.top });
 
@@ -320,10 +352,30 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     accent: brand.secondaryColor,
     callToAction,
     disclaimer,
+    headlineFamily: brand.headlineFont ?? DISPLAY_FAMILY,
   });
 
-  const textPng = await sharp(Buffer.from(textLayer)).png().toBuffer();
+  const textPng = await sharp(Buffer.from(textLayer.svg)).png().toBuffer();
+
+  // Every element is rasterized ALONE and its ink counted.
+  //
+  // One combined layer could not prove the campaign message rendered: the CTA
+  // pill and the disclaimer draw into the same layer, so their ink alone would
+  // satisfy the check while the headline was missing. And `ctaRendered` used to
+  // be Boolean(callToAction), which proves the brief had a CTA, not that one
+  // reached the pixels. Measuring each separately is the only version of these
+  // checks that can actually go red.
+  const inkOf = async (svg: string) => inkRatio(await sharp(Buffer.from(svg)).png().toBuffer());
+  const headlineInkRatio = await inkOf(textLayer.headlineSvg);
   const textInkRatio = await inkRatio(textPng);
+  const ctaInkRatio = textLayer.ctaSvg ? await inkOf(textLayer.ctaSvg) : 0;
+  const disclaimerInkRatio = textLayer.disclaimerSvg ? await inkOf(textLayer.disclaimerSvg) : 0;
+  // The logo is measured too, and for the same reason. This was the last
+  // element still reporting Boolean(fileLoaded): a logo PNG that decoded and
+  // resized perfectly but carried no opaque pixels rendered nothing and still
+  // reported "Brand logo composited". Sharp already refuses an out-of-bounds
+  // composite, so visible ink is the one remaining thing worth measuring.
+  const logoInkRatio = logoBuffer ? await inkRatio(logoBuffer) : 0;
   layers.push({ input: textPng, left: 0, top: 0 });
 
   if (logoBuffer) {
@@ -341,12 +393,14 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     lines: fit.lines,
     copyFits: fit.fits,
     textInkRatio,
-    logoRendered: Boolean(logoBuffer),
-    disclaimerRendered: Boolean(disclaimer),
-    ctaRendered: Boolean(callToAction?.trim()),
+    headlineInkRatio,
+    logoRendered: logoInkRatio > 0,
+    disclaimerRendered: disclaimerInkRatio > 0,
+    ctaRendered: ctaInkRatio > 0,
     enforceSafeZone: tpl.enforceSafeZone,
+    scrimmed: Boolean(tpl.scrim),
     textBounds: {
-      top: logoBuffer ? tpl.logo.top : tpl.copy.top - 34,
+      top: logoInkRatio > 0 ? tpl.logo.top : tpl.copy.top - 34,
       bottom: textBlockBottom(tpl, fit, Boolean(disclaimer), callToAction),
       left: tpl.copy.left,
       right: tpl.copy.left + tpl.copy.width,
@@ -355,24 +409,36 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   };
 }
 
-/** Lowest pixel any text element occupies, used by the safe-zone check. */
+/**
+ * Lowest pixel any text element occupies, used by the safe-zone check.
+ *
+ * It has to mirror buildTextLayer exactly. When the disclaimer follows the CTA
+ * the block grows with the headline, so the bottom cannot be read off a fixed
+ * coordinate -- getting that wrong would have the safe-zone check measuring a
+ * line that is no longer there.
+ */
 export function textBlockBottom(
   tpl: Template,
   fit: { lines: string[]; fontSize: number },
   hasDisclaimer: boolean,
   callToAction?: string,
 ): number {
-  if (hasDisclaimer) return tpl.disclaimerY;
+  if (hasDisclaimer && !tpl.disclaimerFollowsCta) return tpl.disclaimerY;
 
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
     tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;
 
-  if (!callToAction?.trim()) return headlineBottom;
+  const ctaBottom = callToAction?.trim()
+    ? headlineBottom +
+      tpl.ctaGap +
+      Math.round(
+        Math.max(24, fit.fontSize * 0.36) +
+          Math.round(Math.max(24, fit.fontSize * 0.36) * 0.62) * 2,
+      )
+    : headlineBottom;
 
-  const ctaFont = Math.round(Math.max(24, fit.fontSize * 0.36));
-  const boxH = Math.round(ctaFont + Math.round(ctaFont * 0.62) * 2);
-  return headlineBottom + tpl.ctaGap + boxH;
+  return hasDisclaimer ? ctaBottom + 46 : ctaBottom;
 }
 
 function buildTextLayer(args: {
@@ -382,21 +448,37 @@ function buildTextLayer(args: {
   fit: { lines: string[]; fontSize: number };
   textColor: string;
   accent: string;
+  /** The brand's headline face, or the bundled display face. */
+  headlineFamily: string;
   callToAction?: string;
   disclaimer?: string;
-}): string {
-  const { width, height, tpl, fit, textColor, accent, callToAction, disclaimer } = args;
+}): {
+  /** What actually gets composited. */
+  svg: string;
+  /** Each element alone, on the full canvas, so its ink can be counted. */
+  headlineSvg: string;
+  ctaSvg: string | null;
+  disclaimerSvg: string | null;
+} {
+  const { width, height, tpl, fit, textColor, accent, callToAction, disclaimer, headlineFamily } =
+    args;
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
     tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;
+  // Two voices, deliberately. The headline is the advertisement speaking; the
+  // CTA and the legal line are the interface speaking. Both families are
+  // bundled, and fontconfig is pointed only at that directory, so the fallback
+  // names below can never actually be reached -- they are there so the SVG is
+  // still valid markup if it is ever opened outside this pipeline.
+  const display = `${headlineFamily}, Georgia, 'Times New Roman', serif`;
   const font = `${FONT_FAMILY}, 'Helvetica Neue', Helvetica, Arial, sans-serif`;
 
   const lines = fit.lines
     .map(
       (line, i) =>
         `<text x="${tpl.copy.left}" y="${tpl.copy.top + fit.fontSize + i * lineHeight}" ` +
-        `font-family="${font}" font-size="${fit.fontSize}" font-weight="700" ` +
-        `letter-spacing="-0.5" fill="${textColor}">${escapeXml(line)}</text>`,
+        `font-family="${display}" font-size="${fit.fontSize}" ` +
+        `letter-spacing="-0.2" fill="${textColor}">${escapeXml(line)}</text>`,
     )
     .join("\n");
 
@@ -409,14 +491,16 @@ function buildTextLayer(args: {
   // reads as "this is the action", and how real social placements treat it.
   const cta = callToAction?.trim();
   let ctaSvg = "";
+  let ctaBottom = headlineBottom;
   if (cta) {
     const ctaFont = Math.round(Math.max(24, fit.fontSize * 0.36));
     const padX = Math.round(ctaFont * 0.9);
     const padY = Math.round(ctaFont * 0.62);
-    const textW = measureText(cta, ctaFont, 700);
+    const textW = measureText(cta, ctaFont, "bold");
     const boxW = Math.round(textW + padX * 2);
     const boxH = Math.round(ctaFont + padY * 2);
     const boxY = headlineBottom + tpl.ctaGap;
+    ctaBottom = boxY + boxH;
     ctaSvg =
       `<rect x="${tpl.copy.left}" y="${boxY}" width="${boxW}" height="${boxH}" ` +
       `rx="${Math.round(boxH / 2)}" fill="${accent}"/>` +
@@ -425,17 +509,23 @@ function buildTextLayer(args: {
       `letter-spacing="0.6" fill="#141815">${escapeXml(cta)}</text>`;
   }
 
+  // Bottom-anchored, except on the story where it rides with the copy block.
+  const disclaimerY = tpl.disclaimerFollowsCta ? ctaBottom + 46 : tpl.disclaimerY;
+
   const disclaimerSvg = disclaimer
-    ? `<text x="${tpl.copy.left}" y="${tpl.disclaimerY}" font-family="${font}" ` +
+    ? `<text x="${tpl.copy.left}" y="${disclaimerY}" font-family="${font}" ` +
       `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(disclaimer)}</text>`
     : "";
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    ${rule}
-    ${lines}
-    ${ctaSvg}
-    ${disclaimerSvg}
-  </svg>`;
+  const canvasSvg = (body: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${body}</svg>`;
+
+  return {
+    svg: canvasSvg(`${rule}\n${lines}\n${ctaSvg}\n${disclaimerSvg}`),
+    headlineSvg: canvasSvg(lines),
+    ctaSvg: ctaSvg ? canvasSvg(ctaSvg) : null,
+    disclaimerSvg: disclaimerSvg ? canvasSvg(disclaimerSvg) : null,
+  };
 }
 
 /** Returns null rather than throwing: a missing logo is a warning, not a stop. */
@@ -458,7 +548,7 @@ async function loadLogo(brand: Brand, maxWidth: number): Promise<Buffer | null> 
  * an assumption. If the font failed to resolve, or the copy zone collapsed, the
  * layer comes back empty and the creative is flagged -- the check can go red.
  */
-export async function inkRatio(pngBuffer: Buffer): Promise<number> {
+async function inkRatio(pngBuffer: Buffer): Promise<number> {
   const { data, info } = await sharp(pngBuffer)
     .ensureAlpha()
     .raw()

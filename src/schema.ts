@@ -5,7 +5,7 @@ import { z } from "zod";
  * JSON and YAML both normalize into this exact object, so the rest of the
  * system never has to care which format the marketer handed us.
  */
-export const ProductSchema = z.object({
+const ProductSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
 
@@ -27,7 +27,7 @@ export const ProductSchema = z.object({
   generationPrompt: z.string().optional(),
 });
 
-export const BrandSchema = z.object({
+const BrandSchema = z.object({
   name: z.string().min(1),
   logoPath: z.string().optional(),
   primaryColor: z.string().default("#111111"),
@@ -35,6 +35,18 @@ export const BrandSchema = z.object({
   disclaimer: z.string().optional(),
   /** Legal/MLR terms that must never appear in campaign copy. */
   prohibitedWords: z.array(z.string()).default([]),
+  /**
+   * Headline typeface, by family name.
+   *
+   * Typography is brand identity in exactly the way colour is, so a brand that
+   * can declare primaryColor should be able to declare its voice too. Omitted,
+   * the creatives use the bundled display face.
+   *
+   * The named family must be bundled in assets/fonts -- preflight verifies it
+   * and says so if not, because fontconfig's answer to an unknown family is a
+   * silent substitution, not an error.
+   */
+  headlineFont: z.string().optional(),
 });
 
 /**
@@ -42,7 +54,7 @@ export const BrandSchema = z.object({
  * it -- translation is data, not a runtime model call, because localized claims
  * carry legal weight and need human sign-off.
  */
-export const MarketSchema = z.object({
+const MarketSchema = z.object({
   locale: z.string().min(1),
   name: z.string().optional(),
   message: z.string().min(1),
@@ -68,6 +80,16 @@ export const CampaignBriefSchema = z.object({
   callToAction: z.string().optional(),
   /** Feeds the deterministic art-direction prompt. */
   toneOfVoice: z.string().optional(),
+  /**
+   * The campaign's set: one physical world every product is photographed in.
+   *
+   * Without this the prompt describes a generic surface, so each product's
+   * hero samples its own set independently and a two-product campaign comes
+   * back as two unrelated stock photographs -- different room, different light,
+   * different palette. A real campaign is one shoot. Supplying it once here is
+   * what makes every hero in the campaign belong to the same one.
+   */
+  artDirection: z.string().optional(),
   /**
    * Documented baseline for the "manual time saved" figure. Reported only
    * when supplied, and always labelled as an estimate from this number --

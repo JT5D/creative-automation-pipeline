@@ -2,6 +2,7 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 import type { ComposedCreative } from "./composer.js";
 import { safeBoundsFor } from "./composer.js";
+import { availableFamilies } from "./fonts.js";
 import type {
   CampaignBrief,
   Market,
@@ -15,7 +16,7 @@ import { contrastRatio } from "./textLayout.js";
 /** Minimum opaque fraction of the text layer that counts as "copy rendered". */
 const MIN_INK_RATIO = 0.0004;
 
-export class PreflightError extends Error {
+class PreflightError extends Error {
   constructor(
     message: string,
     readonly checks: ValidationCheck[],
@@ -106,6 +107,9 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
     }
   }
 
+  const font = headlineFontCheck(brief);
+  if (font) checks.push(font);
+
   checks.push({
     id: "brand.colors",
     status: isHex(brief.brand.primaryColor) && isHex(brief.brand.secondaryColor) ? "pass" : "fail",
@@ -113,6 +117,26 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
   });
 
   return rollup(checks);
+}
+
+/**
+ * A named typeface has to be verified, not trusted.
+ *
+ * fontconfig's answer to a family it cannot find is a silent substitution, not
+ * an error -- so an unbundled font would ship creatives in the wrong face with
+ * every check green. Returns null when the brand names no font.
+ */
+function headlineFontCheck(brief: CampaignBrief): ValidationCheck | null {
+  const named = brief.brand.headlineFont;
+  if (!named) return null;
+  const ok = availableFamilies().has(named);
+  return {
+    id: "brand.headlineFont",
+    status: ok ? "pass" : "warning",
+    message: ok
+      ? `Headline typeface "${named}" resolves`
+      : `Headline typeface "${named}" is not in assets/fonts — creatives would render in a substituted face; add the file or remove the field`,
+  };
 }
 
 export function preflightOrThrow(result: ValidationResult): void {
@@ -155,15 +179,22 @@ const dimensionsCheck: CreativeCheck = ({ rendered, ratio }) => {
   };
 };
 
-/** The one that makes "message rendered" a fact: it counts ink, not intent. */
+/**
+ * The one that makes "message rendered" a fact: it counts ink, not intent.
+ *
+ * It measures the HEADLINE layer specifically. Measured against the combined
+ * text layer, a creative that drew only its CTA and disclaimer would have
+ * passed a check whose name claims the campaign message is present -- which is
+ * the requirement the exercise is most explicit about.
+ */
 const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
-  const ok = rendered.textInkRatio >= MIN_INK_RATIO;
+  const ok = rendered.headlineInkRatio >= MIN_INK_RATIO;
   return {
     id: "message.rendered",
     status: ok ? "pass" : "fail",
     message: ok
-      ? `Campaign message rasterized (${(rendered.textInkRatio * 100).toFixed(3)}% ink coverage)`
-      : `No glyphs detected in the text layer (${(rendered.textInkRatio * 100).toFixed(4)}%) — copy did not render`,
+      ? `Campaign message rasterized (${(rendered.headlineInkRatio * 100).toFixed(3)}% headline ink)`
+      : `No headline glyphs detected (${(rendered.headlineInkRatio * 100).toFixed(4)}%) — the campaign message did not render`,
   };
 };
 
@@ -176,12 +207,24 @@ const legibilityCheck: CreativeCheck = ({ rendered }) => ({
 });
 
 /**
- * WCAG 2.2 AA wants 4.5:1 for normal text but only 3:1 for large text
- * (>=18.66px bold, or >=24px regular). Campaign headlines are far into the
- * large band, so holding them to the small-text bar would report a failure the
- * standard does not require.
+ * Text/background contrast, but only where "background" is a colour we can name.
+ *
+ * WCAG 2.2 AA wants 4.5:1 for normal text and 3:1 for large text (>=18.66px
+ * bold, or >=24px regular); campaign headlines sit far into the large band, so
+ * holding them to the small-text bar would report a failure the standard does
+ * not require.
+ *
+ * It returns null on the full-bleed formats, and that is the honest answer
+ * rather than a missing one. There the copy sits on a photograph, not on
+ * brand.primaryColor, so comparing the two measures a background that is not
+ * behind the copy -- it would pass over a white image. Legibility there is
+ * guaranteed differently and earlier: composer.ts samples the luminance of the
+ * band the copy will occupy and sizes the scrim to that specific photograph.
+ * Measuring it after the fact is worth doing and is noted as a limitation; a
+ * check that cannot go red is worse than an absent one.
  */
 const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
+  if (rendered.scrimmed) return null;
   const ratio = contrastRatio(rendered.textColor, brief.brand.primaryColor);
   const isLargeText = rendered.fontSize >= 24;
   const threshold = isLargeText ? 3 : 4.5;
@@ -199,7 +242,7 @@ const logoCheck: CreativeCheck = ({ brief, rendered }) =>
         status: rendered.logoRendered ? "pass" : "warning",
         message: rendered.logoRendered
           ? "Brand logo composited"
-          : "Logo configured but could not be composited",
+          : "Logo configured but no logo pixels reached the creative",
       }
     : null;
 
@@ -246,8 +289,25 @@ const disclaimerCheck: CreativeCheck = ({ brief, rendered, market }) =>
       }
     : null;
 
-const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered }) => {
-  const hits = findProhibited(rendered.renderedMessage, brief.brand.prohibitedWords);
+/**
+ * Screens exactly the copy that reached the pixels.
+ *
+ * Headline always, plus the CTA and the disclaimer when they actually
+ * rendered. Scanning the headline alone let this report "rendered copy is
+ * clear of prohibited terms" while a banned claim sat in the CTA. Preflight
+ * blocks that case earlier and for free, so this is the second gate rather
+ * than the only one -- but a check whose message is broader than its
+ * measurement is the wrong kind of green.
+ */
+const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered, market }) => {
+  const renderedCopy = [
+    rendered.renderedMessage,
+    rendered.ctaRendered ? (market.callToAction ?? brief.callToAction) : null,
+    rendered.disclaimerRendered ? (market.disclaimer ?? brief.brand.disclaimer) : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const hits = findProhibited(renderedCopy, brief.brand.prohibitedWords);
   return {
     id: "legal.prohibitedWords",
     status: hits.length === 0 ? "pass" : "fail",
@@ -259,7 +319,7 @@ const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered }) => {
 };
 
 /** Order here is the order a reviewer reads them in. */
-export const CREATIVE_CHECKS: CreativeCheck[] = [
+const CREATIVE_CHECKS: CreativeCheck[] = [
   dimensionsCheck,
   messageRenderedCheck,
   legibilityCheck,

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import opentype from "opentype.js";
@@ -15,7 +15,17 @@ import opentype from "opentype.js";
  * Licence: assets/fonts/LICENSE.md (SIL Open Font License).
  */
 export const FONT_FAMILY = "Rubik";
-export const FONT_DIR = path.resolve("assets/fonts");
+
+/**
+ * The advertisement's headline voice, which is deliberately not the tool's.
+ *
+ * Rubik is right for a dense operator console and wrong for a prestige
+ * skincare headline, where the category convention is a high-contrast serif.
+ * The creatives set the headline in Cormorant Garamond and keep Rubik for the
+ * CTA and the legal line, because those are functional text.
+ */
+export const DISPLAY_FAMILY = "Cormorant Garamond";
+const FONT_DIR = path.resolve("assets/fonts");
 
 /**
  * librsvg resolves SVG font-family through fontconfig, which only looks at
@@ -39,18 +49,41 @@ function configureFontconfig(): void {
 
 configureFontconfig();
 
-const cache = new Map<number, opentype.Font>();
+/**
+ * A face, not a weight.
+ *
+ * This used to be `400 | 700`, which could only ever select between two
+ * weights of one family -- so the moment the headline moved to a different
+ * typeface, the measurement and the rendering would have disagreed and line
+ * breaking would have been computed against the wrong glyphs.
+ */
+export type Face = "display" | "bold" | "regular";
 
-/** 400 and 700 are the two weights the templates use. */
-function loadFont(weight: 400 | 700): opentype.Font {
-  const cached = cache.get(weight);
+const FACE_FILES: Record<Face, string> = {
+  display: "CormorantGaramond-SemiBold.ttf",
+  bold: "Rubik-Bold.ttf",
+  regular: "Rubik-Regular.ttf",
+};
+
+/** The SVG font-family each face must be rendered with, so measurement and
+    rasterization can never drift apart. */
+export const FACE_FAMILY: Record<Face, string> = {
+  display: DISPLAY_FAMILY,
+  bold: FONT_FAMILY,
+  regular: FONT_FAMILY,
+};
+
+const cache = new Map<Face, opentype.Font>();
+
+function loadFont(face: Face): opentype.Font {
+  const cached = cache.get(face);
   if (cached) return cached;
-  const file = weight >= 700 ? "Rubik-Bold.ttf" : "Rubik-Regular.ttf";
+  const file = FACE_FILES[face];
   const bytes = readFileSync(path.join(FONT_DIR, file));
   const font = opentype.parse(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
   );
-  cache.set(weight, font);
+  cache.set(face, font);
   return font;
 }
 
@@ -65,10 +98,10 @@ function loadFont(weight: 400 | 700): opentype.Font {
  * lookup (type 6, format 2 -- unsupported by the library). Advance widths and
  * kerning are all the layout needs; shaping would add nothing for Latin copy.
  */
-export function measureText(text: string, fontSize: number, weight: 400 | 700 = 700): number {
+export function measureText(text: string, fontSize: number, face: Face = "display"): number {
   if (!text) return 0;
 
-  const font = loadFont(weight);
+  const font = loadFont(face);
   const scale = fontSize / font.unitsPerEm;
 
   let units = 0;
@@ -82,4 +115,41 @@ export function measureText(text: string, fontSize: number, weight: 400 | 700 = 
   }
 
   return units * scale;
+}
+
+/**
+ * Families actually present in the bundled font directory.
+ *
+ * A brand may name its headline typeface. If that family is not bundled,
+ * fontconfig does not fail -- it quietly substitutes something else, and the
+ * creative ships in the wrong face with every check green. So the name is
+ * verified against the files on disk and preflight says so when it does not
+ * resolve. Both the family and the typographic family are collected, because a
+ * static instance cut from a variable font advertises both (Cormorant reports
+ * "Cormorant Garamond" and "Cormorant Garamond SemiBold").
+ */
+let families: Set<string> | null = null;
+
+export function availableFamilies(): Set<string> {
+  if (families) return families;
+  const found = new Set<string>();
+  for (const file of readdirSync(FONT_DIR)) {
+    if (!file.toLowerCase().endsWith(".ttf")) continue;
+    const bytes = readFileSync(path.join(FONT_DIR, file));
+    const font = opentype.parse(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    );
+    // opentype.js types predate the platform-scoped name tables it returns.
+    const tables = font.names as unknown as Record<
+      string,
+      Record<string, { en?: string } | undefined> | undefined
+    >;
+    const names = tables.windows ?? tables.macintosh ?? {};
+    for (const key of ["fontFamily", "preferredFamily"]) {
+      const value = names[key]?.en;
+      if (value) found.add(value);
+    }
+  }
+  families = found;
+  return found;
 }

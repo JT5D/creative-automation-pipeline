@@ -21,7 +21,11 @@ const OUT = await mkdtemp(path.join(tmpdir(), "cap-baseline-"));
 
 const report = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
   outputRoot: OUT,
-  mode: "final",
+  // dev, to match tests/visual.test.ts: this captures LAYOUT, so it wants the
+  // deterministic offline renderer as its hero. `final` refuses that renderer
+  // for a missing asset, which would silently drop product B and halve the
+  // baseline set.
+  mode: "dev",
   generator: new TestDoubleHeroGenerator(),
 });
 

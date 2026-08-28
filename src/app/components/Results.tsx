@@ -12,7 +12,14 @@ export function Results({ report }: { report?: CampaignReport }) {
     [report],
   );
 
-  if (!report) return <p className="empty">Exported creatives appear here.</p>;
+  if (!report)
+    return (
+      <p className="empty">
+        <strong>No creatives yet</strong>
+        Run the campaign to produce them. Every file shown here is read from disk, not re-rendered
+        in the browser.
+      </p>
+    );
 
   const locales = report.markets.map((m) => m.locale);
   const m = report.metrics;
@@ -20,6 +27,8 @@ export function Results({ report }: { report?: CampaignReport }) {
   return (
     <>
       <AssignmentProof proof={report.assignmentProof} />
+
+      <SuccessMetrics report={report} />
 
       <div className="metrics">
         <Metric v={m.productsProcessed} l="Products" />
@@ -104,6 +113,63 @@ export function Results({ report }: { report?: CampaignReport }) {
       )}
     </>
   );
+}
+
+/**
+ * The three success metrics the client asked for, in the client's own words:
+ * "time saved, number of campaigns generated, and overall efficiency."
+ *
+ * Every figure is read from `report.successMetrics`, which is counted off the
+ * run. Time saved is the soft one and is labelled as such -- it is derived from
+ * the baseline the brief supplies, not from a stopwatch. There is deliberately
+ * no CTR or conversion figure here: this pipeline never publishes, so it has no
+ * way to know one, and inventing it would be the easiest lie in the project.
+ */
+function SuccessMetrics({ report }: { report: CampaignReport }) {
+  const { timeSaved, campaignsGenerated: c, efficiency: e } = report.successMetrics;
+  return (
+    <dl className="success">
+      {timeSaved && (
+        <div>
+          <dt>Time saved</dt>
+          <dd>{formatMinutes(timeSaved.minutes)}</dd>
+          <span>
+            illustrative, vs {timeSaved.baselineMinutesPerCreative} min/creative in the brief
+          </span>
+        </div>
+      )}
+      <div>
+        <dt>Campaigns generated</dt>
+        <dd>
+          {c.campaigns} campaign · {c.creatives} creatives
+        </dd>
+        <span>
+          across {c.markets} market{c.markets === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div>
+        <dt>Efficiency</dt>
+        {/* A run that spent nothing has no cost per creative to report, and
+            "— per paid call · $0.0000 each" is worse than saying so. */}
+        <dd>
+          {e.creativesPerGenerationCall === null
+            ? "No paid call"
+            : `${e.creativesPerGenerationCall} per paid call` +
+              (e.costPerCreativeUsd ? ` · $${e.costPerCreativeUsd.toFixed(4)} each` : "")}
+        </dd>
+        <span>
+          {e.creativesPerGenerationCall === null
+            ? "every hero was already approved or cached"
+            : `${Math.round(e.reuseRate * 100)}% of heroes reused`}{" "}
+          · {e.secondsPerCreative}s per creative
+        </span>
+      </div>
+    </dl>
+  );
+}
+
+function formatMinutes(min: number): string {
+  return min >= 90 ? `${(min / 60).toFixed(1)} hours` : `${Math.round(min)} min`;
 }
 
 /**

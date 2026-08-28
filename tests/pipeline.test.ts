@@ -165,6 +165,23 @@ describe("asset resolution", () => {
     expect(await findApprovedHero(undefined)).toBeUndefined();
   });
 
+  it("art-directs differently when an approved packshot anchors the product", async () => {
+    const brief = parseBrief(briefYaml());
+    const withRef = buildHeroPrompt(brief.products[1], brief, true);
+    const withoutRef = buildHeroPrompt(brief.products[1], brief, false);
+
+    // No reference: the model is inventing the packaging, so any lettering it
+    // draws is a fabricated claim on a regulated cosmetic.
+    expect(withoutRef).toMatch(/no logos/i);
+    expect(withoutRef).not.toMatch(/preserve the supplied product/i);
+
+    // With a reference: preserving the real product is the entire point, so
+    // telling it "no logos" would erase the packaging we supplied.
+    expect(withRef).toMatch(/preserve the supplied product/i);
+    expect(withRef).toMatch(/add no new packaging text/i);
+    expect(withRef).not.toMatch(/no logos, no watermarks/i);
+  });
+
   it("builds a deterministic prompt that bans baked-in typography", () => {
     const brief = parseBrief(briefYaml());
     const prompt = buildHeroPrompt(brief.products[1], brief);
@@ -731,6 +748,74 @@ describe("run history", () => {
   });
 });
 
+/**
+ * The doctrine this repo is built on: a check that cannot go red is worse than
+ * no check at all, because it launders an assumption into a green tick.
+ *
+ * Each test here supplies a genuinely broken input and asserts the check
+ * notices. Two earlier false-greens were found exactly this way -- both were
+ * shaped `Boolean(someInput)`, proving the brief said so rather than proving
+ * the pixels did.
+ */
+describe("checks that can actually fail", () => {
+  it("catches a logo that loads perfectly but renders nothing", async () => {
+    // The exercise's first named bonus is "presence of logo". This file
+    // decodes, resizes and composites without error -- and is fully
+    // transparent, so nothing whatsoever appears in the creative. Measuring
+    // Boolean(fileLoaded) reported "Brand logo composited" over it.
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-logo-"));
+    const invisible = path.join(dir, "invisible-logo.png");
+    await sharp({
+      create: { width: 400, height: 120, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    })
+      .png()
+      .toFile(invisible);
+
+    const brief = parseBrief(briefYaml());
+    brief.brand.logoPath = invisible;
+    const report = await runCampaign(brief, {
+      outputRoot: dir,
+      mode: "dev",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
+    });
+
+    const logo = report.products[0].creatives[0].validation.checks.find(
+      (c) => c.id === "brand.logo",
+    );
+    expect(logo?.status).toBe("warning");
+    expect(logo?.message).toMatch(/no logo pixels/i);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("passes the same check when the logo actually has ink", async () => {
+    // The control. Without it the test above would also pass if the check
+    // had simply been broken the other way.
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-logo-ok-"));
+    const solid = path.join(dir, "solid-logo.png");
+    await sharp({
+      create: { width: 400, height: 120, channels: 4, background: "#ffffff" },
+    })
+      .png()
+      .toFile(solid);
+
+    const brief = parseBrief(briefYaml());
+    brief.brand.logoPath = solid;
+    const report = await runCampaign(brief, {
+      outputRoot: dir,
+      mode: "dev",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
+    });
+
+    const logo = report.products[0].creatives[0].validation.checks.find(
+      (c) => c.id === "brand.logo",
+    );
+    expect(logo?.status).toBe("pass");
+    await rm(dir, { recursive: true, force: true });
+  });
+});
+
 describe("end-to-end campaign run", () => {
   it("reuses one hero, generates the other, and writes every channel variant", async () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
@@ -766,6 +851,37 @@ describe("end-to-end campaign run", () => {
         expect(creative.validation.status).not.toBe("fail");
       }
     }
+  });
+
+  it("measures the headline separately, so CTA ink cannot vouch for it", async () => {
+    // The campaign message is the requirement the exercise is most explicit
+    // about. Measured against the combined text layer, a creative that drew
+    // only its CTA and disclaimer would pass a check claiming the message is
+    // present. These must therefore be two different measurements.
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-ink-"));
+    const report = await runCampaign(parseBrief(briefYaml()), {
+      outputRoot: dir,
+      mode: "dev",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
+    });
+
+    const creative = report.products[0].creatives[0];
+    const rendered = creative.validation.checks.find((c) => c.id === "message.rendered");
+    expect(rendered?.status).toBe("pass");
+    expect(rendered?.message).toMatch(/headline ink/);
+
+    // The disclaimer is proven by its own ink now, not by the brief having
+    // contained the string. This brief sets no callToAction, so that check
+    // correctly reports nothing at all rather than a vacuous pass.
+    expect(creative.validation.checks.find((c) => c.id === "legal.disclaimer")?.status).toBe(
+      "pass",
+    );
+    expect(
+      creative.validation.checks.find((c) => c.id === "creative.callToAction"),
+    ).toBeUndefined();
+
+    await rm(dir, { recursive: true, force: true });
   });
 
   it("proves the message was rasterized into pixels, not just declared", async () => {

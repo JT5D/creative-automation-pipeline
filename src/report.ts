@@ -70,7 +70,13 @@ export type CampaignReport = {
    * The three metrics the assessment FAQ names when asked what matters most:
    * "time saved, number of campaigns generated, and overall efficiency."
    * Reported together, in that language, rather than left for a reader to
-   * assemble from the raw counters above.
+   * assemble from the raw counters above, and shown in the console.
+   *
+   * Against the brief's business goals: time saved and campaigns generated are
+   * goal 1 (campaign velocity); efficiency is the cost half of goal 4 (ROI).
+   * The other half of goal 4 -- CTR and conversions -- is deliberately absent.
+   * This pipeline never publishes, so it cannot measure them, and a fabricated
+   * conversion rate would be the easiest and worst lie in the project.
    */
   successMetrics: {
     /** Illustrative, from the baseline the brief supplies. Absent without one. */
@@ -139,10 +145,13 @@ export function createReport(args: {
   const { brief, markets, products, failures, preflight, mode, provider, startedAt, completedAt } =
     args;
   const creatives = products.flatMap((p) => p.creatives);
-  const generations = products.filter((p) => p.hero.source === "generated").length;
-  const reused = products.filter((p) => p.hero.source === "reused").length;
-  const heroes = products.length;
-  const cost = costEstimate(provider.model, generations);
+
+  // One pass over the heroes. Every hero figure below reads from this tally, so
+  // two metrics sitting next to each other cannot disagree about the same run.
+  const heroes = { reused: 0, generated: 0, generated_cached: 0, placeholder: 0 };
+  for (const product of products) heroes[product.hero.source]++;
+
+  const cost = costEstimate(provider.model, heroes.generated);
   const timeSaved = timeSavedEstimate(
     brief.manualMinutesPerCreative,
     creatives.length,
@@ -166,16 +175,16 @@ export function createReport(args: {
       productsProcessed: products.length,
       productsFailed: failures.length,
       marketsProcessed: markets.length,
-      approvedAssetsReused: products.filter((p) => p.hero.source === "reused").length,
-      heroesGenerated: products.filter((p) => p.hero.source === "generated").length,
-      heroesFromCache: products.filter((p) => p.hero.source === "generated_cached").length,
-      heroesPlaceholder: products.filter((p) => p.hero.source === "placeholder").length,
+      approvedAssetsReused: heroes.reused,
+      heroesGenerated: heroes.generated,
+      heroesFromCache: heroes.generated_cached,
+      heroesPlaceholder: heroes.placeholder,
       variantsCreated: creatives.length,
       validationPassed: creatives.filter((c) => c.validation.status === "pass").length,
       validationWarnings: creatives.filter((c) => c.validation.status === "warning").length,
       validationFailed: creatives.filter((c) => c.validation.status === "fail").length,
       // Only a live call counts. A cache hit is explicitly not a request.
-      generationRequests: products.filter((p) => p.hero.source === "generated").length,
+      generationRequests: heroes.generated,
     },
     successMetrics: {
       timeSaved: timeSaved && {
@@ -190,9 +199,9 @@ export function createReport(args: {
       },
       efficiency: {
         creativesPerGenerationCall:
-          generations > 0 ? Number((creatives.length / generations).toFixed(1)) : null,
+          heroes.generated > 0 ? Number((creatives.length / heroes.generated).toFixed(1)) : null,
         costPerCreativeUsd: cost ? Number((cost.totalUsd / creatives.length).toFixed(5)) : null,
-        reuseRate: heroes > 0 ? Number((reused / heroes).toFixed(3)) : 0,
+        reuseRate: products.length > 0 ? Number((heroes.reused / products.length).toFixed(3)) : 0,
         secondsPerCreative: Number(
           ((completedAt - startedAt) / 1000 / Math.max(1, creatives.length)).toFixed(2),
         ),

@@ -1,4 +1,4 @@
-import { measureText } from "./fonts.js";
+import { type Face, measureText } from "./fonts.js";
 
 /**
  * Deterministic text layout.
@@ -20,7 +20,7 @@ export function wrapText(
   text: string,
   maxWidth: number,
   fontSize: number,
-  weight: 400 | 700 = 700,
+  face: Face = "display",
 ): string[] {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
@@ -30,7 +30,7 @@ export function wrapText(
 
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
-    if (measureText(candidate, fontSize, weight) <= maxWidth || !current) {
+    if (measureText(candidate, fontSize, face) <= maxWidth || !current) {
       current = candidate;
     } else {
       lines.push(current);
@@ -52,18 +52,18 @@ export function fitText(
   maxLines: number,
   maxFontSize: number,
   minFontSize: number,
-  weight: 400 | 700 = 700,
+  face: Face = "display",
 ): FitResult {
   for (let size = maxFontSize; size >= minFontSize; size -= 2) {
-    const lines = wrapText(text, maxWidth, size, weight);
+    const lines = wrapText(text, maxWidth, size, face);
     if (lines.length <= maxLines) return { lines, fontSize: size, fits: true };
   }
-  const lines = wrapText(text, maxWidth, minFontSize, weight).slice(0, maxLines);
+  const lines = wrapText(text, maxWidth, minFontSize, face).slice(0, maxLines);
   return { lines, fontSize: minFontSize, fits: false };
 }
 
 /** WCAG relative luminance, used to pick readable text over any brand colour. */
-export function relativeLuminance(hex: string): number {
+function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "");
   const full =
     clean.length === 3

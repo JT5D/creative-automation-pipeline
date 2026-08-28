@@ -11,8 +11,8 @@ import sharp from "sharp";
  * Anti-aliasing noise disappears at this resolution; a headline that moved, a
  * logo that vanished, or a scrim that changed strength does not.
  */
-export const SIGNATURE_GRID = 12;
-export const SIGNATURE_LEVELS = 16;
+const SIGNATURE_GRID = 12;
+const SIGNATURE_LEVELS = 16;
 
 export async function visualSignature(image: Buffer | string): Promise<number[]> {
   const { data } = await sharp(image)

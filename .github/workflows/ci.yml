@@ -65,3 +65,26 @@ jobs:
             }
             console.log(\`verified \${n} creatives; offline preview correctly reports assignmentProof.passed = false\`);
           "
+
+      # The README's first instruction is `npm run dev`, and the required demo
+      # video exists to help a reviewer set up and run this locally. Until now
+      # nothing proved the local app actually starts -- src/server.ts had no
+      # coverage at all, so a boot failure would have surfaced on the
+      # reviewer's machine rather than here.
+      - name: The local app boots and answers, from a clean clone with no key
+        run: |
+          npx tsx src/server.ts & SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8787/api/provider >/dev/null && break
+            sleep 1
+          done
+
+          # Keyless, so the console must say offline preview -- not "ready".
+          curl -sf http://127.0.0.1:8787/api/provider | tee /dev/stderr | grep -q '"configured":false'
+          # The exercise's three required formats are marked by the server.
+          curl -sf http://127.0.0.1:8787/api/formats  | grep -q '"required":true'
+          # The sample library the console loads on first paint.
+          curl -sf http://127.0.0.1:8787/api/briefs   | grep -q 'campaign.yaml'
+          echo "local app booted on 127.0.0.1:8787 and answered every route the console calls"

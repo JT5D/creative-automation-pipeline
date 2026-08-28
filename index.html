@@ -7,8 +7,24 @@
     <!-- Inline so the console has a real tab identity with no extra request. -->
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2320'/%3E%3Cpath d='M7 25 25 7' stroke='%23c9a227' stroke-width='4'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2320'/%3E%3Cpath d='M7 25 25 7' stroke='%234f9d7c' stroke-width='4'/%3E%3C/svg%3E"
     />
+    <script>
+      // Runs before first paint, which is the whole point: setting the theme
+      // from React would render one frame of the wrong palette first.
+      //
+      // Dark is the default and the OS preference is deliberately NOT read.
+      // This is a demo artifact as much as a tool -- what a reviewer sees on
+      // opening it should not depend on their system settings. An explicit
+      // choice is remembered; nothing else changes it.
+      try {
+        if (localStorage.getItem("cap.theme") === "light") {
+          document.documentElement.dataset.theme = "light";
+        }
+      } catch (_) {
+        /* private browsing: the dark default is already correct */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,27 +1,120 @@
 /*
- * Creative production console: dark, dense, work-focused.
+ * Set in Rubik -- the same typeface the pipeline rasterizes into the ads.
  *
- * ONE COLOUR RULE, and it is worth stating because it is the difference
- * between a tool and a brochure: --accent (gold) means MONEY or the action
- * that spends it, and nothing else. Selection, headings and chrome are
- * neutral, so the only saturated colour on screen belongs to the campaign's
- * own creatives. An earlier version painted the whole shell in the brand's
- * gold, and the tool ended up competing with the work it was producing.
+ * The files are already in the repo because the compositor needs real glyph
+ * metrics (see src/fonts.ts), so using them here costs nothing, needs no
+ * network, and makes the tool and its output visibly one system rather than a
+ * generic dashboard that happens to emit images.
+ */
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../assets/fonts/Rubik-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../../assets/fonts/Rubik-Bold.ttf") format("truetype");
+}
+
+/*
+ * Creative production console. Dark by default, light on request.
+ *
+ * THE COLOUR RULE, and it is the difference between a tool and a brochure:
+ * the console chrome is BRAND-NEUTRAL. `#C9A227` is the campaign's
+ * brand.secondaryColor -- it belongs to the exported creative and appears
+ * nowhere in this UI. Painting the tool in a client's gold means the tool
+ * wears one customer's identity, which is wrong the moment it runs the
+ * Nordvik brief instead of the Lumen one. So the only saturated colour on
+ * screen belongs to the work, and --brand (green) is the single action colour.
+ *
+ * Every palette value lives in this block. Nothing downstream hardcodes a
+ * colour, which is what makes a re-theme a replacement of these two lists
+ * rather than a sweep through a thousand lines.
  */
 :root {
-  --bg: #0d0f0e;
-  --panel: #161a18;
-  --panel-2: #1d2320;
-  --panel-3: #252c28;
-  --line: #2a322d;
-  --line-2: #3d4a43;
-  --ink: #eef2ef;
-  --muted: #8fa096;
-  --accent: #c9a227;
-  --green: #4ea373;
-  --amber: #d9a441;
-  --red: #d9534f;
+  color-scheme: dark;
+  --page: #0f0e0d;
+  --app: #161514;
+  --surface: #1c1b19;
+  --canvas: #1c1b19;
+  --border: #2c2a27;
+  --border-strong: #3a3733;
+  --text: #f2efe9;
+  --text-2: #c8c3ba;
+  --muted: #9b958b;
+  --disabled: #6b655d;
+  /* The logo ships reversed (white) only, so the mark always sits on this
+     chip. Identical in both themes -- on white it would be invisible. */
+  --lockup: #14322b;
+  --brand: #4f9d7c;
+  --brand-hover: #5cae8b;
+  --on-brand: #08150f;
+  --brand-tint: #18271f;
+  --success: #5fbd8e;
+  --success-tint: #16261f;
+  --success-line: #2b4b3b;
+  --success-text: #8fd4ac;
+  --warning: #d1a441;
+  --warning-tint: #2a2317;
+  --warning-line: #4d3f22;
+  --warning-text: #e0be74;
+  --error: #e0785e;
+  --error-tint: #2b1a16;
+  --error-line: #5a3128;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 26px -16px rgba(0, 0, 0, 0.6);
+  --shadow-shell: 0 1px 2px rgba(0, 0, 0, 0.45), 0 30px 70px -32px rgba(0, 0, 0, 0.75);
+
+  /* Names the existing rules already use, aliased onto the palette above so a
+     theme change is one block and not a rewrite. */
+  --bg: var(--app);
+  --panel: var(--surface);
+  --panel-2: var(--canvas);
+  --panel-3: var(--border);
+  --line: var(--border);
+  --line-2: var(--border-strong);
+  --ink: var(--text);
+  --green: var(--success);
+  --amber: var(--warning);
+  --red: var(--error);
+  --lift: var(--shadow-card);
   --radius: 10px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #e8e5df;
+  --app: #f4f2ee;
+  --surface: #ffffff;
+  --canvas: #ffffff;
+  --border: #e3dfd7;
+  --border-strong: #d3cec3;
+  --text: #1c1a17;
+  --text-2: #4a453e;
+  --muted: #6f6860;
+  --disabled: #a09a90;
+  --lockup: #14322b;
+  --brand: #14322b;
+  --brand-hover: #1f4a3f;
+  --on-brand: #ffffff;
+  --brand-tint: #eef3f0;
+  --success: #2f7d5d;
+  --success-tint: #eaf2ed;
+  --success-line: #c4ddce;
+  --success-text: #245c44;
+  --warning: #96690f;
+  --warning-tint: #fdf7e8;
+  --warning-line: #ecd9a8;
+  --warning-text: #5f4407;
+  --error: #a83f2b;
+  --error-tint: #fbeeea;
+  --error-line: #eec5b9;
+  --shadow-card: 0 1px 2px rgba(28, 26, 23, 0.05), 0 10px 26px -16px rgba(28, 26, 23, 0.3);
+  --shadow-shell: 0 1px 2px rgba(28, 26, 23, 0.06), 0 30px 70px -32px rgba(28, 26, 23, 0.34);
 }
 
 * {
@@ -33,13 +126,24 @@ body {
   background: var(--bg);
   color: var(--ink);
   font:
-    14px / 1.5 ui-sans-serif,
+    14px / 1.5 Rubik,
+    ui-sans-serif,
     -apple-system,
     "Segoe UI",
     Roboto,
     Helvetica,
     Arial,
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Quality floor: every control is reachable and visibly focused by keyboard.
+   There is no reduced-motion block because there is no motion to reduce -- the
+   console animates nothing. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .app {
@@ -54,34 +158,45 @@ body {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 18px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 14px;
 }
+/*
+ * One square, one diagonal: the reuse/generate split this pipeline turns on.
+ * Kept as a mark rather than a logo -- the brand in this tool belongs to the
+ * campaign, not to the console.
+ */
 .mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
   flex: none;
   border: 1px solid var(--line-2);
+  box-shadow: var(--lift);
   background:
-    linear-gradient(135deg, transparent 46%, var(--accent) 46%, var(--accent) 54%, transparent 54%),
+    linear-gradient(135deg, transparent 47%, var(--ink) 47%, var(--ink) 53%, transparent 53%),
     var(--panel-2);
 }
 .topbar h1 {
   margin: 0;
-  font-size: 17px;
-  letter-spacing: -0.2px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.45px;
 }
+
+/* The product thesis in one line, set as a spec line rather than a tagline. */
 .topbar p {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1px;
 }
 
 .controls {
@@ -95,24 +210,27 @@ body {
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   font-size: 12.5px;
   font-family: inherit;
   cursor: pointer;
+  box-shadow: var(--lift);
 }
-.model select:focus {
-  outline: 1px solid var(--accent);
+.model select:hover {
+  border-color: var(--line-2);
 }
 
 .pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel);
-  font-size: 12.5px;
+  box-shadow: var(--lift);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
   color: var(--muted);
 }
 .pill .dot {
@@ -170,15 +288,37 @@ body {
   display: grid;
   gap: 16px;
   grid-template-columns: minmax(320px, 400px) minmax(260px, 1fr);
+  /* The brief is a tall control panel; pipeline and results are a work column
+     beside it. Explicit placement -- brief spanning both rows -- is what stops
+     the brief's height from forcing an empty half-screen under the pipeline
+     while a run has not started yet. */
+  grid-template-rows: auto 1fr;
   align-items: start;
 }
+.columns > .panel:first-child {
+  grid-area: 1 / 1 / 3 / 2;
+  /* The brief is the control surface for everything on the right, and the
+     results column runs long. Sticky keeps the format/market chips and the run
+     button reachable instead of scrolled away above a tall gallery. */
+  position: sticky;
+  top: 16px;
+}
 .panel.wide {
-  grid-column: 1 / -1;
+  grid-area: 2 / 2 / 3 / -1;
   min-height: 140px;
 }
 @media (max-width: 1180px) {
+  /* One column: drop the explicit placement or the panels keep their
+     two-column row assignments and stack out of order. */
   .columns {
     grid-template-columns: 1fr;
+  }
+  .columns > .panel:first-child,
+  .panel.wide {
+    grid-area: auto;
+  }
+  .columns > .panel:first-child {
+    position: static;
   }
 }
 
@@ -187,13 +327,30 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
+  box-shadow: var(--lift);
 }
+
+/*
+ * Step headers as a spec-sheet band. Brief -> run -> output is a real sequence,
+ * so the numbering carries information rather than decorating; the rule that
+ * follows it is the only structural flourish in the shell.
+ */
 .panel h2 {
-  margin: 0;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.1px;
+  letter-spacing: 1.6px;
   color: var(--muted);
+}
+.panel h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 .hint {
   margin: 6px 0 12px;
@@ -222,7 +379,7 @@ body {
   font-family: inherit;
 }
 .briefs button:hover {
-  border-color: #3b463f;
+  border-color: var(--line-2);
 }
 .briefs button.on {
   border-color: var(--line-2);
@@ -250,10 +407,10 @@ body {
 
 .brief {
   width: 100%;
-  height: 300px;
+  height: 214px;
   resize: vertical;
-  background: #0b0d0c;
-  color: #d7e2da;
+  background: var(--bg);
+  color: var(--ink);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
@@ -297,10 +454,10 @@ body {
   font-family: ui-monospace, Menlo, monospace;
 }
 .chips button.on {
-  background: var(--ink);
-  color: #12160f;
-  border-color: var(--ink);
-  font-weight: 700;
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-color: var(--brand);
+  font-weight: 500;
 }
 
 .actions {
@@ -336,7 +493,7 @@ body {
   border: 1px solid var(--line);
 }
 .estimate.blocked {
-  border-color: rgba(217, 83, 79, 0.5);
+  border-color: color-mix(in srgb, var(--red) 50%, transparent);
 }
 .est-head {
   display: flex;
@@ -404,12 +561,12 @@ body {
   border-radius: 3px;
 }
 .tag.reuse {
-  background: rgba(78, 163, 115, 0.16);
+  background: color-mix(in srgb, var(--green) 16%, transparent);
   color: var(--green);
 }
 .tag.generate {
-  background: rgba(201, 162, 39, 0.16);
-  color: var(--accent);
+  background: var(--warning-tint);
+  color: var(--warning-text);
 }
 .est-fails {
   margin: 0;
@@ -428,8 +585,8 @@ body {
   margin-top: 12px;
   width: 100%;
   padding: 12px;
-  background: var(--accent);
-  color: #141815;
+  background: var(--brand);
+  color: var(--on-brand);
   font-weight: 700;
   font-size: 14px;
   border: 0;
@@ -444,6 +601,12 @@ body {
   color: var(--red);
   font-size: 12.5px;
   margin: 10px 0 0;
+}
+.empty strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 4px;
 }
 .empty {
   color: var(--muted);
@@ -463,7 +626,7 @@ body {
   gap: 8px;
   align-items: baseline;
   padding: 6px 0;
-  border-bottom: 1px solid #202723;
+  border-bottom: 1px solid var(--line);
   font-size: 12.5px;
 }
 .ev .tick {
@@ -479,7 +642,7 @@ body {
 }
 .ev.asset_generated .label,
 .ev.generation_submitted .label {
-  color: var(--accent);
+  color: var(--warning-text);
   font-weight: 600;
 }
 .ev .meta {
@@ -510,7 +673,7 @@ body {
 }
 /* Gold is spend. Green is a check that passed. They are different facts. */
 .metric.accent .v {
-  color: var(--accent);
+  color: var(--text);
 }
 .metric.good .v {
   color: var(--green);
@@ -550,22 +713,22 @@ body {
   border-radius: 4px;
 }
 .badge.reused {
-  background: rgba(78, 163, 115, 0.16);
+  background: color-mix(in srgb, var(--green) 16%, transparent);
   color: var(--green);
-  border: 1px solid rgba(78, 163, 115, 0.4);
+  border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
 }
 .badge.generated {
-  background: rgba(201, 162, 39, 0.16);
-  color: var(--accent);
-  border: 1px solid rgba(201, 162, 39, 0.45);
+  background: var(--warning-tint);
+  color: var(--warning-text);
+  border: 1px solid var(--warning-line);
 }
 .badge.placeholder {
-  background: rgba(217, 83, 79, 0.14);
+  background: color-mix(in srgb, var(--red) 14%, transparent);
   color: var(--red);
-  border: 1px solid rgba(217, 83, 79, 0.45);
+  border: 1px solid color-mix(in srgb, var(--red) 45%, transparent);
 }
 .badge.generated_cached {
-  background: rgba(143, 160, 150, 0.14);
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
   color: var(--muted);
   border: 1px solid var(--line);
 }
@@ -576,34 +739,12 @@ body {
   font-family: ui-monospace, Menlo, monospace;
 }
 .prov code {
-  color: #b9c9be;
+  color: var(--ink);
 }
 
-.locales {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-.locales button {
-  background: var(--panel-2);
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 11.5px;
-  cursor: pointer;
-  font-family: ui-monospace, Menlo, monospace;
-}
-.locales button.on {
-  background: var(--accent);
-  color: #141815;
-  border-color: var(--accent);
-  font-weight: 700;
-}
 .loc {
   font-family: ui-monospace, Menlo, monospace;
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .grid {
@@ -620,6 +761,9 @@ body {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 10px 22px -14px rgba(0, 0, 0, 0.8);
 }
 /*
  * Each creative is shown at its OWN aspect ratio, set inline from the width and
@@ -642,17 +786,26 @@ body {
   display: block;
   object-fit: cover;
 }
+/*
+ * A production slug line, the way a print proof carries its job metadata:
+ * format, market, exact pixel dimensions. Mono, because these are values to be
+ * checked, not read.
+ */
 .card figcaption {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  font-size: 11.5px;
+  border-top: 1px solid var(--line);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2px;
   color: var(--muted);
 }
 .card figcaption strong {
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 .v {
   margin-left: auto;
@@ -753,17 +906,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
-.path {
-  margin: 16px 0 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 11.5px;
-  font-family: ui-monospace, Menlo, monospace;
-}
-.path code {
-  color: var(--accent);
-}
 
 .lb-backdrop {
   position: absolute;
@@ -776,7 +918,7 @@ body {
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(6, 8, 7, 0.9);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -821,7 +963,7 @@ body {
   line-height: 1.6;
 }
 .lb-meta code {
-  color: var(--accent);
+  color: var(--ink);
   font-family: ui-monospace, Menlo, monospace;
 }
 .lb-side .checks {
@@ -837,8 +979,8 @@ body {
 }
 
 .failures {
-  border: 1px solid rgba(217, 83, 79, 0.45);
-  background: rgba(217, 83, 79, 0.08);
+  border: 1px solid color-mix(in srgb, var(--red) 45%, transparent);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
   border-radius: 9px;
   padding: 13px 15px;
   margin-bottom: 14px;
@@ -873,12 +1015,12 @@ body {
   overflow: hidden;
 }
 .proof.ok {
-  border-color: rgba(78, 163, 115, 0.45);
-  background: rgba(78, 163, 115, 0.08);
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+  background: color-mix(in srgb, var(--green) 8%, transparent);
 }
 .proof.no {
-  border-color: rgba(201, 162, 39, 0.45);
-  background: rgba(201, 162, 39, 0.07);
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  background: color-mix(in srgb, var(--amber) 7%, transparent);
 }
 .proof-head {
   width: 100%;
@@ -898,7 +1040,7 @@ body {
   color: var(--green);
 }
 .proof.no .proof-head strong {
-  color: var(--accent);
+  color: var(--amber);
 }
 .proof-why {
   margin: 0;
@@ -922,9 +1064,104 @@ body {
 }
 .review.auto {
   color: var(--green);
-  border-color: rgba(78, 163, 115, 0.4);
+  border-color: color-mix(in srgb, var(--green) 40%, transparent);
 }
 .review.needed {
-  color: var(--accent);
-  border-color: rgba(201, 162, 39, 0.45);
+  color: var(--warning-text);
+  border-color: var(--warning-line);
+  background: var(--warning-tint);
+}
+
+/*
+ * The three success metrics the client named. Sits directly under the
+ * assignment proof: what was produced, then what it was worth.
+ */
+.success {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin: 0 0 14px;
+}
+.success > div {
+  background: var(--panel-2);
+  padding: 11px 14px;
+}
+.success dt {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--muted);
+}
+.success dd {
+  margin: 4px 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+.success span {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Folded per-variant rows: one line per product, detail on demand. */
+.ev.variants {
+  grid-template-columns: 18px 1fr auto;
+}
+.label.fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.label.fold .caret {
+  color: var(--muted);
+}
+.fold-detail {
+  grid-column: 2 / -1;
+  margin: 6px 0 2px;
+  padding: 0 0 0 2px;
+  list-style: none;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* Theme switch: a two-state segmented control, sized to match the status pill
+   beside it so the header reads as one row of controls. */
+.theme {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  box-shadow: var(--lift);
+}
+.theme button {
+  padding: 5px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.theme button.on {
+  background: var(--panel-2);
+  color: var(--ink);
 }

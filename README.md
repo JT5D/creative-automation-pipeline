@@ -8,12 +8,13 @@ exist, and calling a GenAI image model only for what is genuinely missing.
 
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one product reused, one
-generated, one paid model call, 24.9s.**
+generated, one paid model call.**
 
-**Then the same run with every format and market selected: 24 creatives, still
-one paid call, 33.8s** — because generation happens once per missing hero, not
-once per output. Both figures are measured runs, reported in
-[`docs/sample-output/report.json`](docs/sample-output/report.json).
+**Select every format and market and that same single call produces 24
+creatives in 37.6s for $0.134** — because generation happens once per missing
+hero, not once per output. That run is the one committed in
+[`docs/sample-output/report.json`](docs/sample-output/report.json); every number
+on this page comes from it.
 
 A working proof-of-concept: it runs locally, calls a real image model, and
 writes real files. What it is not is a deployed system — storage is local, there
@@ -59,11 +60,20 @@ the legal rules of each market.
 Most of that work is mechanical. This pipeline automates the mechanical part
 and spends model budget only where a human genuinely needs something new.
 
+**Who operates it.** The console is the production operator's view — whoever is
+accountable for getting a campaign out, and is comfortable with a brief file and
+a cost line. It is deliberately *not* a creative director's tool. A director's
+job starts where this ends: at the `REVIEW NEW HERO` badge on anything a model
+touched, and at the six exported files. In production that review-and-activate
+surface is GenStudio or Firefly Creative Production, and this repo is the spine
+underneath it — which is why the seams that matter here are the asset resolver
+and the provider, not the UI.
+
 **The five business goals in the brief, and where each one is answered**
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Accelerate campaign velocity | `runCampaign()` — brief in, 24 validated creatives out in 33.8s | **Delivered** |
+| 1 · Accelerate campaign velocity | `runCampaign()` — brief in, 24 validated creatives out in 37.6s | **Delivered** |
 | 2 · Ensure brand consistency | `src/validation.ts` — colour, logo, contrast, disclaimer and safe zone applied and checked by code, identically, every time | **Delivered** |
 | 3 · Maximize relevance & personalization | `markets[]` — per-market message, CTA and disclaimer rasterized into each export, at zero extra generation | **Delivered** |
 | 4 · Optimize marketing ROI | Cost side only: `report.json → successMetrics.efficiency` reports creatives per paid call, cost per creative and reuse rate | **Half.** CTR and conversion are post-publication and this pipeline never publishes, so no CTR number is invented here — see [Production extension path](#production-extension-path) |
@@ -219,13 +229,13 @@ CAMPAIGN COMPLETE  Lumen Botanicals — Autumn Glow (DACH)
   Channel variants created    24
   Validation passed           24 / 24
   Paid generation calls       1
-  Elapsed                     33.8s
+  Elapsed                     37.6s
 ```
 
 Run the exercise's minimum instead — the console's default, 1:1 · 9:16 · 16:9
 in one market — and the same brief produces **6 creatives from the same single
-paid call in 24.9s**. The generation cost does not move, because it is a
-function of missing heroes, not of outputs.
+paid call**. The generation cost does not move, because it is a function of
+missing heroes, not of outputs.
 
 ---
 
@@ -467,8 +477,11 @@ often enough to matter: a CTA pill sized from it clipped its own label.
 | **9:16** 1080×1920 | Story / Reel | Full-bleed hero, copy inside Meta's published safe zone |
 | **16:9** 1920×1080 | Landscape | Hero right, solid brand copy panel left |
 
-The 9:16 template is built against Meta's published safe zone — 14% top, 35%
-bottom, 6% sides free of text and logos. My first version put the headline and
+The 9:16 template is built against Meta's **unified** 9:16 safe zone — 14% top,
+35% bottom, 6% sides free of text and logos. Meta consolidated Facebook and
+Instagram Stories and Reels into that single spec in March 2026, taking the most
+restrictive bottom, so one 9:16 export is safe across all four vertical
+placements. My first version put the headline and
 CTA inside the bottom 35%, where the platform's own profile icon and CTA
 overlay would have covered the entire message. See
 [`docs/CREATIVE_STANDARDS.md`](docs/CREATIVE_STANDARDS.md) for the correction
@@ -540,12 +553,24 @@ the file that ships — not a re-render.
 prohibited-claim scan across all copy · logo file resolves · declared asset
 paths resolve · brand colours are valid hex.
 
-**Per rendered creative**: exact output dimensions · campaign message actually
-rasterized (ink measurement) · copy fits above the legibility floor ·
-text/background contrast vs WCAG AA · logo composited · disclaimer present ·
-no prohibited term in rendered copy.
+**Per rendered creative**: exact output dimensions · copy fits above the
+legibility floor · text/background contrast vs WCAG AA where a named background
+exists · no prohibited term in the copy that reached the pixels.
+
+Four elements are measured, not assumed. The headline, the CTA, the disclaimer
+and the logo are each rasterized **alone** and their opaque pixels counted, so
+"the campaign message is present" and "the brand logo is present" are
+measurements rather than restatements of the brief. A combined layer cannot
+make that distinction: a creative drawing only its CTA would satisfy a check
+whose name asserts the message rendered.
 
 Prohibited terms match on word boundaries, so `cure` does not trip on `secure`.
+
+This is an **MLR screen** — medical, legal and regulatory review — which is the
+gate a dermatologist-tested skincare claim has to clear in every market before
+it can run. It is the reason the check happens at *preflight*, before a single
+credit is spent: copy that legal will reject should never reach production, let
+alone a paid model call. `samples/campaign-legal-fail.yaml` proves it goes red.
 
 These are transparent, deterministic production rules. This is not AI brand
 inference and is not presented as such.
@@ -647,8 +672,27 @@ and is the right call on an entitled account.
 
 ## Limitations
 
-- `position: "attention"` cropping is a Sharp heuristic, not product detection.
-  A production system would use Firefly Expand or a product-aware crop.
+- The hero crop is **centred**, which is right because the art direction demands
+  a centred product with negative space on all sides — but that is a convention
+  the prompt enforces, not product detection. An off-centre approved asset would
+  still crop badly. Adobe's Firefly Expand (generative reframing) or a
+  product-aware crop is the production answer; this repo deliberately does not
+  guess. It previously used Sharp's `attention` saliency heuristic here, which
+  sliced the product out of the 9:16 frame.
+- Text is laid out by hand — wrapping, auto-fit and glyph metrics in
+  `textLayout.ts` and `fonts.ts`. The current best-practice stack for
+  programmatic social creative is [Satori](https://github.com/vercel/satori)
+  (HTML/CSS → SVG) feeding Sharp, which is what Vercel's OG image generation
+  uses. It would delete the hand-rolled layout and the fontconfig shim. I did
+  not adopt it here because auto-fit-to-legibility-floor still has to be written
+  either way, and because I wanted line breaking to read real advance widths so
+  the failure mode is a flagged creative rather than a clipped one. It is the
+  first thing I would change with more time.
+- The contrast check reports only on the brand-panel format, where the
+  background is a colour the brief names. On full-bleed formats the copy sits on
+  a photograph, so legibility is handled earlier — the scrim is sized from the
+  measured luminance of the band the copy will occupy — and is not re-expressed
+  as a WCAG ratio afterwards.
 - The prohibited-word scan is literal matching. It catches the claims a legal
   team enumerates; it does not do semantic claim detection.
 - Run state is in memory, so restarting the server forgets past runs. The
