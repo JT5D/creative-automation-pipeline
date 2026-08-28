@@ -42,9 +42,9 @@ export class GeminiHeroGenerator implements HeroGenerator {
   readonly provider = "google-gemini";
   readonly model: string;
 
-  constructor(private readonly apiKey: string, model = process.env.GEMINI_IMAGE_MODEL ?? DEFAULT_MODEL) {
+  constructor(private readonly apiKey: string, model?: string) {
     if (!apiKey) throw new GenerationUnavailableError("GEMINI_API_KEY is not set");
-    this.model = model;
+    this.model = model || DEFAULT_MODEL;
   }
 
   async generateHero(input: HeroRequest): Promise<GeneratedHero> {

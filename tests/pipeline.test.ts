@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
+import { selectGenerator } from "../src/providers/index.js";
 import type { HeroGenerator, HeroRequest } from "../src/providers/types.js";
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
@@ -419,6 +420,32 @@ describe("selective production", () => {
         locales: ["nope-XX"],
       }),
     ).rejects.toThrow(/no markets selected/i);
+  });
+});
+
+describe("provider selection", () => {
+  it("applies a per-run model override without touching global state", async () => {
+    const before = process.env.GEMINI_IMAGE_MODEL;
+    const g = selectGenerator(
+      { GEMINI_API_KEY: "test-key" } as NodeJS.ProcessEnv,
+      "gemini-3.1-flash-lite-image",
+    );
+    expect(g.model).toBe("gemini-3.1-flash-lite-image");
+    expect(process.env.GEMINI_IMAGE_MODEL).toBe(before);
+  });
+
+  it("falls back to the offline renderer when nothing is configured", () => {
+    const g = selectGenerator({} as NodeJS.ProcessEnv);
+    expect(g.provider).toBe("offline-placeholder");
+  });
+
+  it("prefers Firefly when its credentials are present", () => {
+    const g = selectGenerator({
+      GEMINI_API_KEY: "k",
+      FIREFLY_SERVICES_CLIENT_ID: "id",
+      FIREFLY_SERVICES_CLIENT_SECRET: "secret",
+    } as NodeJS.ProcessEnv);
+    expect(g.provider).toBe("adobe-firefly");
   });
 });
 

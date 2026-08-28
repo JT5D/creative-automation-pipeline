@@ -123,15 +123,11 @@ app.post("/api/runs", async (req, res) => {
   // Respond immediately; the UI polls for real events as they are emitted.
   res.status(202).json({ runId });
 
-  // A model chosen in the UI applies to this process's generator only.
-  if (typeof req.body?.model === "string" && req.body.model) {
-    process.env.GEMINI_IMAGE_MODEL = req.body.model;
-  }
-
   runCampaign(raw, {
     outputRoot: OUTPUT_ROOT,
     ratios: req.body?.ratios,
     locales: req.body?.locales,
+    model: typeof req.body?.model === "string" ? req.body.model : undefined,
     onEvent: (event) => state.events.push(event),
   })
     .then((report) => {

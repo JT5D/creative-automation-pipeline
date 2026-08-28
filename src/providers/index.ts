@@ -18,7 +18,11 @@ export type ProviderStatus = {
  * There is no silent fallback -- whichever one runs is named in the UI, in
  * report.json, and in every provenance record.
  */
-export function selectGenerator(env: NodeJS.ProcessEnv = process.env): HeroGenerator {
+export function selectGenerator(
+  env: NodeJS.ProcessEnv = process.env,
+  /** Per-run model override. Passed explicitly so concurrent runs cannot race. */
+  model?: string,
+): HeroGenerator {
   const { FIREFLY_SERVICES_CLIENT_ID, FIREFLY_SERVICES_CLIENT_SECRET, GEMINI_API_KEY } = env;
 
   if (FIREFLY_SERVICES_CLIENT_ID && FIREFLY_SERVICES_CLIENT_SECRET) {
@@ -29,7 +33,7 @@ export function selectGenerator(env: NodeJS.ProcessEnv = process.env): HeroGener
   }
 
   if (GEMINI_API_KEY) {
-    return new GeminiHeroGenerator(GEMINI_API_KEY);
+    return new GeminiHeroGenerator(GEMINI_API_KEY, model || env.GEMINI_IMAGE_MODEL);
   }
 
   // No credentials: render offline rather than fail. The repo stays runnable

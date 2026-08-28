@@ -37,6 +37,8 @@ export type RunOptions = {
   ratios?: RatioKey[];
   /** Produce only these markets. Omit for every market in the brief. */
   locales?: string[];
+  /** Model override for this run only. */
+  model?: string;
 };
 
 /** Accepts JSON or YAML text; both normalize to the same validated object. */
@@ -101,7 +103,7 @@ export async function runCampaign(
   }
 
   // 3. Provider is resolved once, and only if a hero might actually be missing.
-  const generator = options.generator ?? selectGenerator();
+  const generator = options.generator ?? selectGenerator(process.env, options.model);
   emit("provider_selected", { provider: generator.provider, model: generator.model });
 
   const campaignDir = path.join(outputRoot, sanitizeId(brief.id));
