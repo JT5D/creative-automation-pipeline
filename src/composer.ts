@@ -1,6 +1,12 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import { FONT_FAMILY } from "./fonts.js";
+
+/**
+ * Derived from composite()'s own signature rather than reaching into sharp's
+ * type namespace, which moved in 0.35. This cannot drift from the library.
+ */
+type Layer = Parameters<ReturnType<typeof sharp>["composite"]>[0][number];
 import type {
   Brand,
   CampaignBrief,
@@ -200,7 +206,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     },
   });
 
-  const layers: sharp.OverlayOptions[] = [];
+  const layers: Layer[] = [];
 
   // 2. Hero, cover-fitted into its zone. `cover` crops rather than distorts.
   const heroBuffer = await sharp(await readFile(hero.localPath))
