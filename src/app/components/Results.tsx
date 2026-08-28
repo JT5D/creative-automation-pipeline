@@ -12,7 +12,14 @@ export function Results({ report }: { report?: CampaignReport }) {
     [report],
   );
 
-  if (!report) return <p className="empty">Exported creatives appear here.</p>;
+  if (!report)
+    return (
+      <p className="empty">
+        <strong>No creatives yet</strong>
+        Run the campaign to produce them. Every file shown here is read from disk, not re-rendered
+        in the browser.
+      </p>
+    );
 
   const locales = report.markets.map((m) => m.locale);
   const m = report.metrics;
@@ -142,12 +149,19 @@ function SuccessMetrics({ report }: { report: CampaignReport }) {
       </div>
       <div>
         <dt>Efficiency</dt>
+        {/* A run that spent nothing has no cost per creative to report, and
+            "— per paid call · $0.0000 each" is worse than saying so. */}
         <dd>
-          {e.creativesPerGenerationCall ?? "—"} per paid call
-          {e.costPerCreativeUsd !== null && ` · $${e.costPerCreativeUsd.toFixed(4)} each`}
+          {e.creativesPerGenerationCall === null
+            ? "No paid call"
+            : `${e.creativesPerGenerationCall} per paid call` +
+              (e.costPerCreativeUsd ? ` · $${e.costPerCreativeUsd.toFixed(4)} each` : "")}
         </dd>
         <span>
-          {Math.round(e.reuseRate * 100)}% of heroes reused · {e.secondsPerCreative}s per creative
+          {e.creativesPerGenerationCall === null
+            ? "every hero was already approved or cached"
+            : `${Math.round(e.reuseRate * 100)}% of heroes reused`}{" "}
+          · {e.secondsPerCreative}s per creative
         </span>
       </div>
     </dl>

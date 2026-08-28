@@ -1,4 +1,27 @@
 /*
+ * Set in Rubik -- the same typeface the pipeline rasterizes into the ads.
+ *
+ * The files are already in the repo because the compositor needs real glyph
+ * metrics (see src/fonts.ts), so using them here costs nothing, needs no
+ * network, and makes the tool and its output visibly one system rather than a
+ * generic dashboard that happens to emit images.
+ */
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../assets/fonts/Rubik-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../../assets/fonts/Rubik-Bold.ttf") format("truetype");
+}
+
+/*
  * Creative production console: dark, dense, work-focused.
  *
  * ONE COLOUR RULE, and it is worth stating because it is the difference
@@ -9,14 +32,21 @@
  * gold, and the tool ended up competing with the work it was producing.
  */
 :root {
-  --bg: #0d0f0e;
-  --panel: #161a18;
-  --panel-2: #1d2320;
-  --panel-3: #252c28;
-  --line: #2a322d;
+  /* Warm graphite, not neutral black: the campaign's world is botanical, and a
+     cold blue-black would read as a developer tool rather than a studio one. */
+  --bg: #0b0d0c;
+  --panel: #141817;
+  --panel-2: #1b211f;
+  --panel-3: #232b28;
+  --line: #2b332f;
   --line-2: #3d4a43;
-  --ink: #eef2ef;
-  --muted: #8fa096;
+  --ink: #edf1ee;
+  --muted: #8b9a92;
+  /* Panels read as stacked cards: a hairline of light on the top edge and a
+     real shadow beneath, rather than 1px outlines floating on flat black. */
+  --lift:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 8px 24px -12px rgba(0, 0, 0, 0.75);
   --accent: #c9a227;
   --green: #4ea373;
   --amber: #d9a441;
@@ -33,13 +63,24 @@ body {
   background: var(--bg);
   color: var(--ink);
   font:
-    14px / 1.5 ui-sans-serif,
+    14px / 1.5 Rubik,
+    ui-sans-serif,
     -apple-system,
     "Segoe UI",
     Roboto,
     Helvetica,
     Arial,
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Quality floor: every control is reachable and visibly focused by keyboard.
+   There is no reduced-motion block because there is no motion to reduce -- the
+   console animates nothing. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .app {
@@ -54,34 +95,45 @@ body {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 18px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 14px;
 }
+/*
+ * One square, one diagonal: the reuse/generate split this pipeline turns on.
+ * Kept as a mark rather than a logo -- the brand in this tool belongs to the
+ * campaign, not to the console.
+ */
 .mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
   flex: none;
   border: 1px solid var(--line-2);
+  box-shadow: var(--lift);
   background:
-    linear-gradient(135deg, transparent 46%, var(--accent) 46%, var(--accent) 54%, transparent 54%),
+    linear-gradient(135deg, transparent 47%, var(--accent) 47%, var(--accent) 53%, transparent 53%),
     var(--panel-2);
 }
 .topbar h1 {
   margin: 0;
-  font-size: 17px;
-  letter-spacing: -0.2px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.45px;
 }
+
+/* The product thesis in one line, set as a spec line rather than a tagline. */
 .topbar p {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1px;
 }
 
 .controls {
@@ -95,24 +147,27 @@ body {
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   font-size: 12.5px;
   font-family: inherit;
   cursor: pointer;
+  box-shadow: var(--lift);
 }
-.model select:focus {
-  outline: 1px solid var(--accent);
+.model select:hover {
+  border-color: var(--line-2);
 }
 
 .pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel);
-  font-size: 12.5px;
+  box-shadow: var(--lift);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11.5px;
   color: var(--muted);
 }
 .pill .dot {
@@ -187,13 +242,30 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
+  box-shadow: var(--lift);
 }
+
+/*
+ * Step headers as a spec-sheet band. Brief -> run -> output is a real sequence,
+ * so the numbering carries information rather than decorating; the rule that
+ * follows it is the only structural flourish in the shell.
+ */
 .panel h2 {
-  margin: 0;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.1px;
+  letter-spacing: 1.6px;
   color: var(--muted);
+}
+.panel h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 .hint {
   margin: 6px 0 12px;
@@ -250,7 +322,7 @@ body {
 
 .brief {
   width: 100%;
-  height: 300px;
+  height: 214px;
   resize: vertical;
   background: #0b0d0c;
   color: #d7e2da;
@@ -445,6 +517,12 @@ body {
   font-size: 12.5px;
   margin: 10px 0 0;
 }
+.empty strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
 .empty {
   color: var(--muted);
   font-size: 12.5px;
@@ -620,6 +698,9 @@ body {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 10px 22px -14px rgba(0, 0, 0, 0.8);
 }
 /*
  * Each creative is shown at its OWN aspect ratio, set inline from the width and
@@ -642,17 +723,26 @@ body {
   display: block;
   object-fit: cover;
 }
+/*
+ * A production slug line, the way a print proof carries its job metadata:
+ * format, market, exact pixel dimensions. Mono, because these are values to be
+ * checked, not read.
+ */
 .card figcaption {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  font-size: 11.5px;
+  border-top: 1px solid var(--line);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2px;
   color: var(--muted);
 }
 .card figcaption strong {
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 .v {
   margin-left: auto;
@@ -964,5 +1054,35 @@ body {
   display: block;
   font-size: 10.5px;
   line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Folded per-variant rows: one line per product, detail on demand. */
+.ev.variants {
+  grid-template-columns: 18px 1fr auto;
+}
+.label.fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.label.fold .caret {
+  color: var(--muted);
+}
+.fold-detail {
+  grid-column: 2 / -1;
+  margin: 6px 0 2px;
+  padding: 0 0 0 2px;
+  list-style: none;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.7;
   color: var(--muted);
 }

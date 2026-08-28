@@ -117,9 +117,8 @@ export function BriefPanel(props: Props) {
       </div>
 
       <p className="hint">
-        1:1, 9:16 and 16:9 are the three the exercise requires, and one market covers the English
-        message — that is the run selected now. Adding 4:5 or another market multiplies the output
-        at <strong>no extra generation</strong>.
+        Selected: the three required formats, one market. Adding 4:5 or another market multiplies
+        output at <strong>no extra generation</strong>.
       </p>
 
       <div className="actions">

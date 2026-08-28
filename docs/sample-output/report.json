@@ -23,9 +23,9 @@
     "provider": "google-gemini",
     "model": "gemini-3-pro-image"
   },
-  "startedAt": "2026-08-28T19:41:33.401Z",
-  "completedAt": "2026-08-28T19:42:09.282Z",
-  "durationMs": 35881,
+  "startedAt": "2026-08-28T19:58:47.410Z",
+  "completedAt": "2026-08-28T19:59:21.649Z",
+  "durationMs": 34239,
   "preflight": {
     "status": "pass",
     "checks": [
@@ -92,7 +92,7 @@
   },
   "successMetrics": {
     "timeSaved": {
-      "minutes": 599.4,
+      "minutes": 599.43,
       "baselineMinutesPerCreative": 25,
       "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
     },
@@ -105,7 +105,7 @@
       "creativesPerGenerationCall": 24,
       "costPerCreativeUsd": 0.00558,
       "reuseRate": 0.5,
-      "secondsPerCreative": 1.5
+      "secondsPerCreative": 1.43
     }
   },
   "assignmentProof": {
@@ -219,7 +219,7 @@
               }
             ]
           },
-          "durationMs": 582
+          "durationMs": 546
         },
         {
           "ratio": "1x1",
@@ -273,7 +273,7 @@
               }
             ]
           },
-          "durationMs": 526
+          "durationMs": 498
         },
         {
           "ratio": "1x1",
@@ -327,7 +327,7 @@
               }
             ]
           },
-          "durationMs": 500
+          "durationMs": 340
         },
         {
           "ratio": "4x5",
@@ -381,7 +381,7 @@
               }
             ]
           },
-          "durationMs": 376
+          "durationMs": 510
         },
         {
           "ratio": "4x5",
@@ -435,7 +435,7 @@
               }
             ]
           },
-          "durationMs": 358
+          "durationMs": 348
         },
         {
           "ratio": "4x5",
@@ -489,7 +489,7 @@
               }
             ]
           },
-          "durationMs": 571
+          "durationMs": 533
         },
         {
           "ratio": "9x16",
@@ -548,7 +548,7 @@
               }
             ]
           },
-          "durationMs": 582
+          "durationMs": 406
         },
         {
           "ratio": "9x16",
@@ -607,7 +607,7 @@
               }
             ]
           },
-          "durationMs": 595
+          "durationMs": 559
         },
         {
           "ratio": "9x16",
@@ -666,7 +666,7 @@
               }
             ]
           },
-          "durationMs": 639
+          "durationMs": 611
         },
         {
           "ratio": "16x9",
@@ -720,7 +720,7 @@
               }
             ]
           },
-          "durationMs": 295
+          "durationMs": 277
         },
         {
           "ratio": "16x9",
@@ -774,7 +774,7 @@
               }
             ]
           },
-          "durationMs": 477
+          "durationMs": 282
         },
         {
           "ratio": "16x9",
@@ -828,7 +828,7 @@
               }
             ]
           },
-          "durationMs": 310
+          "durationMs": 444
         }
       ]
     },
@@ -848,8 +848,8 @@
           "operation": "image-reference",
           "model": "gemini-3-pro-image",
           "prompt": "Professional commercial advertising photography of Overnight Recovery Cream by the brand Lumen Botanicals. Campaign audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction tone: Calm, clinical, warm. Understated luxury — never hype.. The product is the hero: centred, sharp, and framed with generous negative space on all sides so the image can be re-cropped to square, vertical and landscape formats without cutting the product. Clean studio lighting, soft natural shadows, calm minimal background, premium editorial colour grading. Absolutely no text, no lettering, no typography, no logos, no watermarks, and no packaging claims of any kind in the image.",
-          "durationMs": 24969,
-          "requestId": "v1_ChdpdVNSYXZqVEpMcmlfdU1QbXJxbjhRMBIXaXVTUmF2alRKTHJpX3VNUG1ycW44UTA"
+          "durationMs": 24518,
+          "requestId": "v1_ChdrLWlSYW82WEc2WFZqTWNQeUtxWXdBcxIXay1pUmFvNlhHNlhWak1jUHlLcVl3QXM"
         }
       },
       "creatives": [
@@ -859,7 +859,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/en-gb.png",
-          "bytes": 223111,
+          "bytes": 156563,
           "validation": {
             "status": "pass",
             "checks": [
@@ -905,7 +905,7 @@
               }
             ]
           },
-          "durationMs": 423
+          "durationMs": 419
         },
         {
           "ratio": "1x1",
@@ -913,7 +913,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/de-de.png",
-          "bytes": 220637,
+          "bytes": 152338,
           "validation": {
             "status": "pass",
             "checks": [
@@ -959,7 +959,7 @@
               }
             ]
           },
-          "durationMs": 419
+          "durationMs": 391
         },
         {
           "ratio": "1x1",
@@ -967,7 +967,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/fr-fr.png",
-          "bytes": 222984,
+          "bytes": 155992,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1013,7 +1013,7 @@
               }
             ]
           },
-          "durationMs": 415
+          "durationMs": 390
         },
         {
           "ratio": "4x5",
@@ -1021,7 +1021,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/en-gb.png",
-          "bytes": 274254,
+          "bytes": 219004,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1067,7 +1067,7 @@
               }
             ]
           },
-          "durationMs": 466
+          "durationMs": 427
         },
         {
           "ratio": "4x5",
@@ -1075,7 +1075,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/de-de.png",
-          "bytes": 271396,
+          "bytes": 221731,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1121,7 +1121,7 @@
               }
             ]
           },
-          "durationMs": 463
+          "durationMs": 302
         },
         {
           "ratio": "4x5",
@@ -1129,7 +1129,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png",
-          "bytes": 276847,
+          "bytes": 221596,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1175,7 +1175,7 @@
               }
             ]
           },
-          "durationMs": 467
+          "durationMs": 433
         },
         {
           "ratio": "9x16",
@@ -1183,7 +1183,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png",
-          "bytes": 358757,
+          "bytes": 296260,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1234,7 +1234,7 @@
               }
             ]
           },
-          "durationMs": 464
+          "durationMs": 454
         },
         {
           "ratio": "9x16",
@@ -1242,7 +1242,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png",
-          "bytes": 355121,
+          "bytes": 295314,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1293,7 +1293,7 @@
               }
             ]
           },
-          "durationMs": 457
+          "durationMs": 296
         },
         {
           "ratio": "9x16",
@@ -1301,7 +1301,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png",
-          "bytes": 361493,
+          "bytes": 298457,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1352,7 +1352,7 @@
               }
             ]
           },
-          "durationMs": 455
+          "durationMs": 315
         },
         {
           "ratio": "16x9",
@@ -1360,7 +1360,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png",
-          "bytes": 259717,
+          "bytes": 169373,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1406,7 +1406,7 @@
               }
             ]
           },
-          "durationMs": 421
+          "durationMs": 357
         },
         {
           "ratio": "16x9",
@@ -1414,7 +1414,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png",
-          "bytes": 261674,
+          "bytes": 169572,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1460,7 +1460,7 @@
               }
             ]
           },
-          "durationMs": 407
+          "durationMs": 362
         },
         {
           "ratio": "16x9",
@@ -1468,7 +1468,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png",
-          "bytes": 271735,
+          "bytes": 181313,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1514,7 +1514,7 @@
               }
             ]
           },
-          "durationMs": 228
+          "durationMs": 204
         }
       ]
     }
@@ -1530,8 +1530,8 @@
   "estimatedTimeSaved": {
     "baselineMinutesPerCreative": 25,
     "manualMinutes": 600,
-    "pipelineMinutes": 0.598,
-    "savedMinutes": 599.4,
+    "pipelineMinutes": 0.571,
+    "savedMinutes": 599.43,
     "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
   }
 }
