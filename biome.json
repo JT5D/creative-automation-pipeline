@@ -1,8 +1,19 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.11/schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
-    "includes": ["src/**", "tests/**", "scripts/**", "*.ts", "*.json"]
+    "includes": [
+      "src/**",
+      "tests/**",
+      "scripts/**",
+      "*.ts",
+      "*.json",
+      "!tests/baselines/**"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -23,16 +34,23 @@
         "noNonNullAssertion": "off",
         "noDescendingSpecificity": "off"
       },
-      "a11y": { "recommended": true },
+      "a11y": {
+        "recommended": true
+      },
       "complexity": {
         "noExcessiveCognitiveComplexity": {
           "level": "warn",
-          "options": { "maxAllowedComplexity": 30 }
+          "options": {
+            "maxAllowedComplexity": 30
+          }
         }
       }
     }
   },
   "javascript": {
-    "formatter": { "quoteStyle": "double", "trailingCommas": "all" }
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "all"
+    }
   }
 }

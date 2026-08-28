@@ -1,4 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { loadBriefFile, runCampaign } from "../src/pipeline.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
@@ -14,7 +15,9 @@ import { visualSignature } from "../src/signature.js";
  * change the layout, that is the test doing its job -- do not run this to make
  * it quiet.
  */
-const OUT = path.resolve(".baseline-run");
+// Renders outside the repo: a generated-output directory here would end up
+// committed, which is exactly what happened the first time.
+const OUT = await mkdtemp(path.join(tmpdir(), "cap-baseline-"));
 
 const report = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
   outputRoot: OUT,
@@ -35,4 +38,5 @@ await writeFile(
   path.resolve("tests/baselines/creatives.json"),
   `${JSON.stringify(signatures, null, 2)}\n`,
 );
+await rm(OUT, { recursive: true, force: true });
 console.log(`wrote ${Object.keys(signatures).length} signatures`);

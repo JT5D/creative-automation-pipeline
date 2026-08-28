@@ -18,8 +18,13 @@ fi
 git check-ignore -q .env || fail ".env is not gitignored"
 
 step "No stray build output tracked"
-if git ls-files | grep -qE '^(outputs/|node_modules/|dist/|\.cache/)'; then
+# Named directories plus anything that looks generated. The first version of
+# this listed offenders by name and missed .baseline-run/, which then shipped.
+if git ls-files | grep -qE '^(outputs/|node_modules/|dist/|\.cache/|\.baseline-run/)'; then
   fail "build output or dependencies are tracked"
+fi
+if git ls-files | grep -qE '(^|/)(report\.json|runs\.jsonl)$'; then
+  fail "a generated run artifact is tracked"
 fi
 
 step "Sample briefs match their advertised results"

@@ -26,6 +26,21 @@ Campaign brief (YAML/JSON)
 
 ---
 
+## Contents
+
+**Start here** · [What this solves](#what-this-solves) · [Setup](#setup) · [Example input and output](#example-input-and-output) · [The sample library](#the-sample-library)
+
+**How it thinks** · [Key design decisions](#key-design-decisions) · [Reproducibility](#reproducibility) · [Provider strategy](#provider-strategy-and-an-honest-limitation) · [Model guide](#model-guide)
+
+**What it guarantees** · [Brand and legal checks](#brand-and-legal-checks) · [Visual regression](#visual-regression) · [Cost control](#cost-control) · [Knowing the cost before you spend it](#knowing-the-cost-before-you-spend-it) · [Learning across runs](#learning-across-runs)
+
+**Honest limits** · [Assumptions](#assumptions) · [Limitations](#limitations)
+
+**For a reviewer** · [Requirements traceability](#requirements-traceability) · [Demo script](#demo-script-230) · [Project layout](#project-layout) · [Production extension path](#production-extension-path)
+
+If you only read one file, read `src/pipeline.ts` — the whole product is legible
+in one screen of code.
+
 ## What this solves
 
 A global consumer-goods team launches hundreds of localized campaigns a month.
