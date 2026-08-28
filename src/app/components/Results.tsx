@@ -19,6 +19,8 @@ export function Results({ report }: { report?: CampaignReport }) {
 
   return (
     <>
+      <AssignmentProof proof={report.assignmentProof} />
+
       <div className="metrics">
         <Metric v={m.productsProcessed} l="Products" />
         <Metric v={m.marketsProcessed} l="Markets" />
@@ -28,7 +30,7 @@ export function Results({ report }: { report?: CampaignReport }) {
         <Metric
           v={`${m.validationPassed}/${m.variantsCreated}`}
           l="Passed"
-          accent={m.validationFailed === 0}
+          good={m.validationFailed === 0}
         />
         <Metric v={`${(report.durationMs / 1000).toFixed(1)}s`} l="Elapsed" />
         {report.estimatedCostUsd && (
@@ -78,6 +80,7 @@ export function Results({ report }: { report?: CampaignReport }) {
               <div className="product-head">
                 <h3>{product.productName}</h3>
                 <SourceBadge source={product.hero.source} />
+                <ReviewBadge product={product} />
               </div>
               <p className="prov">{provenance(product)}</p>
 
@@ -103,9 +106,74 @@ export function Results({ report }: { report?: CampaignReport }) {
   );
 }
 
-function Metric({ v, l, accent }: { v: string | number; l: string; accent?: boolean }) {
+/**
+ * The exercise's own minimum requirements, answered by the run.
+ *
+ * It reads from `report.assignmentProof`, which is computed from the records
+ * on disk -- so this is the run asserting compliance, not the UI claiming it.
+ * An offline preview is the interesting case: it produces real files and still
+ * reports `passed: false`, because it has not demonstrated the one thing the
+ * exercise requires a model for.
+ */
+function AssignmentProof({ proof }: { proof: CampaignReport["assignmentProof"] }) {
+  const [open, setOpen] = useState(false);
+  const failed = proof.checks.filter((c) => !c.passed);
+
   return (
-    <div className={`metric ${accent ? "accent" : ""}`}>
+    <div className={`proof ${proof.passed ? "ok" : "no"}`}>
+      <button type="button" className="proof-head" onClick={() => setOpen((o) => !o)}>
+        <strong>
+          {proof.passed
+            ? `Assignment proof passed · ${proof.checks.length} checks`
+            : `Assignment proof incomplete · ${failed.length} of ${proof.checks.length} not met`}
+        </strong>
+        <span className="caret">{open ? "−" : "+"}</span>
+      </button>
+      {!proof.passed && !open && <p className="proof-why">{failed[0]?.message}</p>}
+      {open && (
+        <ul className="checks">
+          {proof.checks.map((c) => (
+            <li key={c.id} className={c.passed ? "pass" : "fail"}>
+              <span>{c.passed ? "✓" : "✕"}</span>
+              {c.message}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The brief names slow approval cycles as a pain point, so say plainly which
+ * products a human still has to look at. Derived here rather than stored:
+ * anything a new model produced, or anything that did not pass cleanly, needs
+ * eyes. Reused approved assets that passed every check do not.
+ */
+function ReviewBadge({ product }: { product: ProductRecord }) {
+  const clean = product.creatives.every((c) => c.validation.status === "pass");
+  const label =
+    product.hero.source === "reused" && clean
+      ? "AUTO-CLEARED"
+      : clean
+        ? "REVIEW NEW HERO"
+        : "REVIEW REQUIRED";
+  return <span className={`review ${label === "AUTO-CLEARED" ? "auto" : "needed"}`}>{label}</span>;
+}
+
+function Metric({
+  v,
+  l,
+  accent,
+  good,
+}: {
+  v: string | number;
+  l: string;
+  accent?: boolean;
+  good?: boolean;
+}) {
+  return (
+    <div className={`metric ${accent ? "accent" : ""} ${good ? "good" : ""}`}>
       <span className="v">{v}</span>
       <span className="l">{l}</span>
     </div>
@@ -162,7 +230,13 @@ function Card({
 
   return (
     <figure className="card">
-      <button type="button" className="shot" onClick={onZoom} title="View full size">
+      <button
+        type="button"
+        className="shot"
+        onClick={onZoom}
+        title="View full size"
+        style={{ aspectRatio: `${c.width} / ${c.height}` }}
+      >
         <img
           src={`/outputs/${c.outputPath}`}
           alt={`${product.productName} ${c.ratio} ${c.locale}`}
