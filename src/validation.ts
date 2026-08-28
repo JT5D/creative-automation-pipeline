@@ -86,7 +86,7 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
       status: ok ? "pass" : "warning",
       message: ok
         ? `Logo found at ${brief.brand.logoPath}`
-        : `Logo configured but not found at ${brief.brand.logoPath} — creatives will render without it`,
+        : `Logo configured but not found at ${brief.brand.logoPath} - creatives will render without it`,
     });
   }
 
@@ -135,7 +135,7 @@ function headlineFontCheck(brief: CampaignBrief): ValidationCheck | null {
     status: ok ? "pass" : "warning",
     message: ok
       ? `Headline typeface "${named}" resolves`
-      : `Headline typeface "${named}" is not in assets/fonts — creatives would render in a substituted face; add the file or remove the field`,
+      : `Headline typeface "${named}" is not in assets/fonts - creatives would render in a substituted face; add the file or remove the field`,
   };
 }
 
@@ -196,7 +196,7 @@ const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
     status: ok ? "pass" : "fail",
     message: ok
       ? `Campaign message rasterized (${(rendered.headlineInkRatio * 100).toFixed(3)}% headline ink)`
-      : `No headline glyphs detected (${(rendered.headlineInkRatio * 100).toFixed(4)}%) — the campaign message did not render`,
+      : `No headline glyphs detected (${(rendered.headlineInkRatio * 100).toFixed(4)}%) - the campaign message did not render`,
   };
 };
 
@@ -275,8 +275,8 @@ const safeZoneCheck: CreativeCheck = ({ rendered }) => {
     id: "channel.safeZone",
     status: inside ? "pass" : "fail",
     message: inside
-      ? `Copy inside the Meta 9:16 safe zone (y ${b.top}–${b.bottom} within ${safe.top}–${safe.bottom})`
-      : `Copy breaks the Meta 9:16 safe zone (y ${b.top}–${b.bottom}, allowed ${safe.top}–${safe.bottom}) — the platform overlay would cover it`,
+      ? `Copy inside the Meta 9:16 safe zone (y ${b.top}-${b.bottom} within ${safe.top}-${safe.bottom})`
+      : `Copy breaks the Meta 9:16 safe zone (y ${b.top}-${b.bottom}, allowed ${safe.top}-${safe.bottom}) - the platform overlay would cover it`,
   };
 };
 

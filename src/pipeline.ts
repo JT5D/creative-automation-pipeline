@@ -65,7 +65,7 @@ export function parseBrief(raw: string): CampaignBrief {
   });
   throw new Error(
     problems.length === 1
-      ? `Invalid brief — ${problems[0]}`
+      ? `Invalid brief - ${problems[0]}`
       : `Invalid brief:\n  · ${problems.join("\n  · ")}`,
   );
 }
@@ -137,10 +137,15 @@ export async function runCampaign(
   const failures: ProductFailure[] = [];
 
   for (const product of brief.products) {
+    // Which half of the product's work was running when it threw. Only two
+    // stages are distinguishable without inventing precision the catch does
+    // not have: getting a hero, and everything downstream of having one.
+    let stage: ProductFailure["stage"] = "resolve";
     try {
       emit("asset_resolving", { productId: product.id });
 
       const hero = await resolveHero(product, { brief, generator, mode, cacheDir, emit });
+      stage = "compose";
 
       // Persist the canonical hero next to its outputs so the provenance chain
       // is inspectable on disk, not just in the report.
@@ -219,7 +224,7 @@ export async function runCampaign(
       failures.push({
         productId: product.id,
         productName: product.name,
-        stage: "resolve",
+        stage,
         message,
       });
       emit("product_failed", { productId: product.id, message: message.slice(0, 160) });
@@ -248,7 +253,7 @@ export async function runCampaign(
   emit("report_written", { path: path.join(sanitizeId(brief.id), "report.json") });
   emit("complete", {
     variants: report.metrics.variantsCreated,
-    generationRequests: report.metrics.generationRequests,
+    liveHeroGenerations: report.metrics.liveHeroGenerations,
     productsFailed: failures.length,
   });
 

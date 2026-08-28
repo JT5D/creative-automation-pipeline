@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Creative Automation Pipeline — James Tunick</title>
+<title>Creative Automation Pipeline - James Tunick</title>
 <meta name="description" content="A creative automation pipeline that turns one campaign brief into on-brand social creatives across four formats and every target market.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -111,9 +111,9 @@
     <h1>Creative Automation Pipeline</h1>
     <p class="lede">
       The exercise asks for two products across 1:1, 9:16 and 16:9. That is what the
-      console runs by default — <strong>6 finished creatives from one paid generation
+      console runs by default - <strong>6 finished creatives from one paid generation
       call</strong>. Select every format and market and that same single call produces
-      <strong>24 creatives in 37.0 seconds for $0.134</strong>, because generation
+      <strong>24 creatives in 39.3 seconds for $0.134</strong>, because generation
       happens once per missing hero, not once per output.
     </p>
     <div class="byline">
@@ -143,7 +143,7 @@
     <p style="margin-top:24px">
       The expensive, non-deterministic step happens <strong>once per product</strong>.
       Everything after it is pure transformation, so adding a format or a market
-      multiplies the output at <strong>zero additional cost</strong> — and a test
+      multiplies the output at <strong>zero additional cost</strong> - and a test
       asserts exactly that.
     </p>
   </div>
@@ -158,7 +158,7 @@
         <figcaption>
           Live pipeline events, then every exported file served straight off disk
           with its own validation checks and provenance. What the gallery shows is
-          the file that ships — not a re-render.
+          the file that ships - not a re-render.
         </figcaption>
       </figure>
       <figure>
@@ -181,7 +181,7 @@
       <div class="card">
         <h3>Built for the operator, not the director</h3>
         <p>
-          The console is the production operator's view — whoever is accountable for
+          The console is the production operator's view - whoever is accountable for
           getting a campaign out. A creative director's job starts where this ends: at
           the review badge on anything a model touched, and at the exported files. In
           production that review surface is GenStudio or Firefly Creative Production;
@@ -202,8 +202,7 @@
         <p>
           Regenerating an approved asset costs money, takes seconds instead of
           milliseconds, is non-deterministic, and throws away a human approval
-          that carries legal weight. The branch is a real filesystem check —
-          delete the file and the same brief takes the generate path.
+          that carries legal weight. The branch is a real filesystem check - delete the file and the same brief takes the generate path.
         </p>
       </div>
       <div class="card">
@@ -218,7 +217,7 @@
       <div class="card">
         <h3>Built to a published spec</h3>
         <p>
-          The 9:16 template honours Meta's safe zone — 14% top, 35% bottom, 6%
+          The 9:16 template honours Meta's safe zone - 14% top, 35% bottom, 6%
           sides free of text. My first version put the headline inside the bottom
           35%, where the platform's own overlay would have covered the entire
           message. The bounds are now derived from the spec and pinned by a test.
@@ -229,15 +228,15 @@
         <p>
           Each market supplies its own signed-off message, CTA and disclaimer. A
           localized cosmetic claim is a regulatory statement in each
-          jurisdiction — it needs human sign-off, not a model's best guess. The
+          jurisdiction - it needs human sign-off, not a model's best guess. The
           prohibited-claim scan runs across every market.
         </p>
       </div>
       <div class="card">
         <h3>The bill, before you spend it</h3>
         <p>
-          A dry run resolves exactly the way a real run does — same filesystem,
-          same rules — then stops. It reports what will be reused, what will be
+          A dry run resolves exactly the way a real run does - same filesystem,
+          same rules - then stops. It reports what will be reused, what will be
           generated, and what it will cost. A test asserts the estimate matches
           the run that follows.
         </p>
@@ -254,7 +253,7 @@
       <div class="card">
         <h3>Reproducible where it can be</h3>
         <p>
-          Everything after the hero is byte-identical run to run — a test proves
+          Everything after the hero is byte-identical run to run - a test proves
           it. Generation is the one step that is not. Adobe documents seed-based
           reproducibility on its v3 generation API; Image Model 5's v4 schema was
           not verified here, so this implementation neither claims nor sends it.
@@ -267,8 +266,7 @@
         <p>
           Gemini 3 Pro Image is what actually runs, and it is named in every
           provenance record. The Adobe Firefly Image Model 5 adapter is written
-          but has no entitlement to run against, so it is never auto-selected —
-          an untested path must not be able to quietly win. Firefly remains the
+          but has no entitlement to run against, so it is never auto-selected - an untested path must not be able to quietly win. Firefly remains the
           right production choice: licensed training data, Content Credentials,
           and indemnification Adobe extends to certain generally available Google
           and OpenAI models surfaced through Firefly Creative Production for
@@ -288,16 +286,16 @@
       <tr><td>Region, audience, message</td><td><span class="tick">✓</span> Required fields, plus objective, tone and call to action</td></tr>
       <tr><td>Reuse approved assets</td><td><span class="tick">✓</span> Product A reused, driven by a real filesystem check</td></tr>
       <tr><td>Generate only what is missing</td><td><span class="tick">✓</span> Product B generated from its packshot as identity anchor</td></tr>
-      <tr><td>Channel formats</td><td><span class="tick">✓</span> Four — 1:1, 4:5, 9:16, 16:9 — and each run asserts its own coverage in <code>report.json → assignmentProof</code></td></tr>
+      <tr><td>Channel formats</td><td><span class="tick">✓</span> Four - 1:1, 4:5, 9:16, 16:9 - and each run asserts its own coverage in <code>report.json → assignmentProof</code></td></tr>
       <tr><td>Campaign message in the pixels</td><td><span class="tick">✓</span> Rasterized into pixels, verified by ink measurement</td></tr>
       <tr><td>Localization</td><td><span class="tick">✓</span> en-GB · de-DE · fr-FR, at zero extra generation cost</td></tr>
-      <tr><td>Runs locally</td><td><span class="tick">✓</span> <code>npm run dev</code> or CLI. It also runs with no API key at all, as a labelled offline preview — which deliberately does <em>not</em> satisfy the missing-asset GenAI requirement, and reports so</td></tr>
+      <tr><td>Runs locally</td><td><span class="tick">✓</span> <code>npm run dev</code> or CLI. It also runs with no API key at all, as a labelled offline preview - which deliberately does <em>not</em> satisfy the missing-asset GenAI requirement, and reports so</td></tr>
       <tr><td>Organized outputs</td><td><span class="tick">✓</span> By campaign / product / ratio / locale</td></tr>
       <tr><td>Brand compliance</td><td><span class="tick">✓</span> Logo, brand colour, WCAG contrast, safe zone</td></tr>
       <tr><td>Legal / MLR checks</td><td><span class="tick">✓</span> Prohibited-claim scan, run before any spend</td></tr>
       <tr><td>Logging and reporting</td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
       <tr><td>Documentation</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
-      <tr><td>Engineering discipline</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate — <code>npm run check</code></td></tr>
+      <tr><td>Engineering discipline</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate - <code>npm run check</code></td></tr>
     </table>
   </div>
 </section>

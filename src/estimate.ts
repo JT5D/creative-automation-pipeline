@@ -1,4 +1,4 @@
-import { findApprovedHero } from "./assetResolver.js";
+import { buildHeroPrompt, findApprovedHero } from "./assetResolver.js";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
 import {
   type CampaignBrief,
@@ -18,6 +18,15 @@ export type PlannedProduct = {
   sourceAssetPath?: string;
   /** True when a packshot exists to anchor the product's identity. */
   usingReference: boolean;
+  /**
+   * The exact prompt this product would be generated from, assembled the way
+   * the run assembles it. Present only when the action is "generate".
+   *
+   * Here so the thing being paid for can be read before it is paid for. It was
+   * previously only visible by adding a console.log, which meant the one
+   * decision with a real cost attached was the least inspectable in the system.
+   */
+  prompt?: string;
 };
 
 export type CampaignEstimate = {
@@ -82,6 +91,8 @@ export async function estimateCampaign(
       action: approved ? "reuse" : "generate",
       sourceAssetPath: approved,
       usingReference: !approved && Boolean(reference),
+      // Only for the products that would actually be paid for.
+      prompt: approved ? undefined : buildHeroPrompt(product, brief, Boolean(reference)),
     });
   }
 

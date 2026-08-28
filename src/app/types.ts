@@ -63,11 +63,16 @@ export type CampaignReport = {
     validationPassed: number;
     validationWarnings: number;
     validationFailed: number;
-    generationRequests: number;
+    liveHeroGenerations: number;
   };
   /** The three the assessment FAQ names, computed in src/report.ts. */
   successMetrics: {
-    timeSaved?: { minutes: number; baselineMinutesPerCreative: number; basis: string };
+    timeSaved?: {
+      minutes: number;
+      usd?: number;
+      baselineMinutesPerCreative: number;
+      basis: string;
+    };
     campaignsGenerated: { campaigns: number; creatives: number; markets: number };
     efficiency: {
       creativesPerGenerationCall: number | null;
@@ -164,7 +169,7 @@ export type Insights = {
   runs: number;
   campaigns: number;
   creatives: number;
-  generationRequests: number;
+  liveHeroGenerations: number;
   reuseRate: number;
   totalCostUsd: number;
   costPerCreativeUsd: number;
@@ -177,7 +182,7 @@ export type Insights = {
     model: string;
     variants: number;
     reused: number;
-    generationRequests: number;
+    liveHeroGenerations: number;
     costUsd: number;
     durationMs: number;
   }[];

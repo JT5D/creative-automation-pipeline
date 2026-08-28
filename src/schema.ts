@@ -91,11 +91,24 @@ export const CampaignBriefSchema = z.object({
    */
   artDirection: z.string().optional(),
   /**
+   * Overrides the standard the hero is shot to. Optional, because the default
+   * is the suggestion: a campaign that says nothing gets art direction chosen
+   * for it, and only a team with an opinion has to express one.
+   */
+  styleBar: z.string().optional(),
+  /**
    * Documented baseline for the "manual time saved" figure. Reported only
    * when supplied, and always labelled as an estimate from this number --
    * never invented.
    */
   manualMinutesPerCreative: z.number().positive().optional(),
+  /**
+   * Loaded cost of the studio hour this pipeline replaces. Optional and
+   * deliberately without a default: money saved is only reported when a
+   * human states the rate, because a plausible-looking guess here would be
+   * the easiest number in the project to fake.
+   */
+  manualHourlyRateUsd: z.number().positive().optional(),
 
   locale: z.string().optional(),
 

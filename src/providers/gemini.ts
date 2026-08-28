@@ -13,7 +13,7 @@ import {
 /**
  * Google Gemini image generation via the Interactions API.
  *
- * Contract verified against ai.google.dev on 2026-08-28 — see docs/API_NOTES.md.
+ * Contract verified against ai.google.dev on 2026-08-28 - see docs/API_NOTES.md.
  *   POST https://generativelanguage.googleapis.com/v1beta/interactions
  *   auth: x-goog-api-key header
  *   response_format is TOP-LEVEL, not nested inside generationConfig.

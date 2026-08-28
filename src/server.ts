@@ -4,12 +4,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import sharp from "sharp";
+import { zipDirectory } from "./archive.js";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
 import { type PipelineEvent, runCampaign } from "./pipeline.js";
 import { MODEL_OPTIONS, PRICING_SOURCE } from "./pricing.js";
 import { providerStatus } from "./providers/index.js";
 import type { CampaignReport } from "./report.js";
+import { sanitizeId } from "./report.js";
 import { RATIOS, REQUIRED_RATIOS } from "./schema.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
@@ -34,6 +36,30 @@ app.use(express.json({ limit: "12mb" })); // a 2K packshot is a few MB
 // Serve real files from disk so the gallery shows the actual exported PNGs,
 // not a re-render. What you see in the UI is the file you ship.
 app.use("/outputs", express.static(OUTPUT_ROOT));
+
+/**
+ * The whole campaign as one download.
+ *
+ * The console could hand back a single PNG or the report, which is not how
+ * anyone collects a campaign -- a producer wants the folder. The id becomes a
+ * path, so it is sanitized the same way the pipeline sanitizes it on the way in
+ * and then checked to still sit under OUTPUT_ROOT.
+ */
+app.get("/api/campaigns/:id/archive", async (req, res) => {
+  const dir = path.join(OUTPUT_ROOT, sanitizeId(req.params.id));
+  if (path.relative(OUTPUT_ROOT, dir).startsWith("..")) {
+    res.status(400).json({ error: "Bad campaign id" });
+    return;
+  }
+  try {
+    const zip = await zipDirectory(dir, sanitizeId(req.params.id));
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${sanitizeId(req.params.id)}.zip"`);
+    res.send(zip);
+  } catch {
+    res.status(404).json({ error: `No outputs for campaign ${req.params.id}` });
+  }
+});
 
 app.get("/api/provider", (_req, res) => {
   res.json(providerStatus());

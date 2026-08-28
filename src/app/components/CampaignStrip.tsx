@@ -109,7 +109,7 @@ export function CampaignStrip(props: Props) {
 
         <div className="cell wide">
           <span className="cell-k">Message</span>
-          <span className="cell-v msg">{message || "—"}</span>
+          <span className="cell-v msg">{message || "-"}</span>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export function CampaignStrip(props: Props) {
   );
 }
 
-/** The answer to "what will this cost" — shown before anything is spent. */
+/** The answer to "what will this cost" - shown before anything is spent. */
 function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
   return (
     <div className={`estimate ${e.blocked ? "blocked" : ""}`}>
@@ -176,7 +176,7 @@ function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
               <span>generations</span>
             </div>
             <div>
-              <b>{e.estimatedCostUsd ? `$${e.estimatedCostUsd.totalUsd.toFixed(3)}` : "—"}</b>
+              <b>{e.estimatedCostUsd ? `$${e.estimatedCostUsd.totalUsd.toFixed(3)}` : "-"}</b>
               <span>est. spend</span>
             </div>
           </div>
@@ -201,7 +201,7 @@ function EstimateCard({ estimate: e }: { estimate: CampaignEstimate }) {
 
           {e.estimatedTimeSaved && (
             <p className="est-note">
-              ≈{Math.round(e.estimatedTimeSaved.savedMinutes)} min saved — illustrative, against a{" "}
+              ≈{Math.round(e.estimatedTimeSaved.savedMinutes)} min saved - illustrative, against a{" "}
               {e.estimatedTimeSaved.baselineMinutesPerCreative} min/creative baseline stated in the
               brief.
             </p>

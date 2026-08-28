@@ -64,7 +64,7 @@ export type CampaignReport = {
     validationPassed: number;
     validationWarnings: number;
     validationFailed: number;
-    generationRequests: number;
+    liveHeroGenerations: number;
   };
   /**
    * The three metrics the assessment FAQ names when asked what matters most:
@@ -80,7 +80,13 @@ export type CampaignReport = {
    */
   successMetrics: {
     /** Illustrative, from the baseline the brief supplies. Absent without one. */
-    timeSaved?: { minutes: number; baselineMinutesPerCreative: number; basis: string };
+    timeSaved?: {
+      minutes: number;
+      /** Only when the brief states manualHourlyRateUsd. */
+      usd?: number;
+      baselineMinutesPerCreative: number;
+      basis: string;
+    };
     campaignsGenerated: { campaigns: number; creatives: number; markets: number };
     efficiency: {
       /** How much output each paid call produced. The headline number. */
@@ -124,6 +130,8 @@ export type CampaignReport = {
     manualMinutes: number;
     pipelineMinutes: number;
     savedMinutes: number;
+    savedUsd?: number;
+    hourlyRateUsd?: number;
     basis: string;
   };
 };
@@ -152,10 +160,17 @@ export function createReport(args: {
   for (const product of products) heroes[product.hero.source]++;
 
   const cost = costEstimate(provider.model, heroes.generated);
+  // Only creatives that passed. Time and money "saved" were being paid out on
+  // every file the run wrote, including the ones it had just declared failed --
+  // a denominator of the produced set rather than the surviving set, which is
+  // the same shape as every false green this project has found. Nobody saves
+  // studio hours by producing an asset they cannot ship.
+  const shippable = creatives.filter((c) => c.validation.status === "pass").length;
   const timeSaved = timeSavedEstimate(
     brief.manualMinutesPerCreative,
-    creatives.length,
+    shippable,
     completedAt - startedAt,
+    brief.manualHourlyRateUsd,
   );
 
   return {
@@ -183,12 +198,14 @@ export function createReport(args: {
       validationPassed: creatives.filter((c) => c.validation.status === "pass").length,
       validationWarnings: creatives.filter((c) => c.validation.status === "warning").length,
       validationFailed: creatives.filter((c) => c.validation.status === "fail").length,
-      // Only a live call counts. A cache hit is explicitly not a request.
-      generationRequests: heroes.generated,
+      // Heroes produced by a live model call in THIS run. A cache hit and an
+      // offline placeholder are both excluded, and neither is ever a generation.
+      liveHeroGenerations: heroes.generated,
     },
     successMetrics: {
       timeSaved: timeSaved && {
         minutes: timeSaved.savedMinutes,
+        usd: timeSaved.savedUsd,
         baselineMinutesPerCreative: timeSaved.baselineMinutesPerCreative,
         basis: timeSaved.basis,
       },
@@ -207,7 +224,7 @@ export function createReport(args: {
         ),
       },
     },
-    assignmentProof: proveAssignment(products),
+    assignmentProof: proveAssignment(products, brief.products.length),
     products,
     failures,
     warnings: args.warnings,
@@ -219,12 +236,20 @@ export function createReport(args: {
 /**
  * Answers the exercise's minimum requirements from the run's own records.
  *
- * Deliberately small and deliberately not a compliance framework: eight facts,
+ * Deliberately small and deliberately not a compliance framework: nine facts,
  * each one countable off the products and creatives that exist on disk. It is
  * here because "the README says so" is the weakest possible evidence, and this
  * is the strongest cheap one.
+ *
+ * `requested` is the count of products the BRIEF asked for, and every coverage
+ * denominator below uses it rather than the products that survived. Measuring
+ * against the survivors would let a run that dropped a product still prove the
+ * assignment -- a three-product brief passing on the two that worked.
  */
-function proveAssignment(products: ProductRecord[]): {
+function proveAssignment(
+  products: ProductRecord[],
+  requested: number,
+): {
   passed: boolean;
   checks: AssignmentCheck[];
 } {
@@ -247,19 +272,25 @@ function proveAssignment(products: ProductRecord[]): {
       c.validation.checks.some((k) => k.id === "message.legible" && k.status === "pass"),
   );
   const failed = creatives.filter((c) => c.validation.status === "fail");
+  const warned = creatives.filter((c) => c.validation.status === "warning");
 
   const checks: AssignmentCheck[] = [
     {
       id: "minimum_products",
-      passed: products.length >= 2,
-      message: `${products.length} products produced (minimum 2)`,
+      passed: requested >= 2,
+      message: `brief requests ${requested} products (minimum 2)`,
+    },
+    {
+      id: "all_products_produced",
+      passed: requested > 0 && products.length === requested,
+      message: `${products.length}/${requested} requested products produced`,
     },
     ...REQUIRED_RATIOS.map((ratio) => {
       const covered = products.filter((p) => p.creatives.some((c) => c.ratio === ratio));
       return {
         id: `required_ratio_${ratio}`,
-        passed: products.length > 0 && covered.length === products.length,
-        message: `${ratio.replace("x", ":")} produced for ${covered.length}/${products.length} products`,
+        passed: requested > 0 && covered.length === requested,
+        message: `${ratio.replace("x", ":")} produced for ${covered.length}/${requested} products`,
       };
     }),
     {
@@ -268,7 +299,7 @@ function proveAssignment(products: ProductRecord[]): {
       message: generated.length
         ? `${generated.length} missing hero(es) generated by ${generated[0].hero.generation?.provider}`
         : cached.length
-          ? `${cached.length} hero(es) served from a cached real generation — run with MVP_MODE=final for a live call`
+          ? `${cached.length} hero(es) served from a cached real generation - run with MVP_MODE=final for a live call`
           : "no missing asset was generated by a real GenAI model in this run",
     },
     {
@@ -286,9 +317,10 @@ function proveAssignment(products: ProductRecord[]): {
     {
       id: "no_failed_creative_validation",
       passed: failed.length === 0,
-      message: failed.length
-        ? `${failed.length} creative(s) failed validation`
-        : "every creative passed validation",
+      // Says what it counted. "Every creative passed" was broader than
+      // `failed.length === 0`: a creative carrying warnings is not a creative
+      // that passed, and this check has never measured warnings.
+      message: `${creatives.length - failed.length - warned.length} passed, ${warned.length} with warnings, ${failed.length} failed`,
     },
   ];
 

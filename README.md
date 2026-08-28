@@ -3,13 +3,13 @@
 [![CI](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/JT5D/creative-automation-pipeline/actions/workflows/ci.yml)
 
 Turns one campaign brief into ready-to-ship social creatives across every
-channel format and market — reusing brand-approved assets wherever they exist,
+channel format and market - reusing brand-approved assets wherever they exist,
 and calling a GenAI image model only for what is genuinely missing.
 
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one hero reused, one
 generated, one live generation.** Select every format and market and that same
-single generation produces **24 creatives in 37.0s for $0.134** — because a
+single generation produces **24 creatives in 39.3s for $0.134** - because a
 model is called once per missing hero, not once per output.
 
 Every number on this page comes from the run committed in
@@ -30,7 +30,7 @@ Campaign brief (YAML/JSON)
 ```
 
 A working proof-of-concept: it runs locally, calls a real image model, writes
-real files. It is not a deployed system — storage is local, there is no queue,
+real files. It is not a deployed system - storage is local, there is no queue,
 and [Production extension](#production-extension) names what a customer's stack
 would replace.
 
@@ -55,7 +55,7 @@ GEMINI_API_KEY=your-key-here
 Every Gemini image model lists its free tier as "Not available"
 ([pricing](https://ai.google.dev/gemini-api/docs/pricing), verified
 2026-08-28), so a free-tier key returns `HTTP 429 … limit: 0`. Verify before
-demoing — this checks the key *and* that the model id exists, against the live
+demoing - this checks the key *and* that the model id exists, against the live
 model list:
 
 ```bash
@@ -76,7 +76,7 @@ FIREFLY_SERVICES_CLIENT_SECRET=...
 IMAGE_PROVIDER=firefly
 ```
 
-Nothing is auto-selected when both providers are configured — see
+Nothing is auto-selected when both providers are configured - see
 [Provider strategy](#provider-strategy-and-an-honest-limitation).
 </details>
 
@@ -84,6 +84,7 @@ Nothing is auto-selected when both providers are configured — see
 npm run dev                                            # console + API
 npm run campaign -- samples/campaign.yaml              # same pipeline, CLI
 npm run campaign -- samples/campaign.yaml --dry-run    # what it costs, spending nothing
+npm run portfolio                                      # every brief in samples/, one command
 npm run check                                          # the release gate
 ```
 
@@ -97,7 +98,7 @@ object.
 ```yaml
 id: lumen-autumn-glow-de
 region: Germany (DACH)                    # WHERE
-audience: Urban professionals 28–45       # WHO
+audience: Urban professionals 28-45       # WHO
 message: Wake up to visibly brighter skin # WHAT
 callToAction: Jetzt entdecken
 
@@ -144,7 +145,7 @@ brand with no approved assets at all, and one carrying a prohibited claim that
 is stopped at preflight before a credit is spent.
 
 Committed evidence without running anything:
-[`docs/sample-output/`](docs/sample-output/) — the report, the file tree, and
+[`docs/sample-output/`](docs/sample-output/) - the report, the file tree, and
 four representative creatives.
 
 ---
@@ -165,7 +166,7 @@ type CanonicalHeroAsset = {
 ```
 
 Past that line nothing knows or cares where the image came from. Composition,
-validation, export and reporting are deterministic and source-agnostic — which
+validation, export and reporting are deterministic and source-agnostic - which
 is what makes the provider swappable and the pipeline testable without a
 network.
 
@@ -174,7 +175,7 @@ network.
 Regenerating an asset a brand has already approved is worse on every axis: it
 costs money, takes seconds instead of milliseconds, is non-deterministic, and
 discards a human approval that carries legal weight. The branch is a real
-`fs.access()` — delete `samples/assets/radiance-serum-hero.png` and the same
+`fs.access()` - delete `samples/assets/radiance-serum-hero.png` and the same
 brief takes the generation path on the next run.
 
 `findApprovedHero()` is deliberately tiny. It is the seam a customer's DAM, AEM
@@ -182,14 +183,14 @@ or S3 bucket replaces, and its entire contract is "a local path, or nothing."
 
 ### 3. One canonical hero, then transform
 
-Generating per aspect ratio would multiply cost and — far worse — produce four
+Generating per aspect ratio would multiply cost and - far worse - produce four
 *different* products in one campaign: different bottle, different lighting,
 different scene. That is a brand failure, not a budget one.
 
 So a model is called **once per missing hero** at 2K square, and every channel
 format is cut from that one asset locally with Sharp. Adding a format or a
 market costs **zero additional GenAI generation**, and a test asserts it: the
-variant count derives from the `RATIOS` constant while `generationRequests`
+variant count derives from the `RATIOS` constant while `liveHeroGenerations`
 stays at 1.
 
 ### 4. Each ratio is a template, not a resize
@@ -203,7 +204,7 @@ stays at 1.
 
 Copy sits in the **top band on every full-bleed format**, forced by geometry
 rather than chosen. One hero serves all of them, so either the copy zone agrees
-across formats or the product shrinks until it misses the copy everywhere — and
+across formats or the product shrinks until it misses the copy everywhere - and
 it used to shrink. Meta reserves the bottom 35% of a 9:16 placement, leaving the
 top as the only band all three can share. The hero prompt reserves that upper
 half as quiet background, and sizes the product from the crop that actually
@@ -214,7 +215,7 @@ binds: 9:16 keeps 9/16 = 56% of the width. Full derivation in
 
 Rubik and Cormorant Garamond ship in `assets/fonts/` under the SIL Open Font
 License. The creatives therefore render identically on any machine instead of
-whatever an evaluator's fontconfig falls back to — and because the files are
+whatever an evaluator's fontconfig falls back to - and because the files are
 present, line breaking reads **real glyph advance widths** rather than
 estimating them. That replaced a width table tuned by eye, which was wrong often
 enough that a CTA pill clipped its own label.
@@ -238,8 +239,8 @@ demonstrated:
 |---|---|
 | `ctaRendered = Boolean(callToAction)` | opaque-pixel count of the CTA layer |
 | `disclaimerRendered = Boolean(disclaimer)` | opaque-pixel count of its own layer |
-| `logoRendered = Boolean(logoBuffer)` | ink measured — a transparent PNG loaded fine and reported "composited" |
-| truncated headline = *warning* | **fail** — a cut-off campaign message is not the campaign message |
+| `logoRendered = Boolean(logoBuffer)` | ink measured - a transparent PNG loaded fine and reported "composited" |
+| truncated headline = *warning* | **fail** - a cut-off campaign message is not the campaign message |
 
 All four were the same shape: a label broader than its measurement. Each fix
 ships with a test verified to fail against the old code.
@@ -260,7 +261,7 @@ reached the pixels.
 
 Four elements are measured, not assumed: the headline, CTA, disclaimer and logo
 are each rasterized **alone** and their opaque pixels counted. A combined layer
-cannot make that distinction — a creative drawing only its CTA would satisfy a
+cannot make that distinction - a creative drawing only its CTA would satisfy a
 check whose name asserts the message is present.
 
 Prohibited terms match on word boundaries, so `cure` does not trip on `secure`.
@@ -276,33 +277,33 @@ Intelligence; this repo does not claim to replace it.
 The FAQ names three. All three are counted off the run in
 `report.json → successMetrics`:
 
-- **Time saved** — derived from the `manualMinutesPerCreative` baseline the
+- **Time saved** - derived from the `manualMinutesPerCreative` baseline the
   brief supplies, and labelled an illustrative estimate everywhere it appears.
   It is not a measurement.
-- **Campaigns generated** — creatives, products and markets actually produced.
-- **Overall efficiency** — creatives per live generation, cost per creative,
+- **Campaigns generated** - creatives, products and markets actually produced.
+- **Overall efficiency** - creatives per live generation, cost per creative,
   and reuse rate.
 
 Cost is estimated from published list price for the model used, not a billed
-amount. `generationRequests` counts heroes successfully generated, not
+amount. `liveHeroGenerations` counts heroes successfully generated, not
 underlying HTTP attempts.
 
 ---
 
 ## Cost, before and after you spend it
 
-`--dry-run` resolves exactly the way a real run does — the same
-`findApprovedHero` against the same filesystem — then stops. Nothing is
+`--dry-run` resolves exactly the way a real run does - the same
+`findApprovedHero` against the same filesystem - then stops. Nothing is
 generated and no provider is constructed, so the reuse/generate split it reports
 is the split that will happen. The console has the same thing behind
 **Estimate**.
 
-- One generation per **missing** hero — never per ratio, never per format.
+- One generation per **missing** hero - never per ratio, never per format.
 - Preflight completes before any generation, so a bad brief fails free.
 - `numVariations: 1`; no aesthetic candidate fan-out.
 - `MVP_MODE=dev` (default) caches a successful hero, so iterating on layout
   costs nothing. Cached heroes are labelled **Generated earlier · review**
-  everywhere, and a cache hit is never counted as a generation request.
+  everywhere, and a cache hit is never counted as a live generation.
 - `MVP_MODE=final` bypasses the cache for a clean evidence run.
 
 ---
@@ -310,8 +311,7 @@ is the split that will happen. The console has the same thing behind
 ## Provider strategy, and an honest limitation
 
 **Gemini 3 Pro Image runs here. Adobe Firefly Image Model 5 is the right
-production choice, the adapter is written, and it has never been executed** —
-Firefly Services needs an enterprise entitlement and the FAQ states no keys are
+production choice, the adapter is written, and it has never been executed** - Firefly Services needs an enterprise entitlement and the FAQ states no keys are
 provided. It is never selected implicitly: with both configured,
 `IMAGE_PROVIDER` is required, because an adapter nobody has run must not win by
 accident.
@@ -327,23 +327,23 @@ the one field in the Firefly request that cannot be cited from an Adobe example:
 ## What this solves, and what it honestly does not
 
 A global consumer-goods team launches hundreds of localized campaigns a month.
-The expensive part is not ideation — it is producing the same message across
-every product and format, repeatedly, on brand, without breaking each market's
-legal rules. Most of that work is mechanical. This automates the mechanical part
+Ideation is cheap. The expense sits in producing the same message across every
+product and format, repeatedly, on brand, without breaking each market's legal
+rules. Most of that work is mechanical. This automates the mechanical part
 and spends model budget only where a human genuinely needs something new.
 
 Generated work is never presented as approved. Every product a model touched is
-badged **Review generated hero**, and sign-off is a person's job — this is
+badged **Review generated hero**, and sign-off is a person's job - this is
 designed for creative operations with explicit human review, not to replace the
 director.
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Campaign velocity | One brief → 24 validated creatives in 37.0s | **Delivered** |
+| 1 · Campaign velocity | One brief → 24 validated creatives in 39.3s | **Delivered** |
 | 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
 | 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
 | 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
-| 5 · Actionable insights | `report.json` provenance and per-check results; `runs.jsonl` reuse and spend across runs | **Production telemetry.** Campaign-performance insight belongs after activation — GenStudio for Performance Marketing |
+| 5 · Actionable insights | `report.json` provenance and per-check results; `runs.jsonl` reuse and spend across runs | **Production telemetry.** Campaign-performance insight belongs after activation - GenStudio for Performance Marketing |
 
 | Pain point | What this does about it |
 |---|---|
@@ -357,9 +357,9 @@ director.
 
 | Data source | Here |
 |---|---|
-| User inputs — briefs and assets uploaded manually | Briefs are `samples/*.yaml` / `*.json`, editable in the console behind **Edit source**. Assets live in `samples/assets/` — dropped in by hand, or supplied through the inspector on any product a model generated, which writes the file and adds `approvedHeroPath` to the brief. Either route is the same mechanism, and it is the one the pipeline turns on |
-| Storage — *"can be Azure, AWS or Dropbox"* | Local filesystem behind `findApprovedHero()`. That one function is the seam; Firefly's own v4 API accepts output storage on exactly those domains, so the production swap is a storage target, not a redesign |
-| GenAI — best-fit APIs for hero images and variations | `HeroGenerator` → Gemini 3 Pro Image (runs) or Firefly Image Model 5 (written, not entitled). Resized and localized variations are produced **deterministically**, not by a model |
+| User inputs - briefs and assets uploaded manually | Briefs are `samples/*.yaml` / `*.json`, editable in the console behind **Edit source**. Assets live in `samples/assets/` - dropped in by hand, or supplied through the inspector on any product a model generated, which writes the file and adds `approvedHeroPath` to the brief. Either route is the same mechanism, and it is the one the pipeline turns on |
+| Storage - *"can be Azure, AWS or Dropbox"* | Local filesystem behind `findApprovedHero()`. That one function is the seam; Firefly's own v4 API accepts output storage on exactly those domains, so the production swap is a storage target, not a redesign |
+| GenAI - best-fit APIs for hero images and variations | `HeroGenerator` → Gemini 3 Pro Image (runs) or Firefly Image Model 5 (written, not entitled). Resized and localized variations are produced **deterministically**, not by a model |
 
 ---
 
@@ -369,8 +369,7 @@ director.
   replace it.
 - One campaign message per brief, with optional pre-translated copy supplied by
   the marketer.
-- Brand identity is colour + logo + typeface + disclaimer + prohibited terms —
-  the useful subset for automated production.
+- Brand identity is colour + logo + typeface + disclaimer + prohibited terms - the useful subset for automated production.
 - `Lumen Botanicals` is a fictional brand invented for this exercise, as the FAQ
   permits. `samples/assets/` holds its **input** assets, committed so no
   evaluator needs a key to see the reuse path work. The two product images came
@@ -381,12 +380,12 @@ director.
 ## Limitations
 
 - **The hero crop is centred**, which is right because the art direction demands
-  a centred product with negative space — but that is a convention the prompt
+  a centred product with negative space - but that is a convention the prompt
   enforces, not product detection. An off-centre approved asset would still crop
   badly. Firefly Expand or a product-aware crop is the production answer. This
   previously used Sharp's `attention` saliency heuristic, which sliced the
   product out of the 9:16 frame.
-- **Text is laid out by hand** — wrapping, auto-fit and glyph metrics in
+- **Text is laid out by hand** - wrapping, auto-fit and glyph metrics in
   `textLayout.ts` and `fonts.ts`. The current best-practice stack is
   [Satori](https://github.com/vercel/satori) feeding Sharp, which is what
   Vercel's OG image generation uses. Not adopted here because auto-fit to a
@@ -395,14 +394,17 @@ director.
   rather than a clipped one. It is the first thing I would change with more time.
 - **Contrast is reported only on the brand-panel format**, where the background
   is a colour the brief names. On full-bleed the copy sits on a photograph, so
-  legibility is handled earlier — the scrim is sized from the measured luminance
-  of the band the copy will occupy — and not re-expressed as a WCAG ratio after.
+  legibility is handled earlier - the scrim is sized from the measured luminance
+  of the band the copy will occupy - and not re-expressed as a WCAG ratio after.
 - **The prohibited-word scan is literal.** It catches the claims a legal team
   enumerates; it is not semantic claim detection.
 - **Run state is in memory**, so restarting the server forgets past runs. The
   outputs and `report.json` on disk are the durable artifact.
-- **Single machine, no queue.** Batching hundreds of campaigns is the extension
-  path, not something this repo does.
+- **Single machine, no queue.** `npm run portfolio` runs every brief in the
+  manifest back to back, which is the honest shape of batch here: a loop over
+  the same `runCampaign()`, not a scheduler. Hundreds of campaigns concurrently,
+  with retries and prioritization, is the extension path - see
+  [Production extension](#production-extension).
 - **Gemini image generation has no free tier.** Billing must be linked. `npm run
   doctor` verifies key and model, but cannot detect quota until a generation is
   attempted.
@@ -413,7 +415,7 @@ director.
 
 ```
 Customer DAM / AEM / S3
-      │   replaces findApprovedHero() — the only filesystem assumption
+      │   replaces findApprovedHero() - the only filesystem assumption
       ▼
 AssetResolver → HeroGenerator          ← replaced by Firefly Services / Composite APIs
       │
@@ -441,12 +443,12 @@ for.
 
 | Assignment requirement | Implementation | Evidence |
 |---|---|---|
-| Campaign brief (JSON/YAML) | `src/schema.ts` — one Zod schema, both formats | test: *accepts YAML and JSON identically* |
+| Campaign brief (JSON/YAML) | `src/schema.ts` - one Zod schema, both formats | test: *accepts YAML and JSON identically* |
 | ≥ 2 products | `.min(2)` on the products array | test: *rejects a brief with fewer than two products* |
 | Target region / market | `region` (required) | `Germany (DACH)` in report.json |
 | Target audience | `audience` (required) | recorded in report.json |
 | Campaign message | `message` + per-market copy | rasterized into every output, verified by ink and fit |
-| Accept input assets, reuse when available | `findApprovedHero()` | Product A → **Reused**; test asserts `generationRequests === 1` |
+| Accept input assets, reuse when available | `findApprovedHero()` | Product A → **Reused**; test asserts `liveHeroGenerations === 1` |
 | Generate when missing, with a **real** model | `HeroGenerator` → `src/providers/gemini.ts` | Product B → **Generated**, provenance in report.json |
 | Real model, not a stand-in | `MVP_MODE=final` refuses the offline renderer | test: *refuses to fabricate a missing hero in final mode* |
 | ≥ 3 aspect ratios | `RATIOS` + `templateFor()` | **4 delivered**, asserted per run by `assignmentProof` |
@@ -459,9 +461,11 @@ for.
 | Logging / reporting (bonus) | `src/report.ts` | `report.json`, live event stream, `runs.jsonl` |
 
 `report.json → assignmentProof` answers the exercise's minimum from the run's
-own records — eight facts counted off the files on disk. An offline preview
-produces real, correctly-sized, validated files and still reports `false`,
-because it has not demonstrated the one thing the exercise needs a model for.
+own records - nine facts counted off the files on disk, every coverage figure
+measured against the products the *brief* asked for rather than the ones that
+finished. An offline preview produces real, correctly-sized, validated files
+and still reports `false`, because it has not demonstrated the one thing the
+exercise needs a model for.
 
 ---
 
@@ -470,27 +474,27 @@ because it has not demonstrated the one thing the exercise needs a model for.
 The assignment asks for a short video that helps a reviewer *set up and run the
 app locally*. This is that path, and every timing was measured.
 
-**0:00 – 0:30 · Setup.** Clone, `npm install`, `cp .env.example .env`, paste one
+**0:00-0:30 · Setup.** Clone, `npm install`, `cp .env.example .env`, paste one
 Google AI Studio key with billing enabled. `npm run doctor` verifies the key and
 the model id against the live model list before anything is spent.
 
-**0:30 – 0:50 · The brief.** `npm run dev`. The console opens on
+**0:30-0:50 · The brief.** `npm run dev`. The console opens on
 `samples/campaign.yaml`: two products, region, audience, message, brand rules.
 Product A has an approved hero on disk; product B does not. The default
-selection is the exercise's minimum — 1:1, 9:16, 16:9 in one market.
+selection is the exercise's minimum - 1:1, 9:16, 16:9 in one market.
 
-**0:50 – 1:30 · The run.** Press **Run campaign**. Product A resolves to
+**0:50-1:30 · The run.** Press **Run campaign**. Product A resolves to
 *Reused* and spends nothing. Product B has no approved hero, so its packshot
 goes to the model as an identity anchor and returns *Generated*. One live
-generation, driven by a real filesystem check — delete the approved file and the
+generation, driven by a real filesystem check - delete the approved file and the
 same brief takes the generate path.
 
-**1:30 – 2:00 · The output.** Six creatives, each an intentional template rather
+**1:30-2:00 · The output.** Six creatives, each an intentional template rather
 than a resize, served straight off disk. Click any one for its provenance and
 production checks. Files land in
 `outputs/<campaign>/<product>/<ratio>/<locale>.png`.
 
-**2:00 – 2:30 · Scale, and the guardrail.** Add 4:5 and two more markets: 24
+**2:00-2:30 · Scale, and the guardrail.** Add 4:5 and two more markets: 24
 creatives, still one generation, still $0.134. Then pick the *Rejected copy*
 brief, which carries a prohibited claim and is stopped at preflight before a
 credit is spent.
@@ -518,5 +522,5 @@ docs/                  standards, model strategy, API contracts, sample output
 tests/                 functional + visual regression
 ```
 
-If you only read one file, read `src/pipeline.ts` — the whole product is legible
+If you only read one file, read `src/pipeline.ts` - the whole product is legible
 in one screen.

@@ -59,7 +59,7 @@ jobs:
             // The point of this job: a keyless run must never look compliant.
             const m = report.metrics;
             if (!(m.heroesPlaceholder > 0)) throw new Error('expected an offline placeholder hero');
-            if (m.generationRequests !== 0) throw new Error('a keyless run must make no generation requests');
+            if (m.liveHeroGenerations !== 0) throw new Error('a keyless run must make no generation requests');
             if (report.assignmentProof.passed !== false) {
               throw new Error('an offline preview must not report assignmentProof.passed');
             }

@@ -1,0 +1,55 @@
+# A second brand, a different category, and a different set.
+#
+# Nothing in the pipeline knows what a skincare campaign is. This brief exists
+# to prove that: same schema, same run, no code path is category-aware. The
+# only thing that changes is the data.
+
+id: nordisk-brew-harvest
+name: Nordisk Brew - Single Origin Harvest
+
+region: Nordics (SE/DK/NO)
+audience: Home baristas 25-44 who buy single-origin beans and brew by hand
+message: Roasted the morning it ships
+objective: Convert first-time subscribers to the single-origin rotation
+callToAction: Start the rotation
+toneOfVoice: Quiet, precise, Scandinavian. Craft without ceremony.
+
+manualMinutesPerCreative: 20
+manualHourlyRateUsd: 85
+
+# Overrides the default campaign set. Every hero in this campaign is
+# photographed here, so two products read as one shoot.
+artDirection: >-
+  on a pale ash wood counter beside a linen cloth, with morning window light
+  and a soft steam haze in the air
+
+markets:
+  - locale: en-GB
+    name: United Kingdom
+    message: Roasted the morning it ships
+    callToAction: Start the rotation
+    disclaimer: Subscription renews monthly. Cancel anytime.
+
+  - locale: sv-SE
+    name: Sweden
+    message: Rostat samma morgon som det skickas
+    callToAction: Börja prenumerera
+    disclaimer: Prenumerationen förnyas månadsvis. Avbryt när som helst.
+
+brand:
+  name: Nordisk Brew
+  primaryColor: "#1F2A24"
+  secondaryColor: "#B87333"
+  disclaimer: Subscription renews monthly. Cancel anytime.
+  prohibitedWords:
+    - healthiest
+    - cures
+    - guaranteed
+    - miracle
+    - detox
+
+products:
+  - id: ethiopia-guji
+    name: Ethiopia Guji Whole Bean
+  - id: colombia-huila
+    name: Colombia Huila Whole Bean

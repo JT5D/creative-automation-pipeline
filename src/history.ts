@@ -23,7 +23,7 @@ export type RunHistoryEntry = {
   variants: number;
   reused: number;
   generated: number;
-  generationRequests: number;
+  liveHeroGenerations: number;
   costUsd: number;
   durationMs: number;
   savedMinutes: number;
@@ -35,7 +35,7 @@ export type Insights = {
   runs: number;
   campaigns: number;
   creatives: number;
-  generationRequests: number;
+  liveHeroGenerations: number;
   /** Share of heroes served from already-approved assets. The thesis metric. */
   reuseRate: number;
   totalCostUsd: number;
@@ -62,7 +62,7 @@ export async function recordRun(report: CampaignReport, outputRoot: string): Pro
     variants: m.variantsCreated,
     reused: m.approvedAssetsReused,
     generated: m.heroesGenerated + m.heroesFromCache + m.heroesPlaceholder,
-    generationRequests: m.generationRequests,
+    liveHeroGenerations: m.liveHeroGenerations,
     costUsd: report.estimatedCostUsd?.totalUsd ?? 0,
     durationMs: report.durationMs,
     savedMinutes: report.estimatedTimeSaved?.savedMinutes ?? 0,
@@ -102,7 +102,7 @@ export async function readInsights(outputRoot: string): Promise<Insights> {
     runs: history.length,
     campaigns: new Set(history.map((e) => e.campaignId)).size,
     creatives,
-    generationRequests: sum((e) => e.generationRequests),
+    liveHeroGenerations: sum((e) => e.liveHeroGenerations),
     reuseRate: heroes === 0 ? 0 : Number((sum((e) => e.reused) / heroes).toFixed(4)),
     totalCostUsd,
     costPerCreativeUsd: creatives === 0 ? 0 : Number((totalCostUsd / creatives).toFixed(5)),

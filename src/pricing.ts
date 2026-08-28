@@ -4,7 +4,7 @@
  *
  * One source of truth: the estimator, the report and the model picker all read
  * this, so a quoted price can never disagree with a charged one. Prices are
- * list prices used for a clearly-labelled estimate — never a billed amount.
+ * list prices used for a clearly-labelled estimate - never a billed amount.
  */
 export const PRICING_SOURCE =
   "ai.google.dev/gemini-api/docs/pricing, 2K output, verified 2026-08-28";
@@ -28,7 +28,7 @@ export type ModelOption = {
 
 /**
  * Every model with a published price. Used for costing any model id someone
- * configures — including the ones the runtime picker deliberately does not
+ * configures - including the ones the runtime picker deliberately does not
  * offer, so a hand-set GEMINI_IMAGE_MODEL is still costed honestly.
  */
 const MODEL_CATALOG: ModelOption[] = [
@@ -37,7 +37,7 @@ const MODEL_CATALOG: ModelOption[] = [
     label: "Gemini 3 Pro Image",
     usdPer2K: 0.134,
     maxImageSize: "2K",
-    note: "Frontier tier. Best product fidelity — the default.",
+    note: "Frontier tier. Best product fidelity - the default.",
   },
   {
     id: "gemini-3.1-flash-image",
@@ -51,7 +51,7 @@ const MODEL_CATALOG: ModelOption[] = [
     label: "Gemini 3.1 Flash Lite",
     usdPer2K: 0.0336,
     maxImageSize: "1K",
-    note: "Cheapest, but 1K only — cannot serve this pipeline's 2K hero.",
+    note: "Cheapest, but 1K only - cannot serve this pipeline's 2K hero.",
   },
   {
     id: "gemini-2.5-flash-image",
@@ -75,7 +75,7 @@ export const MODEL_OPTIONS: ModelOption[] = MODEL_CATALOG.filter(
 
 const BY_ID = new Map(MODEL_CATALOG.map((m) => [m.id, m]));
 
-/** Undefined for any model with no published price — never guessed. */
+/** Undefined for any model with no published price - never guessed. */
 export function priceFor(model: string): number | undefined {
   return BY_ID.get(model)?.usdPer2K;
 }
@@ -99,15 +99,20 @@ export function timeSavedEstimate(
   baselineMinutesPerCreative: number | undefined,
   variants: number,
   durationMs: number,
+  hourlyRateUsd?: number,
 ) {
   if (!baselineMinutesPerCreative) return undefined;
   const manualMinutes = baselineMinutesPerCreative * variants;
   const pipelineMinutes = durationMs / 60_000;
+  const savedMinutes = Number((manualMinutes - pipelineMinutes).toFixed(2));
   return {
     baselineMinutesPerCreative,
     manualMinutes,
     pipelineMinutes: Number(pipelineMinutes.toFixed(3)),
-    savedMinutes: Number((manualMinutes - pipelineMinutes).toFixed(2)),
+    savedMinutes,
+    // Only when the brief states a rate. No rate, no money figure.
+    savedUsd: hourlyRateUsd ? Number(((savedMinutes / 60) * hourlyRateUsd).toFixed(2)) : undefined,
+    hourlyRateUsd,
     basis:
       "Illustrative estimate: manualMinutesPerCreative from the brief × variants " +
       "produced, minus measured pipeline runtime. Not a measured comparison.",

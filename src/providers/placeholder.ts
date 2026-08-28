@@ -10,8 +10,8 @@ import type { GeneratedHero, HeroGenerator, HeroRequest } from "./types.js";
  * test suite uses, so CI never touches a paid endpoint.
  *
  * It is NOT presented as generative output anywhere. Assets it produces carry
- * `source: "placeholder"`, are excluded from `generationRequests`, and are
- * labelled "PLACEHOLDER — no model called" in the UI, the CLI summary and
+ * `source: "placeholder"`, are excluded from `liveHeroGenerations`, and are
+ * labelled "PLACEHOLDER - no model called" in the UI, the CLI summary and
  * report.json. Swapping in a real provider is one environment variable.
  */
 export class PlaceholderHeroGenerator implements HeroGenerator {

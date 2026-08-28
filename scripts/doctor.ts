@@ -3,7 +3,7 @@ import { providerStatus } from "../src/providers/index.js";
 
 /**
  * Verifies the provider is reachable and that the configured model actually
- * exists — before the demo, not during it.
+ * exists - before the demo, not during it.
  *
  * What it CANNOT tell you: whether the account can actually pay for an image.
  * Google lists no free tier for any image model, and quota only reveals itself
@@ -19,7 +19,7 @@ async function main() {
 
   if (!status.configured) {
     console.log(
-      "\n  Set GEMINI_API_KEY in .env — a Google AI Studio key WITH BILLING ENABLED" +
+      "\n  Set GEMINI_API_KEY in .env - a Google AI Studio key WITH BILLING ENABLED" +
         "\n  is required for image generation: https://aistudio.google.com/apikey\n",
     );
     process.exit(1);
@@ -60,7 +60,7 @@ async function main() {
   }
   console.log(
     "\n  This proves the key and the model id. It does NOT prove image-generation" +
-      "\n  quota — no Gemini image model has a free tier, and billing only shows up" +
+      "\n  quota - no Gemini image model has a free tier, and billing only shows up" +
       "\n  when a generation is attempted. One real run is the proof.\n",
   );
 }

@@ -297,7 +297,7 @@ markets:
 
     // The whole point: twice the output, identical spend.
     expect(multi.calls).toBe(single.calls);
-    expect(multiReport.metrics.generationRequests).toBe(1);
+    expect(multiReport.metrics.liveHeroGenerations).toBe(1);
   });
 
   it("writes one file per locale and rasterizes that market's own copy", async () => {
@@ -369,7 +369,7 @@ describe("the sample brief library", () => {
       });
 
       expect(report.metrics.variantsCreated).toBe(Number(variants));
-      expect(report.metrics.generationRequests).toBe(Number(generations));
+      expect(report.metrics.liveHeroGenerations).toBe(Number(generations));
       expect(report.metrics.validationFailed).toBe(0);
     },
   );
@@ -403,7 +403,7 @@ describe("dry run", () => {
       mode: "final",
       generator,
     });
-    expect(report.metrics.generationRequests).toBe(estimate.generations);
+    expect(report.metrics.liveHeroGenerations).toBe(estimate.generations);
     expect(report.metrics.variantsCreated).toBe(estimate.variants);
   });
 
@@ -614,7 +614,7 @@ describe("generation cache integrity", () => {
         ratios: ["1x1"],
       });
       expect(r.products[1].hero.source).toBe("placeholder");
-      expect(r.metrics.generationRequests).toBe(0);
+      expect(r.metrics.liveHeroGenerations).toBe(0);
     }
     await rm(dir, { recursive: true, force: true });
   });
@@ -732,7 +732,7 @@ describe("run history", () => {
     expect(insights.runs).toBe(2);
     expect(insights.campaigns).toBe(1);
     expect(insights.creatives).toBe(4);
-    expect(insights.generationRequests).toBe(2);
+    expect(insights.liveHeroGenerations).toBe(2);
     // One of two heroes reused each run.
     expect(insights.reuseRate).toBeCloseTo(0.5, 2);
 
@@ -863,7 +863,7 @@ describe("end-to-end campaign run", () => {
     // Derived, not hardcoded: adding a format or a market must never add cost.
     const expectedVariants = 2 * Object.keys(RATIOS).length * report.metrics.marketsProcessed;
     expect(report.metrics.variantsCreated).toBe(expectedVariants);
-    expect(report.metrics.generationRequests).toBe(1);
+    expect(report.metrics.liveHeroGenerations).toBe(1);
 
     const a = report.products.find((p) => p.productId === "product-a")!;
     const b = report.products.find((p) => p.productId === "product-b")!;
@@ -981,7 +981,7 @@ describe("end-to-end campaign run", () => {
     expect(report.metrics.heroesPlaceholder).toBe(1);
     expect(report.metrics.heroesGenerated).toBe(0);
     // A placeholder costs nothing, so it must never inflate the spend count.
-    expect(report.metrics.generationRequests).toBe(0);
+    expect(report.metrics.liveHeroGenerations).toBe(0);
   });
 
   it("refuses to fabricate a missing hero in final mode", async () => {
@@ -1000,7 +1000,7 @@ describe("end-to-end campaign run", () => {
     expect(report.failures[0].message).toMatch(/requires a real GenAI provider/i);
 
     expect(report.metrics.heroesPlaceholder).toBe(0);
-    expect(report.metrics.generationRequests).toBe(0);
+    expect(report.metrics.liveHeroGenerations).toBe(0);
     expect(report.assignmentProof.passed).toBe(false);
     expect(
       report.assignmentProof.checks.find((c) => c.id === "real_genai_demonstrated")?.passed,
@@ -1025,9 +1025,71 @@ describe("end-to-end campaign run", () => {
       "no_placeholder_output",
       "campaign_message_rasterized",
       "no_failed_creative_validation",
+      "all_products_produced",
     ]) {
       expect(report.assignmentProof.checks.find((c) => c.id === id)?.passed).toBe(true);
     }
+  });
+
+  it("lets a brief replace the art-direction standard, and defaults it otherwise", async () => {
+    // Three widening escape hatches, all optional: styleBar replaces the
+    // standard, artDirection replaces the set, generationPrompt replaces
+    // everything. The point of the default is that most briefs set none.
+    const base = parseBrief(briefYaml());
+    const product = base.products[1];
+
+    const fallback = buildHeroPrompt(product, base, false);
+    expect(fallback).toContain("Award-winning cinematic advertising photography");
+
+    const styled = parseBrief(
+      `${briefYaml()}styleBar: Flat lay graphic poster, hard flash, no depth of field.\n`,
+    );
+    const overridden = buildHeroPrompt(product, styled, false);
+    expect(overridden).toContain("Flat lay graphic poster");
+    expect(overridden).not.toContain("Award-winning cinematic");
+    // Nothing downstream may re-assert a look the brief just replaced.
+    expect(overridden).not.toContain("Cinematic campaign photograph");
+  });
+
+  it("cannot prove the assignment when a requested product never got produced", async () => {
+    // The fifth false green this project has found, and the same shape as the
+    // other four: the proof measured the products that SURVIVED, so a run that
+    // dropped one still counted every ratio as fully covered. A three-product
+    // brief passed on the two that worked.
+    //
+    // GenAI is genuinely demonstrated here and nothing that was produced is
+    // wrong, so every other check is green. The dropped product is the only
+    // defect, which is exactly why the old code could not see it.
+    class DropsOneProduct extends FakeApiGenerator {
+      async generateHero(input: HeroRequest) {
+        if (input.productId === "product-c") throw new Error("provider refused");
+        return super.generateHero(input);
+      }
+    }
+
+    const report = await runCampaign(
+      parseBrief(briefYaml("  - id: product-c\n    name: Repair Balm")),
+      { outputRoot: outputs, mode: "final", generator: new DropsOneProduct() },
+    );
+
+    expect(report.products).toHaveLength(2);
+    expect(report.failures.map((f) => f.productId)).toEqual(["product-c"]);
+    expect(report.metrics.liveHeroGenerations).toBe(1);
+
+    // The checks that would have hidden it, now measured against the brief.
+    const check = (id: string) => report.assignmentProof.checks.find((c) => c.id === id);
+    expect(check("all_products_produced")?.passed).toBe(false);
+    expect(check("all_products_produced")?.message).toBe("2/3 requested products produced");
+    for (const ratio of ["1x1", "9x16", "16x9"]) {
+      expect(check(`required_ratio_${ratio}`)?.passed).toBe(false);
+      expect(check(`required_ratio_${ratio}`)?.message).toContain("2/3");
+    }
+
+    // Everything that DID run is still honestly green -- the proof is not
+    // failing because the pipeline broke, only because it is incomplete.
+    expect(check("real_genai_demonstrated")?.passed).toBe(true);
+    expect(check("no_failed_creative_validation")?.passed).toBe(true);
+    expect(report.assignmentProof.passed).toBe(false);
   });
 
   it("publishes provenance paths that work on another machine", async () => {

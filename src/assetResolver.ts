@@ -186,6 +186,19 @@ const DEFAULT_SET =
   "on a honed travertine ledge against a seamless plaster wall, with soft " +
   "foliage shadow falling across the background";
 
+/**
+ * The standard this campaign is shot to.
+ *
+ * Three escape hatches, in widening order, and every one of them optional:
+ * `styleBar` replaces the quality standard, `artDirection` replaces the set,
+ * and a product's `generationPrompt` replaces the whole brief. A campaign that
+ * sets none of them gets all of it chosen for it, which is the common case and
+ * the one that should need no decisions.
+ */
+export function styleBar(brief: CampaignBrief): string {
+  return brief.styleBar?.trim() || CINEMATIC_BAR;
+}
+
 export function campaignSet(brief: CampaignBrief): string {
   return brief.artDirection?.trim() || DEFAULT_SET;
 }
@@ -213,11 +226,86 @@ export function campaignSet(brief: CampaignBrief): string {
  * section 7. The reference is the category's craft conventions, not anyone's
  * imagery -- no style is reproduced and every pixel is generated from this brief.
  */
+/**
+ * The quality bar, stated before anything brand-specific.
+ *
+ * Every clause below it was already a correct technical instruction and the
+ * output still came back looking like stock photography. The reason is that a
+ * precise catalogue brief produces a precise catalogue photograph: evenly lit,
+ * everything in focus, nothing to look at. Naming the standard first, in the
+ * language the reference imagery is captioned in, moves the whole distribution
+ * before a single product detail is specified.
+ *
+ * It is brand-agnostic on purpose. Nothing here mentions a product, a palette
+ * or a category, so it lifts any campaign the pipeline runs, not the sample.
+ */
+/**
+ * One camera set-up in a product shoot.
+ *
+ * The campaign path deliberately generates ONE hero and crops it, because a
+ * crop is free and a generation is not. That buys consistency and costs
+ * coverage: every format is the same photograph. A real shoot covers a product
+ * from several set-ups and edits down.
+ *
+ * These are those set-ups, written as camera briefs rather than adjectives.
+ * They change the composition while the identity, set and light stay fixed, so
+ * the results read as one session. Each one is a separate generation and is
+ * therefore opt-in, never part of the default campaign cost.
+ */
+export type Shot = { id: string; label: string; camera: string };
+
+export const SHOT_SET: Shot[] = [
+  {
+    id: "hero",
+    label: "Hero",
+    camera:
+      "eye-level three-quarter view, product centred and filling the middle of " +
+      "the frame, full container in shot, generous quiet space around it",
+  },
+  {
+    id: "macro",
+    label: "Macro detail",
+    camera:
+      "extreme close-up on the cap and the shoulder of the container, the form " +
+      "deliberately cropped by the frame edge, texture and the specular edge " +
+      "reading sharply, background almost entirely dissolved",
+  },
+  {
+    id: "overhead",
+    label: "Overhead",
+    camera:
+      "directly overhead bird's-eye view looking straight down at the closed " +
+      "lid, the product small and precisely centred in a wide field of surface",
+  },
+  {
+    id: "establishing",
+    label: "Wide establishing",
+    camera:
+      "wide establishing shot with the product small in the lower third, the " +
+      "set and its light doing most of the work, deep negative space above",
+  },
+];
+
+const CINEMATIC_BAR =
+  "Award-winning cinematic advertising photography, editorial quality, shot for " +
+  "a global luxury brand campaign. Rich, filmic colour grade with deep tonal " +
+  "range. Beautiful shallow depth of field. Dramatic natural light with real " +
+  "atmosphere and mood. Hyper-detailed, photorealistic, sharp on the subject. " +
+  "Not a flat studio packshot, not a stock catalogue render.";
+
 export function buildHeroPrompt(
   product: Product,
   brief: CampaignBrief,
   /** True when an approved packshot is being sent as an identity anchor. */
   hasReference = false,
+  /**
+   * Optional camera brief for one shot in a set. Omitted, the hero is framed
+   * for compositing (product low, headline space above), which is what the
+   * campaign path needs. Supplied, it replaces that framing with a specific
+   * perspective, which is how a photographer covers a product in a session
+   * rather than taking the same picture repeatedly.
+   */
+  shot?: Shot,
 ): string {
   if (product.generationPrompt) return product.generationPrompt;
 
@@ -228,21 +316,32 @@ export function buildHeroPrompt(
   const objective = brief.objective ? `Campaign objective: ${sentence(brief.objective)}.` : "";
 
   return [
-    `Premium beauty campaign photograph of ${product.name} by ${brief.brand.name}.`,
+    styleBar(brief),
+    // Deliberately unstyled. The look is set once, in the style bar above, so
+    // that overriding the bar cannot leave a contradicting adjective behind.
+    `Campaign photograph of ${product.name} by ${brief.brand.name}.`,
     `Audience: ${brief.audience}. Market: ${brief.region}.`,
     objective,
     tone,
 
-    // Optics -- the whole product sharp, not a shallow-focus mood shot.
-    "Shot on a 100mm macro lens at f/9, focus stacked so the entire product is",
-    "critically sharp from front to back. Tripod, no motion blur.",
+    // Optics. The product stays critically sharp, but the set behind it falls
+    // away. The previous brief stacked focus across the WHOLE frame at f/9,
+    // which is catalogue lighting: technically clean, flat, and the reason the
+    // output read as stock. Depth is what separates an ad from a packshot.
+    "Shot on a 100mm macro lens at f/4, focus stacked across the product itself",
+    "so its label and edges are critically sharp, while the background falls",
+    "into a soft, creamy out-of-focus wash with gentle bokeh. Tripod, no motion",
+    "blur. Shallow, deliberate depth of field.",
 
-    // Light -- named positions, controlled speculars.
-    "Lighting is soft and directional from the upper left, with open fill from",
-    "the right and a narrow highlight raking the product's edge to separate it",
-    "from the background. Highlights are controlled and rolled off, never blown;",
-    "shadows are soft and open. The lighting is felt, not seen: no softbox,",
-    "reflector, light stand, modifier or any studio equipment appears in frame.",
+    // Light. Natural daylight rather than a studio grid: warmer, directional,
+    // and it gives the frame somewhere for the eye to travel.
+    "Lit by soft natural window daylight raking in from the upper left, warm and",
+    "directional, with open bounce fill from the right and a narrow rim of light",
+    "separating the product's edge from the background. A faint atmospheric haze",
+    "catches the light. Highlights roll off gently and are never blown; shadows",
+    "are deep but open, with real tonal separation between the product and the",
+    "set. The lighting is felt, not seen: no softbox, reflector, light stand,",
+    "modifier or any studio equipment appears in frame.",
 
     // Set and colour -- ONE set for the whole campaign, which is the difference
     // between a campaign and a folder of product shots. See campaignSet().
@@ -274,12 +373,16 @@ export function buildHeroPrompt(
     // over-corrected by nearly half, aiming at 33% when the safe area is 56%.
     // Every hero came back looking photographed from across the room. Say the
     // real number, once, as a positive instruction.
-    "The product sits in the LOWER HALF of the frame, horizontally centred,",
-    "and is large, close and unmistakably the subject -- it fills most of the",
-    "central 50% of the width, with its base and lid entirely in frame. The",
-    "UPPER HALF is quiet, empty background: no product, no props, nothing but",
-    "surface and light, because the campaign headline is composited there.",
-    "Do not crop the product and do not place it off to one side.",
+    shot
+      ? `Camera: ${shot.camera}`
+      : [
+          "The product sits in the LOWER HALF of the frame, horizontally centred,",
+          "and is large, close and unmistakably the subject -- it fills most of the",
+          "central 50% of the width, with its base and lid entirely in frame. The",
+          "UPPER HALF is quiet, empty background: no product, no props, nothing but",
+          "surface and light, because the campaign headline is composited there.",
+          "Do not crop the product and do not place it off to one side.",
+        ].join(" "),
 
     // Retouch standard, stated rather than implied.
     "Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical,",

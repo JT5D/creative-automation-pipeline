@@ -1,0 +1,51 @@
+# Luxury fragrance. Darker set, tighter legal list, two markets.
+# Included because a category with different art direction is the honest test
+# of whether the quality bar is generic or was tuned to one sample.
+
+id: atelier-ferro-nocturne
+name: Atelier Ferro - Nocturne
+
+region: Western Europe (FR/IT)
+audience: Fragrance buyers 30-55 who shop niche houses over designer brands
+message: Worn after dark
+objective: Drive discovery-set purchase ahead of the holiday season
+callToAction: Discover Nocturne
+toneOfVoice: Restrained, nocturnal, confident. No superlatives.
+
+manualMinutesPerCreative: 30
+manualHourlyRateUsd: 110
+
+artDirection: >-
+  on a dark polished stone plinth against a deep shadowed wall, with a single
+  low raking light and soft falloff into black
+
+markets:
+  - locale: en-GB
+    name: United Kingdom
+    message: Worn after dark
+    callToAction: Discover Nocturne
+    disclaimer: Eau de parfum. 50ml.
+
+  - locale: fr-FR
+    name: France
+    message: Se porte à la nuit tombée
+    callToAction: Découvrir Nocturne
+    disclaimer: Eau de parfum. 50 ml.
+
+brand:
+  name: Atelier Ferro
+  primaryColor: "#14141A"
+  secondaryColor: "#B08D57"
+  disclaimer: Eau de parfum. 50ml.
+  prohibitedWords:
+    - pheromone
+    - guaranteed
+    - clinically proven
+    - miracle
+    - aphrodisiac
+
+products:
+  - id: nocturne-edp
+    name: Nocturne Eau de Parfum
+  - id: nocturne-travel
+    name: Nocturne Travel Spray

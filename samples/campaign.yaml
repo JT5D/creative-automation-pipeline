@@ -1,28 +1,31 @@
-# Campaign brief — the single input to the pipeline.
+# Campaign brief - the single input to the pipeline.
 # JSON is accepted too; both normalize to the same validated object.
 
 id: lumen-autumn-glow-de
-name: Lumen Botanicals — Autumn Glow (DACH)
+name: Lumen Botanicals - Autumn Glow (DACH)
 
 # The 4A's brief standard reduces to who / what / why / where / success.
 region: Germany (DACH)                    # WHERE
-audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare   # WHO
-message: Wake up to visibly brighter skin # WHAT — the single-minded proposition
+audience: Urban professionals 28-45 who buy dermatologist-tested, clean-formula skincare   # WHO
+message: Wake up to visibly brighter skin # WHAT - the single-minded proposition
 objective: Drive first-purchase conversion for the autumn skincare range in DACH   # WHY
 callToAction: Jetzt entdecken             # rendered into every creative
-toneOfVoice: Calm, clinical, warm. Understated luxury — never hype.
+toneOfVoice: Calm, clinical, warm. Understated luxury - never hype.
 
-# SUCCESS — the documented baseline for the "time saved" figure in report.json.
+# SUCCESS - the documented baseline for the "time saved" figure in report.json.
 # Reported only because it is supplied here; it is an estimate from this
 # number, clearly labelled, never an invented measurement.
 manualMinutesPerCreative: 25
+# Loaded studio rate. Stated by a human on purpose: without it the run
+# reports time saved only, and never invents a cost.
+manualHourlyRateUsd: 85
 
 # ── Markets ──
 # Every market multiplies the output and costs NOTHING extra: the hero is
 # generated once, then localized copy is composited per market.
 #
 # Copy is supplied per market by the people accountable for it. Translation is
-# deliberately data, not a runtime model call — localized claims carry legal
+# deliberately data, not a runtime model call - localized claims carry legal
 # weight in each jurisdiction and need human sign-off.
 markets:
   - locale: en-GB
@@ -66,7 +69,7 @@ products:
   # ── Product A ──
   # An approved campaign hero already exists, so the pipeline REUSES it
   # and spends nothing. Delete the file and this product takes the
-  # generation path instead — the branch is a real filesystem check.
+  # generation path instead - the branch is a real filesystem check.
   - id: radiance-serum
     name: Radiance Vitamin C Serum
     approvedHeroPath: samples/assets/radiance-serum-hero.png

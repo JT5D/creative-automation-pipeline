@@ -11,7 +11,7 @@ export type ProviderStatus = {
 };
 
 const CHOOSE =
-  "Set IMAGE_PROVIDER=gemini or IMAGE_PROVIDER=firefly — both are configured and " +
+  "Set IMAGE_PROVIDER=gemini or IMAGE_PROVIDER=firefly - both are configured and " +
   "guessing which one should spend money is not a decision this code should make.";
 
 /**
@@ -20,8 +20,7 @@ const CHOOSE =
  * An earlier version let Firefly win simply because two environment variables
  * happened to be present. That is the wrong default for an adapter this repo
  * has never executed against a live endpoint: the run that matters would have
- * silently changed provider. So selection is stated, not inferred —
- * `IMAGE_PROVIDER` decides, and the only inference left is the unambiguous
+ * silently changed provider. So selection is stated, not inferred - * `IMAGE_PROVIDER` decides, and the only inference left is the unambiguous
  * case where exactly one real provider is configured.
  *
  * There is no runtime fallback. If the selected provider cannot be built the
@@ -82,16 +81,16 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
       model: g.model,
       label:
         g.provider === "adobe-firefly"
-          ? `Adobe Firefly — ${g.model}`
+          ? `Adobe Firefly - ${g.model}`
           : g.provider === "google-gemini"
-            ? `Google Gemini — ${g.model}`
-            : "Offline preview — no model will be called",
+            ? `Google Gemini - ${g.model}`
+            : "Offline preview - no model will be called",
       configured: g.provider !== "offline-placeholder",
     };
   } catch (error) {
     return {
       provider: "none",
-      model: "—",
+      model: "-",
       label: error instanceof Error ? error.message : "Generation unavailable",
       configured: false,
     };

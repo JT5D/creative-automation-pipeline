@@ -155,7 +155,11 @@ export function templateFor(ratio: RatioKey): Template {
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
-      disclaimerFollowsCta: true,
+      // Bottom-anchored, unlike the story. Trailing the CTA pushed the legal
+      // line into the lower half of the frame, which is exactly where the art
+      // direction puts the product -- it was composited across the jar lid on
+      // every square creative. The bottom anchor was already here and unused.
+      disclaimerFollowsCta: false,
       enforceSafeZone: false,
       scrim: "top",
       maxLines: 3,
@@ -209,7 +213,7 @@ export function templateFor(ratio: RatioKey): Template {
 }
 
 /**
- * Mean luminance (0–1) of a horizontal band of the hero.
+ * Mean luminance (0-1) of a horizontal band of the hero.
  *
  * A fixed scrim opacity is a guess: over a dark photo it is wasted, and over a
  * bright one the copy still fails. Sampling the band the copy will actually sit
@@ -280,6 +284,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     .toBuffer();
   layers.push({ input: heroBuffer, left: tpl.hero.left, top: tpl.hero.top });
 
+  // Fit the copy first: the scrim has to cover the block it makes readable,
+  // and that block's height is not known until the headline has been wrapped.
+  const fit = fitText(message, tpl.copy.width, tpl.maxLines, tpl.maxFontSize, tpl.minFontSize);
+
   // 3. Copy zone treatment. On the full-bleed 1:1 the copy sits over the photo,
   //    so it needs a gradient scrim to stay readable; the panel formats do not.
   const textColor = tpl.scrim ? "#FFFFFF" : readableTextColor(brand.primaryColor);
@@ -312,9 +320,16 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     </svg>`;
     layers.push({ input: Buffer.from(topSvg), left: 0, top: 0 });
   } else if (tpl.scrim === "top") {
-    // 9:16 puts its copy in the upper safe band, so the scrim is strongest
-    // there and clears the lower frame where the product sits.
-    const fade = Math.min(height, tpl.disclaimerY + 260);
+    // The scrim ends just past the copy, not at the bottom of the frame.
+    //
+    // It used to fade to `disclaimerY + 260`, which is mid-frame on a 9:16 and
+    // the very bottom on a 1:1 -- so when the square formats moved their copy to
+    // the top band, their scrim stretched over the whole image and went thin
+    // everywhere. White copy then sat on a sunlit plaster wall at almost no
+    // contrast. Sizing it to the block it exists for keeps it strong where the
+    // words are and absent over the product.
+    const copyBottom = textBlockBottom(tpl, fit, Boolean(disclaimer), callToAction);
+    const fade = Math.min(height, copyBottom + 200);
     const bandLum = await bandLuminance(heroBuffer, 0, fade, width);
     const peak = scrimOpacity(bandLum, 0.5, 0.82);
     const mid = scrimOpacity(bandLum, 0.4, 0.72);
@@ -327,6 +342,30 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
       <rect width="${width}" height="${fade}" fill="url(#g)"/>
     </svg>`;
     layers.push({ input: Buffer.from(scrimSvg), left: 0, top: 0 });
+
+    // A bottom-anchored legal line sits on bare photo, below where the top
+    // scrim reaches. It is the one piece of copy with regulatory weight, so it
+    // gets its own short fade instead of depending on whatever the hero
+    // happens to put behind it -- measured on this creative it was white on
+    // sunlit travertine.
+    if (disclaimer && !tpl.disclaimerFollowsCta) {
+      // Independent of the copy scrim above it -- they may overlap. Clamping
+      // this to `fade` produced a zero-height layer whenever the copy block
+      // reached the bottom of the frame, and libvips rejects that outright.
+      const footTop = Math.max(0, Math.min(height - 16, tpl.disclaimerY - 78));
+      const footHeight = height - footTop;
+      const footLum = await bandLuminance(heroBuffer, footTop, footHeight, width);
+      const footPeak = scrimOpacity(footLum, 0.55, 0.88);
+      const footSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${footHeight}">
+        <defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="60%" stop-color="#000000" stop-opacity="${(footPeak * 0.8).toFixed(3)}"/>
+          <stop offset="100%" stop-color="#000000" stop-opacity="${footPeak}"/>
+        </linearGradient></defs>
+        <rect width="${width}" height="${footHeight}" fill="url(#f)"/>
+      </svg>`;
+      layers.push({ input: Buffer.from(footSvg), left: 0, top: footTop });
+    }
   } else {
     // Solid brand panel fills everything outside the hero zone.
     const panel =
@@ -340,7 +379,6 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   }
 
   // 4. Text layer, rendered in isolation so we can prove ink actually landed.
-  const fit = fitText(message, tpl.copy.width, tpl.maxLines, tpl.maxFontSize, tpl.minFontSize);
 
   const logoBuffer = await loadLogo(brand, tpl.logo.maxWidth);
   const textLayer = buildTextLayer({
@@ -382,7 +420,12 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     layers.push({ input: logoBuffer, left: tpl.logo.left, top: tpl.logo.top });
   }
 
-  const buffer = await canvas.composite(layers).png({ quality: 95 }).toBuffer();
+  // Truecolor, deliberately. `quality` on a PNG is not JPEG quality: it puts
+  // libvips into palette mode, and every exported creative was coming out
+  // quantised to 256 colours. That is invisible on flat artwork and very
+  // visible on a soft background falloff, which is most of what the art
+  // direction now produces. It also spent 4x the encode time to do it.
+  const buffer = await canvas.composite(layers).png().toBuffer();
 
   return {
     buffer,

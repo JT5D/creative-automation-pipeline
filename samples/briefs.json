@@ -1,21 +1,21 @@
 [
   {
     "file": "campaign.yaml",
-    "label": "Autumn Glow — DACH",
-    "teaches": "The canonical run. One hero reused, one generated. The console opens on the exercise's minimum — 1:1, 9:16, 16:9 in one market — for 6 creatives from 1 model call; select every format and market and the SAME single call yields 24.",
-    "expect": "24 creatives · 1 generation"
+    "label": "Autumn Glow - DACH",
+    "teaches": "The canonical run. One hero reused, one generated. The console opens on the exercise's minimum - 1:1, 9:16, 16:9 in one market - for 6 creatives from 1 model call; select every format and market and the SAME single call yields 24.",
+    "expect": "24 creatives \u00b7 1 generation"
   },
   {
     "file": "campaign-minimal.yaml",
-    "label": "Restock — UK",
+    "label": "Restock - UK",
     "teaches": "The smallest valid brief, and the cheapest run. Both heroes already approved, so nothing is generated.",
-    "expect": "8 creatives · 0 generations"
+    "expect": "8 creatives \u00b7 0 generations"
   },
   {
     "file": "campaign-cold-start.yaml",
-    "label": "Nordvik — cold start",
+    "label": "Nordvik - cold start",
     "teaches": "A different brand launching from nothing. No approved assets at all, so both heroes are generated from text.",
-    "expect": "8 creatives · 2 generations"
+    "expect": "8 creatives \u00b7 2 generations"
   },
   {
     "file": "campaign-legal-fail.yaml",
@@ -25,8 +25,20 @@
   },
   {
     "file": "campaign.json",
-    "label": "Autumn Glow — JSON",
+    "label": "Autumn Glow - JSON",
     "teaches": "The same brief in JSON. Both formats normalize to one validated object. Counts shown are the full brief: every format, every market.",
-    "expect": "24 creatives · 1 generation"
+    "expect": "24 creatives \u00b7 1 generation"
+  },
+  {
+    "file": "campaign-coffee-nordics.yaml",
+    "label": "Nordisk Brew - Nordics",
+    "teaches": "A different brand in a different category with its own art direction. Nothing in the pipeline is category-aware; only the data changes.",
+    "expect": "16 creatives - 2 generations"
+  },
+  {
+    "file": "campaign-fragrance-eu.yaml",
+    "label": "Atelier Ferro - Nocturne",
+    "teaches": "Luxury fragrance on a dark set, proving the quality bar is generic rather than tuned to the skincare sample.",
+    "expect": "16 creatives - 2 generations"
   }
 ]

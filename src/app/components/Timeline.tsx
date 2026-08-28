@@ -67,7 +67,7 @@ export function Timeline({
     return (
       <p className="empty">
         <strong>Not started</strong>
-        Each step appears here as the pipeline emits it — which asset was reused, which was
+        Each step appears here as the pipeline emits it - which asset was reused, which was
         generated, and what that cost.
       </p>
     );

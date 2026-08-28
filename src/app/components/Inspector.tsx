@@ -62,16 +62,16 @@ export function Inspector({
         {generated ? (
           <>
             <dt>Model</dt>
-            <dd>{h.generation?.model ?? "—"}</dd>
+            <dd>{h.generation?.model ?? "-"}</dd>
             <dt>Operation</dt>
-            <dd>{h.generation?.operation ?? "—"}</dd>
+            <dd>{h.generation?.operation ?? "-"}</dd>
           </>
         ) : (
           <>
             <dt>Origin</dt>
-            <dd className="brk">{h.sourceAssetPath?.split("/").pop() ?? "—"}</dd>
+            <dd className="brk">{h.sourceAssetPath?.split("/").pop() ?? "-"}</dd>
             <dt>Cost</dt>
-            <dd>None — no model call</dd>
+            <dd>None - no model call</dd>
           </>
         )}
         <dt>Dimensions</dt>
@@ -141,7 +141,7 @@ function SupplyApproved({
     <div className="insp-review">
       <strong>Review required</strong>
       <p>
-        A model produced this hero. Creative sign-off happens with a person — but you can supply the
+        A model produced this hero. Creative sign-off happens with a person - but you can supply the
         approved asset here, and the next run will reuse it instead of generating one.
       </p>
       <input

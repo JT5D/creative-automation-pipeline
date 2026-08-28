@@ -32,7 +32,7 @@ export function RunDetails({
 
   const summary = report
     ? `${report.products.length} products · ${(report.durationMs / 1000).toFixed(1)}s · ` +
-      `${report.metrics.generationRequests} generation request${report.metrics.generationRequests === 1 ? "" : "s"} · ` +
+      `${report.metrics.liveHeroGenerations} live hero generation${report.metrics.liveHeroGenerations === 1 ? "" : "s"} · ` +
       `${report.warnings.length === 0 ? "no warnings" : `${report.warnings.length} warning(s)`}`
     : events.length > 0
       ? `${events.length} events`
@@ -56,7 +56,7 @@ export function RunDetails({
           {proof && (
             <div>
               <span className="insp-label">
-                Assignment proof — counted off the files on disk, not asserted here
+                Assignment proof - counted off the files on disk, not asserted here
               </span>
               <ul className="checks">
                 {proof.checks.map((c) => (
@@ -78,7 +78,8 @@ export function RunDetails({
                 </li>
                 <li>{Math.round(insights.reuseRate * 100)}% of heroes reused</li>
                 <li>
-                  {insights.generationRequests} model calls · ${insights.totalCostUsd.toFixed(3)}
+                  {insights.liveHeroGenerations} live hero generations · $
+                  {insights.totalCostUsd.toFixed(3)}
                 </li>
               </ul>
             </div>

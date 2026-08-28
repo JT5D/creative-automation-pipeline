@@ -2,10 +2,10 @@
 # Preflight fails on the prohibited claim BEFORE any generation is paid for.
 #   npm run campaign -- samples/campaign-legal-fail.yaml
 id: lumen-autumn-glow-de-rejected
-name: Lumen Botanicals — Autumn Glow (rejected copy)
+name: Lumen Botanicals - Autumn Glow (rejected copy)
 
 region: Germany (DACH)
-audience: Urban professionals 28–45
+audience: Urban professionals 28-45
 message: The clinically proven miracle that cures dull skin overnight
 
 brand:

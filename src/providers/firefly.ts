@@ -8,7 +8,7 @@ import {
 } from "./types.js";
 
 /**
- * Adobe Firefly Services — Image Model 5.
+ * Adobe Firefly Services - Image Model 5.
  *
  * NOT EXECUTED against a live endpoint: Firefly Services needs an enterprise
  * entitlement I do not hold, and the FAQ states no keys are provided. It ships

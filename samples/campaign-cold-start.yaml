@@ -5,13 +5,13 @@
 # expensive end of the range, and it is here to show the cost scaling honestly
 # rather than only demoing the flattering case.
 #
-# It also proves nothing in the pipeline is hardcoded to one brand — different
+# It also proves nothing in the pipeline is hardcoded to one brand - different
 # palette, different category, different copy, same code path.
 id: nordvik-first-drop
-name: Nordvik — First Drop
+name: Nordvik - First Drop
 
 region: Nordics
-audience: Speciality coffee drinkers 25–40 who buy direct from roasters
+audience: Speciality coffee drinkers 25-40 who buy direct from roasters
 message: Slow-steeped for eighteen hours
 objective: Launch awareness for a new direct-to-consumer roastery
 callToAction: Taste the first batch

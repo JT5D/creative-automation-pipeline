@@ -40,7 +40,7 @@ export function Results({
           <ul>
             {report.failures.map((f) => (
               <li key={f.productId}>
-                <b>{f.productName}</b> — {f.message}
+                <b>{f.productName}</b> - {f.message}
               </li>
             ))}
           </ul>
@@ -149,7 +149,7 @@ function SourceBadge({ source }: { source: string }) {
       : source === "generated"
         ? "Generated"
         : source === "placeholder"
-          ? "Offline preview — not a GenAI run"
+          ? "Offline preview - not a GenAI run"
           : "Generated earlier · review";
   return <span className={`badge ${source}`}>{label}</span>;
 }

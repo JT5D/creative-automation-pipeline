@@ -1,42 +1,62 @@
 import type { CampaignReport } from "../types.js";
 
 /**
- * The five-second answer: are these creatives deliverable, and what did it take.
+ * The five-second answer: what this run produced, and who has to look at it next.
  *
- * The verdict answers the operator's question -- did everything this run
- * produced pass -- and deliberately not `assignmentProof.passed`, which answers
- * whether this particular run demonstrated every requirement the exercise
- * names. The two come apart whenever a hero is served from cache. The proof is
- * reported underneath, unchanged and just as strict.
+ * Three states, because two were a lie. The old banner could say "Ready to
+ * deliver" and "1 item awaiting review" in the same breath -- software does not
+ * grant approval, and a freshly generated hero has not been signed off by
+ * anyone. It also said "passed every check" off a count that ignored warnings,
+ * which is the same defect this project keeps finding: a label broader than the
+ * measurement underneath it.
+ *
+ * The verdict answers the operator's question -- is this work finished, and by
+ * whom -- and deliberately not `assignmentProof.passed`, which answers whether
+ * this particular run demonstrated every requirement the exercise names. The
+ * two come apart whenever a hero is served from cache. The proof is reported
+ * underneath, unchanged and just as strict.
  */
 export function DeliveryBanner({ report }: { report: CampaignReport }) {
   const m = report.metrics;
   const proof = report.assignmentProof;
   const failedProof = proof.checks.filter((c) => !c.passed);
-  const review = report.products.filter((p) => p.hero.source !== "reused").length;
 
-  // Deliverable means every creative passed and no product dropped out. It is
-  // not the same question as whether this run demonstrated every assignment
-  // requirement, which is what `assignmentProof` answers.
-  const shippable = m.validationFailed === 0 && report.failures.length === 0;
+  // A hero this run did not take from an already-approved asset is new creative
+  // work. It is validated, not approved.
+  const review = report.products.filter((p) => p.hero.source !== "reused").length;
+  const blocked = m.validationFailed > 0 || report.failures.length > 0;
+
+  // The three metrics the assessment names are time saved, campaigns generated
+  // and efficiency. Two of them were only reachable by opening report.json.
+  const saved = report.successMetrics?.timeSaved;
+  const state = blocked ? "no" : review > 0 ? "review" : "ok";
+  const heading = blocked ? "Blocked" : review > 0 ? "Review required" : "Production complete";
 
   return (
-    <div className={`delivery ${shippable ? "ok" : "no"}`}>
+    <div className={`delivery ${state}`}>
       <div className="verdict">
         <span className="tick" aria-hidden="true">
-          {shippable ? "✓" : "!"}
+          {state === "ok" ? "✓" : state === "review" ? "◆" : "!"}
         </span>
         <div>
-          <strong>{shippable ? "Ready to deliver" : "Not ready to deliver"}</strong>
+          <strong>{heading}</strong>
+          {/* Exact counts only. Every clause below names the number it read. */}
           <span>
-            {shippable
-              ? `All ${m.variantsCreated} creatives passed every check`
-              : `${m.validationFailed} creative(s) did not pass`}
-            {review > 0 && ` · ${review} item${review === 1 ? "" : "s"} awaiting review`}
+            {m.variantsCreated} creative{m.variantsCreated === 1 ? "" : "s"} exported ·{" "}
+            {m.validationFailed} failed automated validation
+            {m.validationWarnings > 0 && ` · ${m.validationWarnings} with warnings`}
+            {report.failures.length > 0 &&
+              ` · ${report.failures.length} product${report.failures.length === 1 ? "" : "s"} did not complete`}
           </span>
+          {review > 0 && !blocked && (
+            <span>
+              {review} generated hero{review === 1 ? "" : "es"} need
+              {review === 1 ? "s" : ""} human sign-off before publication
+            </span>
+          )}
           {!proof.passed && (
             <span className="verdict-proof">
-              Assignment proof {proof.checks.length - failedProof.length}/{proof.checks.length} —{" "}
+              Assignment proof {proof.checks.length - failedProof.length}/{proof.checks.length} -{" "}
               {failedProof[0]?.message}
             </span>
           )}
@@ -47,10 +67,14 @@ export function DeliveryBanner({ report }: { report: CampaignReport }) {
         <Cell v={m.variantsCreated} k="creatives exported" />
         <Cell v={m.approvedAssetsReused} k="approved heroes reused" />
         <Cell
-          v={m.heroesGenerated}
-          k={m.heroesGenerated === 1 ? "hero generated" : "heroes generated"}
+          v={m.liveHeroGenerations}
+          k={m.liveHeroGenerations === 1 ? "hero generated live" : "heroes generated live"}
         />
         <Cell v={`${(report.durationMs / 1000).toFixed(1)}s`} k="elapsed" />
+        {saved && <Cell v={fmtHours(saved.minutes)} k="studio time saved" good />}
+        {saved?.usd !== undefined && (
+          <Cell v={`$${saved.usd.toLocaleString()}`} k="labour cost avoided" good />
+        )}
         <Cell
           v={`${m.validationPassed}/${m.variantsCreated}`}
           k="creatives passed validation"
@@ -61,11 +85,22 @@ export function DeliveryBanner({ report }: { report: CampaignReport }) {
         )}
       </div>
 
-      <a className="ghost dl" href={`/outputs/${report.campaignId}/report.json`} download>
-        report.json
-      </a>
+      <div className="dl-group">
+        {/* A producer collects the folder, not one file at a time. */}
+        <a className="ghost dl" href={`/api/campaigns/${report.campaignId}/archive`} download>
+          Download all {m.variantsCreated}
+        </a>
+        <a className="ghost dl" href={`/outputs/${report.campaignId}/report.json`} download>
+          report.json
+        </a>
+      </div>
     </div>
   );
+}
+
+/** Minutes read as noise past about an hour; hours are what a producer plans in. */
+function fmtHours(minutes: number) {
+  return minutes >= 90 ? `${(minutes / 60).toFixed(1)}h` : `${Math.round(minutes)}m`;
 }
 
 function Cell({ v, k, good }: { v: string | number; k: string; good?: boolean }) {

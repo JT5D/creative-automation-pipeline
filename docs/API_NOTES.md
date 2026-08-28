@@ -6,7 +6,7 @@ can see exactly which claims were checked and which were not.
 
 ---
 
-## Google Gemini — image generation (the provider this repo runs on)
+## Google Gemini - image generation (the provider this repo runs on)
 
 **Endpoint**
 
@@ -16,7 +16,7 @@ x-goog-api-key: $GEMINI_API_KEY
 Content-Type: application/json
 ```
 
-**Request** — `response_format` is a **top-level** field. It is *not* nested
+**Request** - `response_format` is a **top-level** field. It is *not* nested
 inside `generationConfig`, which is where the older `generateContent` API put
 image options. Copying that older shape silently produces a text response.
 
@@ -39,11 +39,11 @@ image options. Copying that older shape silently produces a text response.
 **`mime_type` accepts only `image/jpeg`.** Sending `image/png` is rejected:
 
 ```
-HTTP 400 — "The value 'image/png' is not supported for
+HTTP 400 - "The value 'image/png' is not supported for
 'response_format.mime_type'. Supported values: 'image/jpeg'."
 ```
 
-Found by running the live endpoint, not from the docs — the guide does not
+Found by running the live endpoint, not from the docs - the guide does not
 state this restriction. Final creatives are re-encoded to PNG by the
 compositor, so it affects transport only.
 
@@ -73,7 +73,7 @@ documented legacy path.
 
 ---
 
-## Adobe Firefly Services — written, not executed
+## Adobe Firefly Services - written, not executed
 
 `src/providers/firefly.ts` is implemented against Adobe's published contract.
 **It has not been run against a live endpoint.** Firefly Services requires an
@@ -84,7 +84,7 @@ available API keys. No specific keys are provided.").
 It ships anyway because it makes the provider seam concrete rather than
 theoretical: set the two Firefly variables plus `IMAGE_PROVIDER=firefly` and it
 runs, with no change to the resolver, composer, validator, or report. It is
-never selected implicitly — an adapter nobody has executed must not be able to
+never selected implicitly - an adapter nobody has executed must not be able to
 win by accident.
 
 Contract used:
@@ -103,7 +103,7 @@ Contract used:
 (`/v4/images/generate-async`) takes `modelId: "firefly_image"` plus
 `aspectRatio`, `numVariations`, `referenceBlobs` and an optional
 `modelSpecificPayload`. Adobe states the mode is decided by that array: *"the
-mode is determined by content in the `referenceBlobs` field"* — empty is
+mode is determined by content in the `referenceBlobs` field"* - empty is
 generation, populated is edit/reference. An earlier version of this adapter sent
 a v3-shaped body to the v4 endpoint, which would have failed on the first real
 call.
@@ -115,7 +115,7 @@ Body sent here, field by field:
 | `prompt` | deterministic art direction | published Image5 example |
 | `modelId` | `"firefly_image"` | published Image5 example |
 | `numVariations` | `1` | published Image5 example |
-| `referenceBlobs` | `[]` | published Image5 example — empty selects generation |
+| `referenceBlobs` | `[]` | published Image5 example - empty selects generation |
 | `modelSpecificPayload.prompt_reasoner` | `"quality"` | published Image5 example |
 | `aspectRatio` | `"1:1"` | **UNVERIFIED VALUE.** The field is documented; Adobe's examples show only `"16:9"` and `"4:3"` and do not enumerate the allowed set |
 
@@ -146,5 +146,5 @@ instinct:
 
 Firefly's UI exposes partner models (Gemini/Nano Banana, GPT Image, FLUX,
 Ideogram, Runway, Veo, Kling). Availability in that UI does **not** imply the
-standalone Firefly REST endpoint accepts arbitrary partner-model ids — these
+standalone Firefly REST endpoint accepts arbitrary partner-model ids - these
 are different surfaces, and this repo does not assume otherwise.

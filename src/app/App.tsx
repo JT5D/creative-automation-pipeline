@@ -76,6 +76,13 @@ export function App() {
   const [filterLocale, setFilterLocale] = useState("all");
   const [filterRatio, setFilterRatio] = useState("all");
 
+  // The formats this run actually produced. Both filters are driven off what
+  // the report contains rather than off what was requested, so a filter can
+  // never offer a value the stage has nothing for.
+  const producedRatios = run?.report
+    ? [...new Set(run.report.products.flatMap((p) => p.creatives.map((c) => c.ratio)))]
+    : [];
+
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refreshInsights = useCallback(() => {
@@ -209,6 +216,13 @@ export function App() {
     setRun(null);
     setEstimate(null);
     setSelected(null);
+    // Filters belong to the run that is being replaced. Carrying them over let
+    // a second run land filtered to a market it no longer contains, and since
+    // the filter row only appears for multi-market runs there was then no
+    // control on screen to clear it: the banner reported six creatives above a
+    // completely empty stage, recoverable only by reloading the page.
+    setFilterLocale("all");
+    setFilterRatio("all");
 
     // Every exit from here has to clear `busy`, including the ones that throw.
     // A dropped connection used to leave the button spinning forever with no
@@ -306,7 +320,7 @@ export function App() {
               <select value={model} onChange={(e) => setModel(e.target.value)}>
                 {models.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.label} — ${m.usdPer2K.toFixed(3)}/image
+                    {m.label} - ${m.usdPer2K.toFixed(3)}/image
                   </option>
                 ))}
               </select>
@@ -350,20 +364,24 @@ export function App() {
 
       <main className="stage">
         <div className="work">
-          {run?.report && run.report.markets.length > 1 && (
+          {run?.report && producedRatios.length > 0 && (
             <div className="filters">
-              <Chips
-                value={filterLocale}
-                onChange={setFilterLocale}
-                options={run.report.markets.map((m) => m.locale)}
-                allLabel="All markets"
-              />
+              {/* Each filter appears when its own axis has more than one value.
+                  The format filter used to be gated on the number of MARKETS,
+                  so a default run producing three formats in one market showed
+                  no way to narrow them. */}
+              {run.report.markets.length > 1 && (
+                <Chips
+                  value={filterLocale}
+                  onChange={setFilterLocale}
+                  options={run.report.markets.map((m) => m.locale)}
+                  allLabel="All markets"
+                />
+              )}
               <Chips
                 value={filterRatio}
                 onChange={setFilterRatio}
-                options={[
-                  ...new Set(run.report.products.flatMap((p) => p.creatives.map((c) => c.ratio))),
-                ]}
+                options={producedRatios}
                 allLabel="All formats"
                 format={(r) => r.replace("x", ":")}
               />

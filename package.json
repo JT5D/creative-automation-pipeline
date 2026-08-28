@@ -18,7 +18,9 @@
     "lint": "biome check src tests scripts",
     "format": "biome check --write src tests scripts",
     "check": "bash scripts/check.sh",
-    "test:baseline": "tsx scripts/baseline.ts"
+    "test:baseline": "tsx scripts/baseline.ts",
+    "shots": "tsx scripts/shot-variants.ts",
+    "portfolio": "tsx src/cli.ts --all"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
