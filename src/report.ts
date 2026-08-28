@@ -237,8 +237,14 @@ function proveAssignment(products: ProductRecord[]): {
   // which of the two it is beats a bare "not met".
   const cached = products.filter((p) => p.hero.source === "generated_cached");
   const placeholders = products.filter((p) => p.hero.source === "placeholder");
-  const messageRendered = creatives.filter((c) =>
-    c.validation.checks.some((chk) => chk.id === "message.rendered" && chk.status === "pass"),
+  // The exercise requires the campaign message ON the post -- which means all
+  // of it. Ink alone proves something drew; it does not prove the message was
+  // not cut in half at the legibility floor. Both, or this check would stay
+  // green over a truncated headline.
+  const messageComplete = creatives.filter(
+    (c) =>
+      c.validation.checks.some((k) => k.id === "message.rendered" && k.status === "pass") &&
+      c.validation.checks.some((k) => k.id === "message.legible" && k.status === "pass"),
   );
   const failed = creatives.filter((c) => c.validation.status === "fail");
 
@@ -274,8 +280,8 @@ function proveAssignment(products: ProductRecord[]): {
     },
     {
       id: "campaign_message_rasterized",
-      passed: creatives.length > 0 && messageRendered.length === creatives.length,
-      message: `campaign message measured in the pixels of ${messageRendered.length}/${creatives.length} creatives`,
+      passed: creatives.length > 0 && messageComplete.length === creatives.length,
+      message: `campaign message measured complete in the pixels of ${messageComplete.length}/${creatives.length} creatives`,
     },
     {
       id: "no_failed_creative_validation",

@@ -1,8 +1,9 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import express from "express";
+import sharp from "sharp";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
 import { type PipelineEvent, runCampaign } from "./pipeline.js";
@@ -28,7 +29,7 @@ type RunState = {
 const runs = new Map<string, RunState>();
 
 const app = express();
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "12mb" })); // a 2K packshot is a few MB
 
 // Serve real files from disk so the gallery shows the actual exported PNGs,
 // not a re-render. What you see in the UI is the file you ship.
@@ -64,6 +65,72 @@ app.get("/api/briefs/:file", async (req, res) => {
 });
 
 /** Model choices with published prices, so the picker cannot invent a number. */
+/**
+ * Accept an approved asset the way the brief's data sources describe it:
+ * a person supplying a file by hand.
+ *
+ * This is the reuse mechanism made visible. Drop an approved hero in for a
+ * product that has none, and the next run finds it on disk and stops paying a
+ * model to invent one -- the same filesystem check the pipeline always made,
+ * now reachable without leaving the console.
+ *
+ * Deliberately narrow: it writes one image into samples/assets and nothing
+ * else. The filename is rebuilt from the product id rather than trusted, so a
+ * crafted name cannot escape the directory, and the type is checked against
+ * the bytes the compositor can actually read.
+ */
+const ASSETS_DIR = path.join(SAMPLES_DIR, "assets");
+const ASSET_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
+app.post("/api/assets", async (req, res) => {
+  const { productId, mimeType, dataBase64 } = req.body ?? {};
+  const extension = ASSET_TYPES[String(mimeType)];
+
+  if (!productId || typeof productId !== "string" || !/^[a-z0-9-]+$/i.test(productId)) {
+    return res
+      .status(400)
+      .json({ error: "A product id of letters, digits and hyphens is required" });
+  }
+  if (!extension) {
+    return res
+      .status(400)
+      .json({ error: `Unsupported type. Accepts ${Object.keys(ASSET_TYPES).join(", ")}` });
+  }
+  if (typeof dataBase64 !== "string" || dataBase64.length === 0) {
+    return res.status(400).json({ error: "No file contents received" });
+  }
+
+  const bytes = Buffer.from(dataBase64, "base64");
+  if (bytes.length === 0) return res.status(400).json({ error: "File is empty" });
+
+  // The declared type is a claim, not evidence. Decode with the same library
+  // that will have to composite this asset later: if Sharp cannot read it now,
+  // the run would fail on it, and failing here says so while a person is still
+  // looking at the screen.
+  let meta: { width?: number; height?: number; format?: string };
+  try {
+    meta = await sharp(bytes).metadata();
+  } catch {
+    return res.status(400).json({ error: "That file is not a readable image" });
+  }
+  if (!meta.width || !meta.height) {
+    return res.status(400).json({ error: "That image has no readable dimensions" });
+  }
+
+  // The name is constructed, never taken from the upload.
+  const filename = `${productId}-approved-hero.${extension}`;
+  await mkdir(ASSETS_DIR, { recursive: true });
+  await writeFile(path.join(ASSETS_DIR, filename), bytes);
+
+  // Relative, because it goes straight into a brief that has to work on
+  // someone else's machine.
+  res.json({ path: `samples/assets/${filename}`, width: meta.width, height: meta.height });
+});
+
 app.get("/api/models", (_req, res) => {
   res.json({ models: MODEL_OPTIONS, source: PRICING_SOURCE });
 });

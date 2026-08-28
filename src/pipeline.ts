@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { resolveHero } from "./assetResolver.js";
-import { composeVariant } from "./composer.js";
+import { composeVariant, templateFor } from "./composer.js";
 import { recordRun } from "./history.js";
 import { type HeroGenerator, selectGenerator } from "./providers/index.js";
 import {
@@ -124,7 +124,8 @@ export async function runCampaign(
     if (c.status === "warning") warnings.push(c.message);
   }
 
-  // 3. Provider is resolved once, and only if a hero might actually be missing.
+  // 3. Provider is resolved once, up front, so a misconfigured key fails the
+  //    run immediately rather than after the first product has been composed.
   const generator = options.generator ?? selectGenerator(process.env, options.model);
   emit("provider_selected", { provider: generator.provider, model: generator.model });
 
@@ -163,7 +164,13 @@ export async function runCampaign(
           emit("variant_composing", { productId: product.id, ratio, locale: market.locale });
 
           const rendered = await composeVariant({ brief, product, hero, ratio, market });
-          const validation = validateCreative({ brief, rendered, ratio, market });
+          const validation = validateCreative({
+            brief,
+            rendered,
+            ratio,
+            market,
+            tpl: templateFor(ratio),
+          });
 
           const dir = path.join(productDir, ratio);
           await mkdir(dir, { recursive: true });

@@ -788,6 +788,39 @@ describe("checks that can actually fail", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
+  it("refuses to call a truncated campaign message rendered", async () => {
+    // The exercise is most explicit about this one: the campaign message goes
+    // on the post. A headline the compositor cut in half at the legibility
+    // floor is not that message, and it used to be a warning -- so the creative
+    // rolled up to "warning" rather than "fail", and assignmentProof stayed
+    // green over a requirement it had not met.
+    const dir = await mkdtemp(path.join(tmpdir(), "cap-trunc-"));
+    const brief = parseBrief(briefYaml());
+    brief.message =
+      "Wake up to visibly brighter skin with our clinically inspired overnight " +
+      "botanical recovery complex formulated for urban professionals who want " +
+      "measurable radiance without compromise or irritation of any kind";
+    for (const market of brief.markets ?? []) market.message = brief.message;
+
+    const report = await runCampaign(brief, {
+      outputRoot: dir,
+      mode: "dev",
+      generator: new FakeApiGenerator(),
+      ratios: ["1x1"],
+    });
+
+    const creative = report.products[0].creatives[0];
+    const legible = creative.validation.checks.find((c) => c.id === "message.legible");
+    expect(legible?.status).toBe("fail");
+    expect(creative.validation.status).toBe("fail");
+
+    // And the proof must say so rather than reporting the ink and stopping.
+    const proof = report.assignmentProof;
+    expect(proof.passed).toBe(false);
+    expect(proof.checks.find((c) => c.id === "campaign_message_rasterized")?.passed).toBe(false);
+    await rm(dir, { recursive: true, force: true });
+  });
+
   it("passes the same check when the logo actually has ink", async () => {
     // The control. Without it the test above would also pass if the check
     // had simply been broken the other way.

@@ -87,4 +87,12 @@ jobs:
           curl -sf http://127.0.0.1:8787/api/formats  | grep -q '"required":true'
           # The sample library the console loads on first paint.
           curl -sf http://127.0.0.1:8787/api/briefs   | grep -q 'campaign.yaml'
+
+          # The asset upload is the one write this server makes. Assert it
+          # refuses a crafted product id, because that is the input that would
+          # otherwise decide a filesystem path.
+          curl -s -X POST http://127.0.0.1:8787/api/assets \
+            -H 'Content-Type: application/json' \
+            -d '{"productId":"../../etc/passwd","mimeType":"image/png","dataBase64":"aGk="}' \
+            | grep -q 'letters, digits and hyphens'
           echo "local app booted on 127.0.0.1:8787 and answered every route the console calls"

@@ -151,22 +151,21 @@ function findFirstImage(node: unknown): { data: string; mimeType: string } | nul
   const obj = node as Record<string, unknown>;
 
   // Interactions shape: { type: "image", mime_type, data }
+  //
+  // The mime type has to be present and has to say image. Accepting any long
+  // string on a field called `data` would hand a base64-decoded paragraph of
+  // text to the compositor as if it were a PNG, and the failure would surface
+  // somewhere far away from the cause.
   const mime = obj.mime_type ?? obj.mimeType;
-  if (typeof obj.data === "string" && obj.data.length > 128) {
-    return {
-      data: obj.data,
-      mimeType: typeof mime === "string" ? mime : "image/png",
-    };
+  if (typeof obj.data === "string" && obj.data.length > 128 && isImageMime(mime)) {
+    return { data: obj.data, mimeType: String(mime) };
   }
 
   // Legacy generateContent shape: { inlineData: { mimeType, data } }
   if (obj.inlineData && typeof obj.inlineData === "object") {
     const inline = obj.inlineData as Record<string, unknown>;
-    if (typeof inline.data === "string") {
-      return {
-        data: inline.data,
-        mimeType: typeof inline.mimeType === "string" ? inline.mimeType : "image/png",
-      };
+    if (typeof inline.data === "string" && isImageMime(inline.mimeType)) {
+      return { data: inline.data, mimeType: String(inline.mimeType) };
     }
   }
 
@@ -175,4 +174,9 @@ function findFirstImage(node: unknown): { data: string; mimeType: string } | nul
     if (found) return found;
   }
   return null;
+}
+
+/** A declared type that actually claims to be an image. */
+function isImageMime(value: unknown): boolean {
+  return typeof value === "string" && value.startsWith("image/");
 }

@@ -245,164 +245,17 @@ body {
 .pill.ok {
   color: var(--ink);
 }
-
-.insights {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 22px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.ins-title {
-  font-size: 10.5px;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-right: 4px;
-}
-.ins {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-}
-.ins b {
-  display: block;
-  font-size: 19px;
-  color: var(--ink);
-  letter-spacing: -0.4px;
-  text-transform: none;
-  font-weight: 700;
-}
-
-/*
- * Brief and pipeline share the first row; results take the full width below.
- * The exported creatives are the thing a reviewer is here to look at, so they
- * get the whole canvas rather than a third of it.
- */
-.columns {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(320px, 400px) minmax(260px, 1fr);
-  /* The brief is a tall control panel; pipeline and results are a work column
-     beside it. Explicit placement -- brief spanning both rows -- is what stops
-     the brief's height from forcing an empty half-screen under the pipeline
-     while a run has not started yet. */
-  grid-template-rows: auto 1fr;
-  align-items: start;
-}
-.columns > .panel:first-child {
-  grid-area: 1 / 1 / 3 / 2;
-  /* The brief is the control surface for everything on the right, and the
-     results column runs long. Sticky keeps the format/market chips and the run
-     button reachable instead of scrolled away above a tall gallery. */
-  position: sticky;
-  top: 16px;
-}
-.panel.wide {
-  grid-area: 2 / 2 / 3 / -1;
-  min-height: 140px;
-}
 @media (max-width: 1180px) {
   /* One column: drop the explicit placement or the panels keep their
      two-column row assignments and stack out of order. */
   .columns {
     grid-template-columns: 1fr;
   }
-  .columns > .panel:first-child,
-  .panel.wide {
-    grid-area: auto;
-  }
-  .columns > .panel:first-child {
-    position: static;
-  }
-}
-
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: var(--lift);
-}
-
-/*
- * Step headers as a spec-sheet band. Brief -> run -> output is a real sequence,
- * so the numbering carries information rather than decorating; the rule that
- * follows it is the only structural flourish in the shell.
- */
-.panel h2 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 2px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.6px;
-  color: var(--muted);
-}
-.panel h2::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
 }
 .hint {
   margin: 6px 0 12px;
   color: var(--muted);
   font-size: 12px;
-}
-
-.briefs {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.briefs button {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  text-align: left;
-  background: var(--panel-2);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 9px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.briefs button:hover {
-  border-color: var(--line-2);
-}
-.briefs button.on {
-  border-color: var(--line-2);
-  background: var(--panel-3);
-  box-shadow: inset 2px 0 0 var(--ink);
-}
-.briefs button em {
-  font-style: normal;
-  font-size: 10.5px;
-  color: var(--muted);
-  white-space: nowrap;
-  font-family: ui-monospace, Menlo, monospace;
-}
-.briefs button.on em {
-  color: var(--ink);
-}
-.teaches {
-  margin: 0 0 12px;
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--muted);
-  border-left: 2px solid var(--line);
-  padding-left: 10px;
 }
 
 .brief {
@@ -419,16 +272,6 @@ body {
     SFMono-Regular,
     Menlo,
     monospace;
-}
-.opts {
-  display: grid;
-  gap: 10px;
-  margin: 12px 0;
-}
-.opt {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 .opt-label {
   font-size: 10.5px;
@@ -458,12 +301,6 @@ body {
   color: var(--brand);
   border-color: var(--brand);
   font-weight: 500;
-}
-
-.actions {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 8px;
 }
 .ghost {
   background: var(--panel-2);
@@ -581,17 +418,22 @@ body {
   line-height: 1.5;
 }
 
+/* The only filled button on the screen. It sits in the header now, so it is
+   sized to its label rather than to a panel it no longer lives in. */
 .run {
-  margin-top: 12px;
-  width: 100%;
-  padding: 12px;
+  padding: 10px 20px;
   background: var(--brand);
   color: var(--on-brand);
-  font-weight: 700;
+  font-family: inherit;
+  font-weight: 500;
   font-size: 14px;
   border: 0;
   border-radius: 8px;
   cursor: pointer;
+  white-space: nowrap;
+}
+.run:hover:not(:disabled) {
+  background: var(--brand-hover);
 }
 .run:disabled {
   opacity: 0.5;
@@ -651,48 +493,6 @@ body {
   font-family: ui-monospace, Menlo, monospace;
 }
 
-.metrics {
-  display: grid;
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  overflow: hidden;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  margin-bottom: 14px;
-}
-.metric {
-  background: var(--panel-2);
-  padding: 11px 13px;
-}
-.metric .v {
-  display: block;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-/* Gold is spend. Green is a check that passed. They are different facts. */
-.metric.accent .v {
-  color: var(--text);
-}
-.metric.good .v {
-  color: var(--green);
-}
-.metric .l {
-  display: block;
-  font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.9px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
 .product {
   margin-bottom: 26px;
 }
@@ -746,67 +546,6 @@ body {
   font-family: ui-monospace, Menlo, monospace;
   color: var(--muted);
 }
-
-.grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  /* Cards size to their own creative; without this a 16:9 stretches to the
-     height of the 9:16 beside it and reads as a broken, half-empty card. */
-  align-items: start;
-}
-.card {
-  margin: 0;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.45),
-    0 10px 22px -14px rgba(0, 0, 0, 0.8);
-}
-/*
- * Each creative is shown at its OWN aspect ratio, set inline from the width and
- * height in the report. A fixed-height box with object-fit: contain letterboxed
- * every 1:1 and 9:16 export inside black bars -- the finished work is the thing
- * a reviewer came to look at, and it should not be presented in a frame that
- * fits none of it.
- */
-.card .shot {
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: var(--panel-3);
-  cursor: zoom-in;
-}
-.card img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-/*
- * A production slug line, the way a print proof carries its job metadata:
- * format, market, exact pixel dimensions. Mono, because these are values to be
- * checked, not read.
- */
-.card figcaption {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-top: 1px solid var(--line);
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2px;
-  color: var(--muted);
-}
-.card figcaption strong {
-  color: var(--ink);
-  font-size: 11.5px;
-  font-weight: 700;
-}
 .v {
   margin-left: auto;
   text-transform: uppercase;
@@ -826,31 +565,6 @@ body {
 
 .dim {
   margin-left: auto;
-}
-.checkbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  background: transparent;
-  border: 0;
-  border-top: 1px solid var(--line);
-  padding: 7px 10px;
-  font-size: 10.5px;
-  cursor: pointer;
-  font-family: inherit;
-  color: var(--green);
-  letter-spacing: 0.3px;
-}
-.checkbar.warning {
-  color: var(--amber);
-}
-.checkbar.fail {
-  color: var(--red);
-}
-.checkbar .caret {
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .checks {
@@ -914,64 +628,6 @@ body {
   border: 0;
   cursor: zoom-out;
 }
-
-.lightbox {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg) 90%, transparent);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px;
-}
-.lb-inner {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 22px;
-  max-width: 1180px;
-  max-height: 92vh;
-  width: 100%;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 22px;
-}
-.lb-inner img {
-  width: 100%;
-  height: 100%;
-  max-height: 84vh;
-  object-fit: contain;
-  border-radius: 8px;
-  background: #000;
-}
-.lb-side {
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.lb-side h3 {
-  margin: 0;
-  font-size: 17px;
-}
-.lb-meta {
-  margin: 0;
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-.lb-meta code {
-  color: var(--ink);
-  font-family: ui-monospace, Menlo, monospace;
-}
-.lb-side .checks {
-  padding: 0;
-}
-.lb-side .ghost {
-  margin-top: auto;
-}
 @media (max-width: 900px) {
   .lb-inner {
     grid-template-columns: 1fr;
@@ -1006,22 +662,6 @@ body {
   font-size: 11.5px;
   color: var(--muted);
 }
-
-/* Assignment proof — the run asserting the exercise's own requirements. */
-.proof {
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  margin-bottom: 14px;
-  overflow: hidden;
-}
-.proof.ok {
-  border-color: color-mix(in srgb, var(--green) 45%, transparent);
-  background: color-mix(in srgb, var(--green) 8%, transparent);
-}
-.proof.no {
-  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
-  background: color-mix(in srgb, var(--amber) 7%, transparent);
-}
 .proof-head {
   width: 100%;
   display: flex;
@@ -1036,20 +676,11 @@ body {
   cursor: pointer;
   text-align: left;
 }
-.proof.ok .proof-head strong {
-  color: var(--green);
-}
-.proof.no .proof-head strong {
-  color: var(--amber);
-}
 .proof-why {
   margin: 0;
   padding: 0 13px 10px;
   color: var(--muted);
   font-size: 12px;
-}
-.proof .checks {
-  padding: 0 13px 10px;
 }
 
 /* Which products a human still has to look at. */
@@ -1070,44 +701,6 @@ body {
   color: var(--warning-text);
   border-color: var(--warning-line);
   background: var(--warning-tint);
-}
-
-/*
- * The three success metrics the client named. Sits directly under the
- * assignment proof: what was produced, then what it was worth.
- */
-.success {
-  display: grid;
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  overflow: hidden;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  margin: 0 0 14px;
-}
-.success > div {
-  background: var(--panel-2);
-  padding: 11px 14px;
-}
-.success dt {
-  font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.9px;
-  color: var(--muted);
-}
-.success dd {
-  margin: 4px 0 3px;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  color: var(--ink);
-}
-.success span {
-  display: block;
-  font-size: 10.5px;
-  line-height: 1.45;
-  color: var(--muted);
 }
 
 /* Folded per-variant rows: one line per product, detail on demand. */
@@ -1164,4 +757,462 @@ body {
 .theme button.on {
   background: var(--panel-2);
   color: var(--ink);
+}
+
+/* ─── Campaign strip ──────────────────────────────────────────────────────
+   What this run is, in one row. It replaced a 700px-tall panel whose main
+   feature was a YAML textarea -- a real input contract, but not the default
+   view of a production tool. The source is one click away behind Edit source. */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.cell {
+  flex: 1 1 210px;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.cell.wide {
+  flex: 2 1 260px;
+  border-right: 0;
+}
+.cell-k {
+  font-size: 12px;
+  color: var(--muted);
+}
+.cell-v {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+.cell-v.msg {
+  display: block;
+  line-height: 1.45;
+}
+.cell-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.cell select {
+  background: var(--app);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  max-width: 100%;
+}
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+/* ─── Edit source ─────────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-inner {
+  position: relative;
+  width: min(860px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-shell);
+  padding: 20px;
+}
+.modal-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.modal-head span {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.modal-foot {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ─── Delivery banner ─────────────────────────────────────────────────────
+   The five-second answer. One row replaced a proof block, an eight-cell
+   metric grid and a separate success strip that said the same things three
+   times over. */
+.delivery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--success);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.delivery.no {
+  border-left-color: var(--warning);
+}
+.verdict {
+  flex: 1 1 320px;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 22px;
+  border-right: 1px solid var(--border);
+}
+.verdict .tick {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  background: var(--success-tint);
+  border: 1px solid var(--success-line);
+  color: var(--success);
+}
+.delivery.no .verdict .tick {
+  background: var(--warning-tint);
+  border-color: var(--warning-line);
+  color: var(--warning);
+}
+.verdict div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.verdict strong {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+.verdict span {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+.dmetrics {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 3 1 480px;
+}
+.dcell {
+  flex: 1 1 108px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-right: 1px solid var(--border);
+}
+.dcell .v {
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.dcell.good .v {
+  color: var(--success);
+}
+.dcell .k {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.delivery .dl {
+  align-self: center;
+  margin: 0 18px;
+}
+
+/* ─── Stage: workspace + inspector ────────────────────────────────────── */
+.stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+.work {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.product {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.product-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex-wrap: wrap;
+}
+.product-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+.prov {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+/* Cards grow in proportion to their own width, so a row of mixed formats
+   stays aspect-true and equal-height at any viewport without a media query. */
+.shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+}
+.shot {
+  flex-shrink: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.shot .frame {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--canvas);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+.shot.on .frame {
+  border-color: var(--brand);
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+.shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shot .cap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+.shot .cap .loc {
+  color: var(--muted);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+}
+.shot .cap .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.shot .cap .dot.warning {
+  background: var(--warning);
+}
+.shot .cap .dot.fail {
+  background: var(--error);
+}
+
+/* ─── Inspector ───────────────────────────────────────────────────────── */
+.inspector {
+  flex: 1 1 320px;
+  max-width: 396px;
+  position: sticky;
+  top: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.insp-shot {
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.insp-shot img {
+  width: 100%;
+  display: block;
+}
+.inspector h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.insp-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.insp-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+.insp-meta dt {
+  color: var(--muted);
+}
+.insp-meta dd {
+  margin: 0;
+  color: var(--text);
+}
+.insp-meta .brk {
+  word-break: break-all;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+}
+.insp-review {
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--warning-tint);
+  border: 1px solid var(--warning-line);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.insp-review strong {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--warning-text);
+}
+.insp-review p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--warning-text);
+}
+.dl {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* ─── Run details ─────────────────────────────────────────────────────────
+   Collapsed by default: an operator must never need this to know the run
+   succeeded. It is evidence for when the answer is disputed. */
+.details {
+  margin-top: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.details-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.details-head strong {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.details-head span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.details-head .caret {
+  margin-left: auto;
+}
+.details-body {
+  display: grid;
+  gap: 20px;
+  padding: 4px 18px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: start;
+}
+.checks.plain li {
+  color: var(--text-2);
+}
+
+@media (max-width: 1180px) {
+  .inspector {
+    max-width: none;
+    position: static;
+  }
+}
+
+/* Supplying an approved asset is an action inside the review panel, so it
+   inherits the warning surface rather than competing with the run button. */
+.insp-review .ghost {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.insp-review .err {
+  color: var(--error);
+  font-size: 12.5px;
+  margin: 4px 0 0;
+}
+
+/* The assignment proof is a real answer to a real question, just not the
+   headline one, so it sits under the verdict rather than replacing it. */
+.verdict-proof {
+  font-size: 12px;
+  color: var(--muted);
 }

@@ -8,38 +8,17 @@ import {
 } from "./types.js";
 
 /**
- * Adobe Firefly Services adapter — Image Model 5, the current flagship.
+ * Adobe Firefly Services — Image Model 5.
  *
- * ─────────────────────────────────────────────────────────────────────────
- * HONESTY NOTE: this adapter has NOT been executed against a live endpoint.
- * Firefly Services needs an enterprise entitlement I do not hold, and the
- * assessment FAQ states no keys are provided. It ships because it makes the
- * provider seam concrete: swapping Gemini for Firefly is this one file plus
- * two environment variables, and nothing downstream of the canonical hero
- * changes. It is never selected by accident -- IMAGE_PROVIDER=firefly is
- * required. See docs/API_NOTES.md.
- * ─────────────────────────────────────────────────────────────────────────
+ * NOT EXECUTED against a live endpoint: Firefly Services needs an enterprise
+ * entitlement I do not hold, and the FAQ states no keys are provided. It ships
+ * because it makes the provider seam concrete -- swapping Gemini for Firefly is
+ * this file plus two environment variables, and nothing downstream of the
+ * canonical hero moves. It is never selected by accident: IMAGE_PROVIDER=firefly
+ * is required.
  *
- * Image Model 5 takes a different body from v3, and mixing the two is the
- * trap here: v3 takes `size: { width, height }`, v4 takes `modelId` plus
- * `aspectRatio`, and `referenceBlobs` is what selects generate-vs-edit mode
- * ("the mode is determined by content in the referenceBlobs field" -- Adobe).
- * An empty array is therefore text-to-image, and it is also the field that
- * would carry an approved packshot on an entitled account.
- *
- * Contract sources (verified 2026-08-28):
- *   IMS token   POST https://ims-na1.adobelogin.com/ims/token/v3
- *   scopes      openid, AdobeID, session, additional_info,
- *               read_organizations, firefly_api, ff_apis
- *   generation  POST https://firefly-api.adobe.io/v4/images/generate-async
- *   body        { prompt, aspectRatio, modelId, numVariations, referenceBlobs,
- *                 modelSpecificPayload } -- every field from a published
- *                 Image5 example, except the `aspectRatio: "1:1"` VALUE:
- *                 Adobe's examples show only "16:9" and "4:3" and the full
- *                 enum is not published. That single unverified value is
- *                 recorded in docs/API_NOTES.md rather than glossed over.
- *   job         { jobId, statusUrl, cancelUrl }
- *   result      { status: "succeeded", result: { outputs: [ { image: { url } } ] } }
+ * The wire contract, every field's provenance, and the one value in this request
+ * that cannot be cited from an Adobe example: docs/API_NOTES.md.
  */
 const IMS_TOKEN_URL = "https://ims-na1.adobelogin.com/ims/token/v3";
 const GENERATE_URL = "https://firefly-api.adobe.io/v4/images/generate-async";

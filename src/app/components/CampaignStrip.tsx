@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { BriefSummary, CampaignEstimate, FormatOption } from "../types.js";
 
 type Props = {
@@ -6,6 +7,7 @@ type Props = {
   onSelect: (file: string) => void;
   brief: string;
   onBriefChange: (v: string) => void;
+  message: string;
   formats: FormatOption[];
   selectedFormats: string[];
   onToggleFormat: (key: string) => void;
@@ -13,23 +15,26 @@ type Props = {
   selectedLocales: string[];
   onToggleLocale: (locale: string) => void;
   estimate: CampaignEstimate | null;
-  onEstimate: () => void;
-  onRun: () => void;
-  busy: boolean;
-  running: boolean;
 };
 
 /**
- * Everything that happens before a run: pick a brief, edit it, choose what to
- * produce, and see what it will cost.
+ * What this run is, in one row: which brief, which markets, which formats, and
+ * the proposition that will be rasterized into every creative.
+ *
+ * The raw brief is still a real input contract, so it stays one click away
+ * behind Edit source -- but it is a YAML file, and a YAML file is not the
+ * default view of a production tool. Selection lives here rather than in a
+ * side panel because changing a format or a market is the thing an operator
+ * does most, and it has to sit next to what it changes.
  */
-export function BriefPanel(props: Props) {
+export function CampaignStrip(props: Props) {
   const {
     library,
     active,
     onSelect,
     brief,
     onBriefChange,
+    message,
     formats,
     selectedFormats,
     onToggleFormat,
@@ -37,51 +42,53 @@ export function BriefPanel(props: Props) {
     selectedLocales,
     onToggleLocale,
     estimate,
-    onEstimate,
-    onRun,
-    busy,
-    running,
   } = props;
 
+  const [editing, setEditing] = useState(false);
   const current = library.find((b) => b.file === active);
 
   return (
-    <section className="panel">
-      <h2>1 · Campaign brief</h2>
+    <>
+      <div className="strip">
+        <div className="cell">
+          <span className="cell-k">Brief</span>
+          <div className="cell-v">
+            <select
+              value={active}
+              onChange={(e) => onSelect(e.target.value)}
+              aria-label="Campaign brief"
+            >
+              {library.map((b) => (
+                <option key={b.file} value={b.file}>
+                  {b.label}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="link" onClick={() => setEditing(true)}>
+              Edit source
+            </button>
+          </div>
+          {current && <span className="cell-note">{current.expect}</span>}
+        </div>
 
-      {library.length > 0 && (
-        <>
-          <div className="briefs">
-            {library.map((b) => (
+        <div className="cell">
+          <span className="cell-k">Markets</span>
+          <div className="chips">
+            {locales.map((l) => (
               <button
                 type="button"
-                key={b.file}
-                className={active === b.file ? "on" : ""}
-                onClick={() => onSelect(b.file)}
-                title={b.teaches}
+                key={l}
+                className={selectedLocales.includes(l) ? "on" : ""}
+                onClick={() => onToggleLocale(l)}
               >
-                {b.label}
-                {/* What the FULL brief produces — every format, every market.
-                    A test asserts each of these against a real run. The current
-                    selection is narrower by default; the hint below says so. */}
-                <em title="the full brief: every format, every market">{b.expect}</em>
+                {l}
               </button>
             ))}
           </div>
-          {current && <p className="teaches">{current.teaches}</p>}
-        </>
-      )}
+        </div>
 
-      <textarea
-        className="brief"
-        value={brief}
-        spellCheck={false}
-        onChange={(e) => onBriefChange(e.target.value)}
-      />
-
-      <div className="opts">
-        <div className="opt">
-          <span className="opt-label">Formats</span>
+        <div className="cell">
+          <span className="cell-k">Formats</span>
           <div className="chips">
             {formats.map((f) => (
               <button
@@ -95,43 +102,48 @@ export function BriefPanel(props: Props) {
               </button>
             ))}
           </div>
+          <span className="cell-note">
+            Adding a format or a market costs <strong>no extra generation</strong>.
+          </span>
         </div>
 
-        {locales.length > 1 && (
-          <div className="opt">
-            <span className="opt-label">Markets</span>
-            <div className="chips">
-              {locales.map((l) => (
-                <button
-                  type="button"
-                  key={l}
-                  className={selectedLocales.includes(l) ? "on" : ""}
-                  onClick={() => onToggleLocale(l)}
-                >
-                  {l}
-                </button>
-              ))}
+        <div className="cell wide">
+          <span className="cell-k">Message</span>
+          <span className="cell-v msg">{message || "—"}</span>
+        </div>
+      </div>
+
+      {editing && (
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Edit brief source">
+          <button
+            type="button"
+            className="lb-backdrop"
+            aria-label="Close"
+            onClick={() => setEditing(false)}
+          />
+          <div className="modal-inner">
+            <div className="modal-head">
+              <strong>{current?.label ?? active}</strong>
+              <span>{current?.teaches}</span>
             </div>
+            <textarea
+              className="brief"
+              value={brief}
+              spellCheck={false}
+              onChange={(e) => onBriefChange(e.target.value)}
+            />
+            <div className="modal-foot">
+              <button type="button" className="ghost" onClick={() => setEditing(false)}>
+                Done
+              </button>
+            </div>
+            {estimate && <EstimateCard estimate={estimate} />}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <p className="hint">
-        Selected: the three required formats, one market. Adding 4:5 or another market multiplies
-        output at <strong>no extra generation</strong>.
-      </p>
-
-      <div className="actions">
-        <button type="button" className="ghost" onClick={onEstimate} disabled={busy}>
-          Estimate
-        </button>
-        <button type="button" className="run" onClick={onRun} disabled={busy || !brief.trim()}>
-          {running ? "Running…" : "Run campaign"}
-        </button>
-      </div>
-
-      {estimate && <EstimateCard estimate={estimate} />}
-    </section>
+      {estimate && !editing && <EstimateCard estimate={estimate} />}
+    </>
   );
 }
 

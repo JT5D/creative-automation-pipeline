@@ -124,40 +124,40 @@ type Template = {
 
 export type { Template };
 
+/**
+ * Copy sits in the TOP band on every full-bleed format. That is forced by
+ * geometry, not chosen: one hero serves all four, so either the copy zone
+ * agrees across formats or the product shrinks until it misses the copy
+ * everywhere. Meta reserves the bottom 35% of a 9:16 placement, leaving the top
+ * as the only band all three can share. Derivation: docs/CREATIVE_STANDARDS.md
+ * section 7.
+ */
 export function templateFor(ratio: RatioKey): Template {
   const { width, height } = RATIOS[ratio];
 
-  if (ratio === "1x1") {
-    const margin = 72;
+  // 1:1 and 4:5 are the same treatment on two canvases -- full-bleed hero,
+  // scrim and copy in the top band, lockup top-left. They differ only in the
+  // numbers below. Since the copy band moved to the top they stopped differing
+  // in anything else, so they share a builder rather than two near-identical
+  // literals that could drift apart.
+  if (ratio === "1x1" || ratio === "4x5") {
+    const square = ratio === "1x1";
+    const margin = square ? 72 : 76;
     return {
       hero: { left: 0, top: 0, width, height },
-      copy: { left: margin, top: 610, width: Math.round(width * 0.6), height: 250 },
+      copy: {
+        left: margin,
+        top: square ? 268 : 300,
+        width: Math.round(width * (square ? 0.68 : 0.7)),
+        height: square ? 250 : 260,
+      },
       // Top-left lockup, the conventional brand position on a full-bleed post.
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
       disclaimerY: height - 46,
-      disclaimerFollowsCta: false,
+      disclaimerFollowsCta: true,
       enforceSafeZone: false,
-      scrim: "bottom",
-      maxLines: 3,
-      maxFontSize: 74,
-      minFontSize: 38,
-    };
-  }
-
-  // 4:5 -- Instagram's portrait feed placement. Same full-bleed treatment as
-  // 1:1 with a taller canvas, so the copy block simply sits lower.
-  if (ratio === "4x5") {
-    const margin = 76;
-    return {
-      hero: { left: 0, top: 0, width, height },
-      copy: { left: margin, top: 850, width: Math.round(width * 0.62), height: 260 },
-      logo: { left: margin, top: margin, maxWidth: 300 },
-      ctaGap: 52,
-      disclaimerY: height - 46,
-      disclaimerFollowsCta: false,
-      enforceSafeZone: false,
-      scrim: "bottom",
+      scrim: "top",
       maxLines: 3,
       maxFontSize: 74,
       minFontSize: 38,

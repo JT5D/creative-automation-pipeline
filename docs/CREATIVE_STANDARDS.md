@@ -162,3 +162,45 @@ Meta's Stories page lists 1440 × 2560 as its recommended 9:16 resolution. The
 pipeline exports 1080 × 1920 because that is what the assignment names; the
 templates derive every position from the canvas size, so raising the export
 resolution is a change to the `RATIOS` constant alone.
+
+## 7. One hero, four formats — the constraint that decides composition
+
+Every format is a centre crop of a single square hero. That is what makes the
+economics work — one generation, not one per output — and it is also the
+tightest constraint in the system, because the product cannot move between
+formats.
+
+**How much of the hero survives.** 9:16 is the narrowest crop: it keeps
+9/16 = **56%** of the width. 16:9 keeps the same fraction of the height. So the
+product has to sit inside a centred square of 56%, and nothing is gained by
+making it any smaller than that. The prompt targets the central 50%, which
+leaves a margin without wasting the frame.
+
+This is worth stating because getting it wrong is not obvious in either
+direction. An early version let the product fill the square, and the 9:16 crop
+sliced it in half. The correction said "SMALL and distant", "only the central
+third", and "most of this picture is background" — three phrases pushing the
+same way, aiming at 33% when the safe area was 56%. Nothing was sliced any
+more, and every hero looked photographed from across the room.
+
+**Where the copy goes, and why it is not a style choice.** Because one hero
+serves every format, either the copy zone agrees across formats or the product
+shrinks until it misses the copy everywhere. Meta reserves the bottom 35% of a
+9:16 placement, so the bottom band is unavailable there. The top is the only
+band all three full-bleed formats can share:
+
+| Format | Copy band | Scrim |
+|---|---|---|
+| 1:1 | top | top |
+| 4:5 | top | top |
+| 9:16 | top, inside the safe zone | top |
+| 16:9 | beside the photograph, on the brand panel | none |
+
+The hero prompt therefore reserves the upper half as quiet background — no
+product, no props, only surface and light — because that is where the headline
+is composited. The art direction and the layout have to know about each other;
+when they did not, a correctly-sized product and the headline occupied the
+same pixels.
+
+16:9 is exempt because it is a panel layout: the copy sits beside the
+photograph rather than over it, so the hero is free to fill its own region.

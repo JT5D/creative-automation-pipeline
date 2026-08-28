@@ -25,3 +25,4 @@ lumen-autumn-glow-de/radiance-serum/9x16/en-gb.png
 lumen-autumn-glow-de/radiance-serum/9x16/fr-fr.png
 lumen-autumn-glow-de/radiance-serum/source/approved-hero.png
 lumen-autumn-glow-de/report.json
+runs.jsonl

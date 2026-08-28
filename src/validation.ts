@@ -1,7 +1,7 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import type { ComposedCreative } from "./composer.js";
-import { safeBoundsFor } from "./composer.js";
+import { safeBoundsFor, type Template } from "./composer.js";
 import { availableFamilies } from "./fonts.js";
 import type {
   CampaignBrief,
@@ -165,6 +165,8 @@ type CheckContext = {
   rendered: ComposedCreative;
   ratio: RatioKey;
   market: Market;
+  /** The format's own layout budget, so a failure can say what it exceeded. */
+  tpl: Template;
 };
 
 type CreativeCheck = (ctx: CheckContext) => ValidationCheck | null;
@@ -198,12 +200,24 @@ const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
   };
 };
 
-const legibilityCheck: CreativeCheck = ({ rendered }) => ({
+/**
+ * A truncated campaign message is a failure, not a warning.
+ *
+ * The compositor truncates rather than shrink below the legibility floor, which
+ * is the right trade -- but the exercise requires the campaign message to be
+ * displayed on the final post, and half a headline is not that message. Nobody
+ * ships an ad with the headline cut off. It was a warning, which meant the
+ * creative rolled up to "warning" rather than "fail", which meant
+ * `assignmentProof` stayed green over a violated requirement.
+ *
+ * The remedy is in the operator's hands and the message says so.
+ */
+const legibilityCheck: CreativeCheck = ({ rendered, tpl }) => ({
   id: "message.legible",
-  status: rendered.copyFits ? "pass" : "warning",
+  status: rendered.copyFits ? "pass" : "fail",
   message: rendered.copyFits
-    ? `Copy fits in ${rendered.lines.length} line(s) at ${rendered.fontSize}px`
-    : `Copy exceeds the copy zone; truncated at the ${rendered.fontSize}px legibility floor rather than shrunk further`,
+    ? `Campaign message fits in ${rendered.lines.length} line(s) at ${rendered.fontSize}px`
+    : `Campaign message does not fit: it needs more than ${tpl.maxLines} lines at the ${rendered.fontSize}px legibility floor and was truncated. Shorten the message for this market.`,
 });
 
 /**

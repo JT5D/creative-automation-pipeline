@@ -7,3 +7,7 @@ outputs/
 .env.local
 *.log
 .DS_Store
+
+# Assets supplied through the console at demo time. The fixtures the sample
+# briefs name are committed and do not match this pattern.
+samples/assets/*-approved-hero.png

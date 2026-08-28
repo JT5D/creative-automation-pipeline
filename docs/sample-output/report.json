@@ -23,9 +23,9 @@
     "provider": "google-gemini",
     "model": "gemini-3-pro-image"
   },
-  "startedAt": "2026-08-28T22:25:35.752Z",
-  "completedAt": "2026-08-28T22:26:13.396Z",
-  "durationMs": 37644,
+  "startedAt": "2026-08-29T00:04:53.703Z",
+  "completedAt": "2026-08-29T00:05:30.732Z",
+  "durationMs": 37029,
   "preflight": {
     "status": "pass",
     "checks": [
@@ -92,7 +92,7 @@
   },
   "successMetrics": {
     "timeSaved": {
-      "minutes": 599.37,
+      "minutes": 599.38,
       "baselineMinutesPerCreative": 25,
       "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
     },
@@ -105,7 +105,7 @@
       "creativesPerGenerationCall": 24,
       "costPerCreativeUsd": 0.00558,
       "reuseRate": 0.5,
-      "secondsPerCreative": 1.57
+      "secondsPerCreative": 1.54
     }
   },
   "assignmentProof": {
@@ -144,7 +144,7 @@
       {
         "id": "campaign_message_rasterized",
         "passed": true,
-        "message": "campaign message measured in the pixels of 24/24 creatives"
+        "message": "campaign message measured complete in the pixels of 24/24 creatives"
       },
       {
         "id": "no_failed_creative_validation",
@@ -173,7 +173,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/radiance-serum/1x1/en-gb.png",
-          "bytes": 294092,
+          "bytes": 256867,
           "validation": {
             "status": "pass",
             "checks": [
@@ -190,7 +190,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -214,7 +214,7 @@
               }
             ]
           },
-          "durationMs": 883
+          "durationMs": 1020
         },
         {
           "ratio": "1x1",
@@ -222,7 +222,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/radiance-serum/1x1/de-de.png",
-          "bytes": 294295,
+          "bytes": 255406,
           "validation": {
             "status": "pass",
             "checks": [
@@ -239,7 +239,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -263,7 +263,7 @@
               }
             ]
           },
-          "durationMs": 957
+          "durationMs": 614
         },
         {
           "ratio": "1x1",
@@ -271,7 +271,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/radiance-serum/1x1/fr-fr.png",
-          "bytes": 293587,
+          "bytes": 258435,
           "validation": {
             "status": "pass",
             "checks": [
@@ -283,12 +283,12 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.513% headline ink)"
+                "message": "Campaign message rasterized (2.502% headline ink)"
               },
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 74px"
+                "message": "Campaign message fits in 3 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -312,7 +312,7 @@
               }
             ]
           },
-          "durationMs": 811
+          "durationMs": 465
         },
         {
           "ratio": "4x5",
@@ -320,7 +320,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/radiance-serum/4x5/en-gb.png",
-          "bytes": 355870,
+          "bytes": 295729,
           "validation": {
             "status": "pass",
             "checks": [
@@ -337,7 +337,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -361,7 +361,7 @@
               }
             ]
           },
-          "durationMs": 731
+          "durationMs": 484
         },
         {
           "ratio": "4x5",
@@ -369,7 +369,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/radiance-serum/4x5/de-de.png",
-          "bytes": 356769,
+          "bytes": 298610,
           "validation": {
             "status": "pass",
             "checks": [
@@ -386,7 +386,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -410,7 +410,7 @@
               }
             ]
           },
-          "durationMs": 564
+          "durationMs": 540
         },
         {
           "ratio": "4x5",
@@ -418,7 +418,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/radiance-serum/4x5/fr-fr.png",
-          "bytes": 360144,
+          "bytes": 303033,
           "validation": {
             "status": "pass",
             "checks": [
@@ -430,12 +430,12 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.010% headline ink)"
+                "message": "Campaign message rasterized (2.001% headline ink)"
               },
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 74px"
+                "message": "Campaign message fits in 3 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -459,7 +459,7 @@
               }
             ]
           },
-          "durationMs": 384
+          "durationMs": 615
         },
         {
           "ratio": "9x16",
@@ -484,7 +484,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 88px"
+                "message": "Campaign message fits in 2 line(s) at 88px"
               },
               {
                 "id": "brand.logo",
@@ -513,7 +513,7 @@
               }
             ]
           },
-          "durationMs": 477
+          "durationMs": 631
         },
         {
           "ratio": "9x16",
@@ -538,7 +538,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 88px"
+                "message": "Campaign message fits in 2 line(s) at 88px"
               },
               {
                 "id": "brand.logo",
@@ -567,7 +567,7 @@
               }
             ]
           },
-          "durationMs": 460
+          "durationMs": 641
         },
         {
           "ratio": "9x16",
@@ -592,7 +592,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 88px"
+                "message": "Campaign message fits in 3 line(s) at 88px"
               },
               {
                 "id": "brand.logo",
@@ -621,7 +621,7 @@
               }
             ]
           },
-          "durationMs": 438
+          "durationMs": 637
         },
         {
           "ratio": "16x9",
@@ -646,7 +646,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 72px"
+                "message": "Campaign message fits in 2 line(s) at 72px"
               },
               {
                 "id": "brand.contrast",
@@ -675,7 +675,7 @@
               }
             ]
           },
-          "durationMs": 328
+          "durationMs": 335
         },
         {
           "ratio": "16x9",
@@ -700,7 +700,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 72px"
+                "message": "Campaign message fits in 2 line(s) at 72px"
               },
               {
                 "id": "brand.contrast",
@@ -729,7 +729,7 @@
               }
             ]
           },
-          "durationMs": 484
+          "durationMs": 313
         },
         {
           "ratio": "16x9",
@@ -754,7 +754,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 72px"
+                "message": "Campaign message fits in 3 line(s) at 72px"
               },
               {
                 "id": "brand.contrast",
@@ -783,7 +783,7 @@
               }
             ]
           },
-          "durationMs": 354
+          "durationMs": 516
         }
       ]
     },
@@ -802,9 +802,9 @@
           "provider": "google-gemini",
           "operation": "image-reference",
           "model": "gemini-3-pro-image",
-          "prompt": "Premium beauty campaign photograph of Overnight Recovery Cream by Lumen Botanicals. Audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction: Calm, clinical, warm. Understated luxury — never hype. Shot on a 100mm macro lens at f/9, focus stacked so the entire product is critically sharp from front to back. Tripod, no motion blur. Lighting is soft and directional from the upper left, with open fill from the right and a narrow highlight raking the product's edge to separate it from the background. Highlights are controlled and rolled off, never blown; shadows are soft and open. The lighting is felt, not seen: no softbox, reflector, light stand, modifier or any studio equipment appears in frame. The product stands on a honed travertine ledge against a seamless plaster wall, with soft foliage shadow falling across the background. Restrained tonal colour grade, sympathetic to the brand palette without tinting the product itself. Materials must read as real: frosted glass transmits light correctly with a crisp polished rim, and the cap is smooth lacquered metal or resin with a clean specular roll-off and a precise machined edge. The container is CLOSED with its cap fully seated, and is opaque: the contents are NOT visible. Do not render cream, lotion, product texture or any substance inside or on the vessel. WIDE SHOT. The camera is pulled well back and the product is SMALL and distant in a large empty set -- a single small jar alone on a wide expanse of surface. The product occupies only the central third of the image and is surrounded by a large amount of empty space on every side. Most of this picture is background. Do not fill the frame with the product; do not crop it; the entire product including its base is visible with room to spare. Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical, circular openings drawn as true undistorted ellipses. No lumps, no curdling, no smears, no double lids, no warped geometry, no visible seams, and no second product, prop or duplicate of the item anywhere in the frame. Preserve the supplied product EXACTLY as it appears in the reference: its geometry, proportions, cap, closure, surface finish, colours, and any label or brand mark already on it. Do not restyle, redraw, relabel or substitute the product. Add no new packaging text, no new claims, no invented logos. No typography anywhere else in the scene, and no watermarks.",
-          "durationMs": 24552,
-          "requestId": "v1_ChdfQXFTYXZPSU9OQzAxTWtQdEx6UnVRaxIXX0FxU2F2T0lPTkMwMU1rUHRMelJ1UWs"
+          "prompt": "Premium beauty campaign photograph of Overnight Recovery Cream by Lumen Botanicals. Audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction: Calm, clinical, warm. Understated luxury — never hype. Shot on a 100mm macro lens at f/9, focus stacked so the entire product is critically sharp from front to back. Tripod, no motion blur. Lighting is soft and directional from the upper left, with open fill from the right and a narrow highlight raking the product's edge to separate it from the background. Highlights are controlled and rolled off, never blown; shadows are soft and open. The lighting is felt, not seen: no softbox, reflector, light stand, modifier or any studio equipment appears in frame. The product stands on a honed travertine ledge against a seamless plaster wall, with soft foliage shadow falling across the background. Restrained tonal colour grade, sympathetic to the brand palette without tinting the product itself. Materials must read as real: frosted glass transmits light correctly with a crisp polished rim, and the cap is smooth lacquered metal or resin with a clean specular roll-off and a precise machined edge. The container is CLOSED with its cap fully seated, and is opaque: the contents are NOT visible. Do not render cream, lotion, product texture or any substance inside or on the vessel. The product sits in the LOWER HALF of the frame, horizontally centred, and is large, close and unmistakably the subject -- it fills most of the central 50% of the width, with its base and lid entirely in frame. The UPPER HALF is quiet, empty background: no product, no props, nothing but surface and light, because the campaign headline is composited there. Do not crop the product and do not place it off to one side. Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical, circular openings drawn as true undistorted ellipses. No lumps, no curdling, no smears, no double lids, no warped geometry, no visible seams, and no second product, prop or duplicate of the item anywhere in the frame. Preserve the supplied product EXACTLY as it appears in the reference: its geometry, proportions, cap, closure, surface finish, colours, and any label or brand mark already on it. Do not restyle, redraw, relabel or substitute the product. Add no new packaging text, no new claims, no invented logos. No typography anywhere else in the scene, and no watermarks.",
+          "durationMs": 24587,
+          "requestId": "v1_ChZReUtTYXQzNkM2Q3JzT0lQX0o2NU9BEhZReUtTYXQzNkM2Q3JzT0lQX0o2NU9B"
         }
       },
       "creatives": [
@@ -814,7 +814,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/en-gb.png",
-          "bytes": 417540,
+          "bytes": 265229,
           "validation": {
             "status": "pass",
             "checks": [
@@ -831,7 +831,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -855,7 +855,7 @@
               }
             ]
           },
-          "durationMs": 749
+          "durationMs": 718
         },
         {
           "ratio": "1x1",
@@ -863,7 +863,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/de-de.png",
-          "bytes": 415203,
+          "bytes": 268652,
           "validation": {
             "status": "pass",
             "checks": [
@@ -880,7 +880,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -904,7 +904,7 @@
               }
             ]
           },
-          "durationMs": 735
+          "durationMs": 709
         },
         {
           "ratio": "1x1",
@@ -912,7 +912,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/fr-fr.png",
-          "bytes": 422680,
+          "bytes": 271500,
           "validation": {
             "status": "pass",
             "checks": [
@@ -924,12 +924,12 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.513% headline ink)"
+                "message": "Campaign message rasterized (2.502% headline ink)"
               },
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 74px"
+                "message": "Campaign message fits in 3 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -953,7 +953,7 @@
               }
             ]
           },
-          "durationMs": 763
+          "durationMs": 561
         },
         {
           "ratio": "4x5",
@@ -961,7 +961,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/en-gb.png",
-          "bytes": 500698,
+          "bytes": 306741,
           "validation": {
             "status": "pass",
             "checks": [
@@ -978,7 +978,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -1002,7 +1002,7 @@
               }
             ]
           },
-          "durationMs": 644
+          "durationMs": 753
         },
         {
           "ratio": "4x5",
@@ -1010,7 +1010,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/de-de.png",
-          "bytes": 499152,
+          "bytes": 308620,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1027,7 +1027,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 74px"
+                "message": "Campaign message fits in 2 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -1051,7 +1051,7 @@
               }
             ]
           },
-          "durationMs": 500
+          "durationMs": 288
         },
         {
           "ratio": "4x5",
@@ -1059,7 +1059,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png",
-          "bytes": 506087,
+          "bytes": 311227,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1071,12 +1071,12 @@
               {
                 "id": "message.rendered",
                 "status": "pass",
-                "message": "Campaign message rasterized (2.010% headline ink)"
+                "message": "Campaign message rasterized (2.001% headline ink)"
               },
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 74px"
+                "message": "Campaign message fits in 3 line(s) at 74px"
               },
               {
                 "id": "brand.logo",
@@ -1100,7 +1100,7 @@
               }
             ]
           },
-          "durationMs": 499
+          "durationMs": 303
         },
         {
           "ratio": "9x16",
@@ -1108,7 +1108,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png",
-          "bytes": 671865,
+          "bytes": 469074,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1125,7 +1125,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 88px"
+                "message": "Campaign message fits in 2 line(s) at 88px"
               },
               {
                 "id": "brand.logo",
@@ -1154,7 +1154,7 @@
               }
             ]
           },
-          "durationMs": 416
+          "durationMs": 535
         },
         {
           "ratio": "9x16",
@@ -1162,7 +1162,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png",
-          "bytes": 669796,
+          "bytes": 469002,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1179,7 +1179,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 88px"
+                "message": "Campaign message fits in 2 line(s) at 88px"
               },
               {
                 "id": "brand.logo",
@@ -1208,7 +1208,7 @@
               }
             ]
           },
-          "durationMs": 422
+          "durationMs": 400
         },
         {
           "ratio": "9x16",
@@ -1216,7 +1216,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png",
-          "bytes": 677666,
+          "bytes": 465976,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1233,7 +1233,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 88px"
+                "message": "Campaign message fits in 3 line(s) at 88px"
               },
               {
                 "id": "brand.logo",
@@ -1262,7 +1262,7 @@
               }
             ]
           },
-          "durationMs": 592
+          "durationMs": 548
         },
         {
           "ratio": "16x9",
@@ -1270,7 +1270,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png",
-          "bytes": 689829,
+          "bytes": 421279,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1287,7 +1287,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 72px"
+                "message": "Campaign message fits in 2 line(s) at 72px"
               },
               {
                 "id": "brand.contrast",
@@ -1316,7 +1316,7 @@
               }
             ]
           },
-          "durationMs": 294
+          "durationMs": 259
         },
         {
           "ratio": "16x9",
@@ -1324,7 +1324,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png",
-          "bytes": 688236,
+          "bytes": 422921,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1341,7 +1341,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 2 line(s) at 72px"
+                "message": "Campaign message fits in 2 line(s) at 72px"
               },
               {
                 "id": "brand.contrast",
@@ -1370,7 +1370,7 @@
               }
             ]
           },
-          "durationMs": 300
+          "durationMs": 275
         },
         {
           "ratio": "16x9",
@@ -1378,7 +1378,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png",
-          "bytes": 689691,
+          "bytes": 425640,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1395,7 +1395,7 @@
               {
                 "id": "message.legible",
                 "status": "pass",
-                "message": "Copy fits in 3 line(s) at 72px"
+                "message": "Campaign message fits in 3 line(s) at 72px"
               },
               {
                 "id": "brand.contrast",
@@ -1424,7 +1424,7 @@
               }
             ]
           },
-          "durationMs": 297
+          "durationMs": 267
         }
       ]
     }
@@ -1440,8 +1440,8 @@
   "estimatedTimeSaved": {
     "baselineMinutesPerCreative": 25,
     "manualMinutes": 600,
-    "pipelineMinutes": 0.627,
-    "savedMinutes": 599.37,
+    "pipelineMinutes": 0.617,
+    "savedMinutes": 599.38,
     "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
   }
 }

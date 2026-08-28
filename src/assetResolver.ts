@@ -174,48 +174,13 @@ export async function findApprovedHero(maybePath?: string): Promise<string | und
 }
 
 /**
- * Deterministic art direction. Pure string composition -- no LLM call, so the
- * same brief always produces the same prompt and the same cache key.
- *
- * This is written as a photographic brief rather than a description, because
- * that is the difference between a stock-looking render and something a brand
- * would run. Every clause below is a decision a photographer or retoucher would
- * actually make on a beauty shoot:
- *
- *   optics    a long macro at a closed aperture, focus stacked -- the whole
- *             product sharp front to back. Shallow depth of field looks
- *             cinematic and destroys the packaging detail a brand is paying for.
- *   light     large soft key at 45 degrees, bounce fill opposite, a narrow
- *             kicker to draw an edge and lift the product off the background.
- *   set       honed stone or matte plaster, seamless tonal falloff.
- *   material  frosted glass has to transmit light correctly; a lacquered cap
- *             needs a crisp specular roll-off or it reads as untextured 3D.
- *   contents  the vessel is CLOSED and opaque. This one is load-bearing: asked
- *             for an open or translucent jar, the model renders the cream
- *             inside, and at 2K it comes out lumpy and curdled -- the single
- *             worst artefact in the first version of these creatives.
- *   retouch   catalogue standard, stated explicitly, because "professional"
- *             alone does not remove dust, fingerprints or warped ellipses.
- *
- * Reference is the category standard set by premium beauty campaigns -- the
- * craft conventions, not anyone's imagery. Style is not copyrightable and none
- * is reproduced; every pixel here is generated from this brief.
- */
-/**
  * The set every product in one campaign is photographed in.
  *
- * The prompt used to describe the set loosely -- "a honed stone or matte
- * plaster surface" -- which left the choice to the model on each call. Every
- * hero is a separate generation, so a two-product campaign came back as two
- * unrelated photographs: different room, different light, different palette.
- * Each image was individually fine, which is why no test caught it, and the
- * campaign still looked wrong.
- *
- * One named set, shared by every product, is the whole fix. A brief can state
- * its own; the default is a set that suits the packaged goods this is built
- * for. It makes the heroes belong together -- it does not make them the same
- * photograph, because no seed is available on this provider
- * (docs/MODEL_STRATEGY.md).
+ * Each hero is a separate generation, so a loosely described set let the model
+ * choose its own per product -- and a two-product campaign came back as two
+ * unrelated photographs. One named set, shared, is the fix. It makes the heroes
+ * belong together; it does not make them identical, because this provider
+ * exposes no seed (docs/MODEL_STRATEGY.md).
  */
 const DEFAULT_SET =
   "on a honed travertine ledge against a seamless plaster wall, with soft " +
@@ -225,6 +190,29 @@ export function campaignSet(brief: CampaignBrief): string {
   return brief.artDirection?.trim() || DEFAULT_SET;
 }
 
+/**
+ * Deterministic art direction. Pure string composition -- no LLM call, so the
+ * same brief always produces the same prompt and the same cache key.
+ *
+ * Written as a photographic brief rather than a description, because that is
+ * the difference between a stock render and something a brand would run. Each
+ * clause is a decision a photographer would actually make:
+ *
+ *   optics    long macro, closed aperture, focus stacked -- the whole product
+ *             sharp. Shallow depth of field destroys the packaging detail.
+ *   light     soft key at 45 degrees, bounce fill, a narrow kicker for edge
+ *             separation -- and no equipment in frame, or it renders the softbox.
+ *   material  frosted glass must transmit light; a lacquered cap needs a crisp
+ *             specular roll-off or it reads as untextured 3D.
+ *   contents  the vessel is CLOSED and opaque. Load-bearing: asked for an open
+ *             jar the model renders the cream, and at 2K it comes out curdled.
+ *   retouch   catalogue standard, stated -- "professional" alone does not
+ *             remove dust, fingerprints or warped ellipses.
+ *
+ * Composition is derived from the crop rather than chosen: docs/CREATIVE_STANDARDS.md
+ * section 7. The reference is the category's craft conventions, not anyone's
+ * imagery -- no style is reproduced and every pixel is generated from this brief.
+ */
 export function buildHeroPrompt(
   product: Product,
   brief: CampaignBrief,
@@ -272,17 +260,26 @@ export function buildHeroPrompt(
     "contents are NOT visible. Do not render cream, lotion, product texture or",
     "any substance inside or on the vessel.",
 
-    // Composition, so one hero survives every crop.
-    // Width, not height, is the binding constraint: a 9:16 crop of a square
-    // discards ~41% of the width, so anything wider than about half the frame
-    // gets its edges sliced. This is the clause that keeps one generation
-    // usable across every channel format.
-    "WIDE SHOT. The camera is pulled well back and the product is SMALL and",
-    "distant in a large empty set -- a single small jar alone on a wide expanse",
-    "of surface. The product occupies only the central third of the image and",
-    "is surrounded by a large amount of empty space on every side. Most of this",
-    "picture is background. Do not fill the frame with the product; do not crop",
-    "it; the entire product including its base is visible with room to spare.",
+    // Composition, derived from the crop rather than guessed at.
+    //
+    // Every format is a centre crop of one square hero (see composeVariant,
+    // fit "cover"). The narrowest is 9:16, which keeps 9/16 = 56% of the
+    // width; 16:9 keeps the same fraction of the height. So the product has to
+    // sit inside a centred square of 56% -- and nothing whatsoever is gained
+    // by making it smaller than that.
+    //
+    // An earlier version of this clause said "SMALL and distant", "only the
+    // central third", and "most of this picture is background". It was written
+    // to stop the 9:16 crop slicing the product in half, and it did -- but it
+    // over-corrected by nearly half, aiming at 33% when the safe area is 56%.
+    // Every hero came back looking photographed from across the room. Say the
+    // real number, once, as a positive instruction.
+    "The product sits in the LOWER HALF of the frame, horizontally centred,",
+    "and is large, close and unmistakably the subject -- it fills most of the",
+    "central 50% of the width, with its base and lid entirely in frame. The",
+    "UPPER HALF is quiet, empty background: no product, no props, nothing but",
+    "surface and light, because the campaign headline is composited there.",
+    "Do not crop the product and do not place it off to one side.",
 
     // Retouch standard, stated rather than implied.
     "Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical,",
