@@ -1,0 +1,1492 @@
+{
+  "campaignId": "lumen-autumn-glow-de",
+  "campaignName": "Lumen Botanicals — Autumn Glow (DACH)",
+  "region": "Germany (DACH)",
+  "audience": "Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare",
+  "message": "Wake up to visibly brighter skin",
+  "markets": [
+    {
+      "locale": "en-GB",
+      "message": "Wake up to visibly brighter skin"
+    },
+    {
+      "locale": "de-DE",
+      "message": "Wach auf mit sichtbar strahlenderer Haut"
+    },
+    {
+      "locale": "fr-FR",
+      "message": "Réveillez-vous avec une peau visiblement plus éclatante"
+    }
+  ],
+  "mode": "final",
+  "provider": {
+    "provider": "google-gemini",
+    "model": "gemini-3-pro-image"
+  },
+  "startedAt": "2026-08-28T18:21:27.458Z",
+  "completedAt": "2026-08-28T18:22:01.663Z",
+  "durationMs": 34205,
+  "preflight": {
+    "status": "pass",
+    "checks": [
+      {
+        "id": "brief.products",
+        "status": "pass",
+        "message": "2 product(s) in brief (minimum 2)"
+      },
+      {
+        "id": "brief.region",
+        "status": "pass",
+        "message": "region present"
+      },
+      {
+        "id": "brief.audience",
+        "status": "pass",
+        "message": "audience present"
+      },
+      {
+        "id": "brief.message",
+        "status": "pass",
+        "message": "message present"
+      },
+      {
+        "id": "legal.prohibitedWords",
+        "status": "pass",
+        "message": "No prohibited terms found (8 screened)"
+      },
+      {
+        "id": "brand.logoFile",
+        "status": "pass",
+        "message": "Logo found at samples/assets/lumen-logo.png"
+      },
+      {
+        "id": "asset.radiance-serum.approvedHeroPath",
+        "status": "pass",
+        "message": "radiance-serum: approvedHeroPath resolved"
+      },
+      {
+        "id": "asset.overnight-recovery-cream.referenceAssetPath",
+        "status": "pass",
+        "message": "overnight-recovery-cream: referenceAssetPath resolved"
+      },
+      {
+        "id": "brand.colors",
+        "status": "pass",
+        "message": "Brand colours are valid hex values"
+      }
+    ]
+  },
+  "metrics": {
+    "productsProcessed": 2,
+    "productsFailed": 0,
+    "marketsProcessed": 3,
+    "approvedAssetsReused": 1,
+    "heroesGenerated": 1,
+    "heroesFromCache": 0,
+    "heroesPlaceholder": 0,
+    "variantsCreated": 24,
+    "validationPassed": 24,
+    "validationWarnings": 0,
+    "validationFailed": 0,
+    "generationRequests": 1
+  },
+  "successMetrics": {
+    "timeSaved": {
+      "minutes": 599.43,
+      "baselineMinutesPerCreative": 25,
+      "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
+    },
+    "campaignsGenerated": {
+      "campaigns": 1,
+      "creatives": 24,
+      "markets": 3
+    },
+    "efficiency": {
+      "creativesPerGenerationCall": 24,
+      "costPerCreativeUsd": 0.00558,
+      "reuseRate": 0.5,
+      "secondsPerCreative": 1.43
+    }
+  },
+  "products": [
+    {
+      "productId": "radiance-serum",
+      "productName": "Radiance Vitamin C Serum",
+      "hero": {
+        "productId": "radiance-serum",
+        "source": "reused",
+        "localPath": "lumen-autumn-glow-de/radiance-serum/source/approved-hero.png",
+        "sourceAssetPath": "/Users/jamestunick/Desktop/ADOBE-MVP/creative-automation-pipeline/samples/assets/radiance-serum-hero.png",
+        "mimeType": "image/png",
+        "width": 2048,
+        "height": 2048
+      },
+      "creatives": [
+        {
+          "ratio": "1x1",
+          "locale": "en-GB",
+          "width": 1080,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/1x1/en-gb.png",
+          "bytes": 288800,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1080 (expected 1080×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.066% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 74px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 554
+        },
+        {
+          "ratio": "1x1",
+          "locale": "de-DE",
+          "width": 1080,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/1x1/de-de.png",
+          "bytes": 292015,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1080 (expected 1080×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.169% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 66px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 66px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 358
+        },
+        {
+          "ratio": "1x1",
+          "locale": "fr-FR",
+          "width": 1080,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/1x1/fr-fr.png",
+          "bytes": 290527,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1080 (expected 1080×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.166% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 60px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 60px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 496
+        },
+        {
+          "ratio": "4x5",
+          "locale": "en-GB",
+          "width": 1080,
+          "height": 1350,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/4x5/en-gb.png",
+          "bytes": 359378,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1350 (expected 1080×1350)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.245% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 2 line(s) at 74px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 594
+        },
+        {
+          "ratio": "4x5",
+          "locale": "de-DE",
+          "width": 1080,
+          "height": 1350,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/4x5/de-de.png",
+          "bytes": 362555,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1350 (expected 1080×1350)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.475% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 68px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 68px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 557
+        },
+        {
+          "ratio": "4x5",
+          "locale": "fr-FR",
+          "width": 1080,
+          "height": 1350,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/4x5/fr-fr.png",
+          "bytes": 365296,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1350 (expected 1080×1350)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.478% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 62px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 62px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 419
+        },
+        {
+          "ratio": "9x16",
+          "locale": "en-GB",
+          "width": 1080,
+          "height": 1920,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/9x16/en-gb.png",
+          "bytes": 442868,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1920 (expected 1080×1920)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.096% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 2 line(s) at 88px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "channel.safeZone",
+                "status": "pass",
+                "message": "Copy inside the Meta 9:16 safe zone (y 303–1208 within 269–1248)"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 433
+        },
+        {
+          "ratio": "9x16",
+          "locale": "de-DE",
+          "width": 1080,
+          "height": 1920,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/9x16/de-de.png",
+          "bytes": 453757,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1920 (expected 1080×1920)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.943% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 88px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "channel.safeZone",
+                "status": "pass",
+                "message": "Copy inside the Meta 9:16 safe zone (y 303–1208 within 269–1248)"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 409
+        },
+        {
+          "ratio": "9x16",
+          "locale": "fr-FR",
+          "width": 1080,
+          "height": 1920,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/9x16/fr-fr.png",
+          "bytes": 451822,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1920 (expected 1080×1920)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.263% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 86px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 86px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "channel.safeZone",
+                "status": "pass",
+                "message": "Copy inside the Meta 9:16 safe zone (y 303–1208 within 269–1248)"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 579
+        },
+        {
+          "ratio": "16x9",
+          "locale": "en-GB",
+          "width": 1920,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/16x9/en-gb.png",
+          "bytes": 389918,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1920×1080 (expected 1920×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (2.150% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 72px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 72px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 310
+        },
+        {
+          "ratio": "16x9",
+          "locale": "de-DE",
+          "width": 1920,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/16x9/de-de.png",
+          "bytes": 398984,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1920×1080 (expected 1920×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (2.724% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 4 line(s) at 72px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 72px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 463
+        },
+        {
+          "ratio": "16x9",
+          "locale": "fr-FR",
+          "width": 1920,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/radiance-serum/16x9/fr-fr.png",
+          "bytes": 396535,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1920×1080 (expected 1920×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.103% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 4 line(s) at 72px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 72px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 331
+        }
+      ]
+    },
+    {
+      "productId": "overnight-recovery-cream",
+      "productName": "Overnight Recovery Cream",
+      "hero": {
+        "productId": "overnight-recovery-cream",
+        "source": "generated",
+        "localPath": "lumen-autumn-glow-de/overnight-recovery-cream/source/generated-hero.png",
+        "mimeType": "image/jpeg",
+        "width": 2048,
+        "height": 2048,
+        "sourceAssetPath": "/Users/jamestunick/Desktop/ADOBE-MVP/creative-automation-pipeline/samples/assets/overnight-cream-packshot.png",
+        "generation": {
+          "provider": "google-gemini",
+          "operation": "image-reference",
+          "model": "gemini-3-pro-image",
+          "prompt": "Professional commercial advertising photography of Overnight Recovery Cream by the brand Lumen Botanicals. Campaign audience: Urban professionals 28–45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction tone: Calm, clinical, warm. Understated luxury — never hype.. The product is the hero: centred, sharp, and framed with generous negative space on all sides so the image can be re-cropped to square, vertical and landscape formats without cutting the product. Clean studio lighting, soft natural shadows, calm minimal background, premium editorial colour grading. Absolutely no text, no lettering, no typography, no logos, no watermarks, and no packaging claims of any kind in the image.",
+          "durationMs": 23333,
+          "requestId": "v1_Chd3dEdSYXB1M0daQ2FfdU1QMGV2QmdRNBIXd3RHUmFwdTNHWkNhX3VNUDBldkJnUTQ"
+        }
+      },
+      "creatives": [
+        {
+          "ratio": "1x1",
+          "locale": "en-GB",
+          "width": 1080,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/en-gb.png",
+          "bytes": 265415,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1080 (expected 1080×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.066% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 74px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 458
+        },
+        {
+          "ratio": "1x1",
+          "locale": "de-DE",
+          "width": 1080,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/de-de.png",
+          "bytes": 262410,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1080 (expected 1080×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.169% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 66px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 66px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 460
+        },
+        {
+          "ratio": "1x1",
+          "locale": "fr-FR",
+          "width": 1080,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/fr-fr.png",
+          "bytes": 267925,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1080 (expected 1080×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.166% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 60px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 60px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 477
+        },
+        {
+          "ratio": "4x5",
+          "locale": "en-GB",
+          "width": 1080,
+          "height": 1350,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/en-gb.png",
+          "bytes": 335471,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1350 (expected 1080×1350)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.245% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 2 line(s) at 74px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 74px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 514
+        },
+        {
+          "ratio": "4x5",
+          "locale": "de-DE",
+          "width": 1080,
+          "height": 1350,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/de-de.png",
+          "bytes": 336903,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1350 (expected 1080×1350)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.475% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 68px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 68px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 365
+        },
+        {
+          "ratio": "4x5",
+          "locale": "fr-FR",
+          "width": 1080,
+          "height": 1350,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png",
+          "bytes": 337514,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1350 (expected 1080×1350)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.478% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 62px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 62px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 547
+        },
+        {
+          "ratio": "9x16",
+          "locale": "en-GB",
+          "width": 1080,
+          "height": 1920,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png",
+          "bytes": 421197,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1920 (expected 1080×1920)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.096% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 2 line(s) at 88px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "channel.safeZone",
+                "status": "pass",
+                "message": "Copy inside the Meta 9:16 safe zone (y 303–1208 within 269–1248)"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 550
+        },
+        {
+          "ratio": "9x16",
+          "locale": "de-DE",
+          "width": 1080,
+          "height": 1920,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png",
+          "bytes": 425987,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1920 (expected 1080×1920)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.943% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 88px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 88px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "channel.safeZone",
+                "status": "pass",
+                "message": "Copy inside the Meta 9:16 safe zone (y 303–1208 within 269–1248)"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 401
+        },
+        {
+          "ratio": "9x16",
+          "locale": "fr-FR",
+          "width": 1080,
+          "height": 1920,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png",
+          "bytes": 430812,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1080×1920 (expected 1080×1920)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (4.263% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 86px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 86px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "channel.safeZone",
+                "status": "pass",
+                "message": "Copy inside the Meta 9:16 safe zone (y 303–1208 within 269–1248)"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 399
+        },
+        {
+          "ratio": "16x9",
+          "locale": "en-GB",
+          "width": 1920,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png",
+          "bytes": 336114,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1920×1080 (expected 1920×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (2.150% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 3 line(s) at 72px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 72px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Discover now\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 467
+        },
+        {
+          "ratio": "16x9",
+          "locale": "de-DE",
+          "width": 1920,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png",
+          "bytes": 332224,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1920×1080 (expected 1920×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (2.724% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 4 line(s) at 72px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 72px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Jetzt entdecken\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 436
+        },
+        {
+          "ratio": "16x9",
+          "locale": "fr-FR",
+          "width": 1920,
+          "height": 1080,
+          "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png",
+          "bytes": 340692,
+          "validation": {
+            "status": "pass",
+            "checks": [
+              {
+                "id": "output.dimensions",
+                "status": "pass",
+                "message": "1920×1080 (expected 1920×1080)"
+              },
+              {
+                "id": "message.rendered",
+                "status": "pass",
+                "message": "Campaign message rasterized (3.103% ink coverage)"
+              },
+              {
+                "id": "message.legible",
+                "status": "pass",
+                "message": "Copy fits in 4 line(s) at 72px"
+              },
+              {
+                "id": "brand.contrast",
+                "status": "pass",
+                "message": "Text/background contrast 13.81:1 (WCAG 2.2 AA needs 3:1 for large text at 72px)"
+              },
+              {
+                "id": "brand.logo",
+                "status": "pass",
+                "message": "Brand logo composited"
+              },
+              {
+                "id": "creative.callToAction",
+                "status": "pass",
+                "message": "Call to action rendered (\"Découvrir\")"
+              },
+              {
+                "id": "legal.disclaimer",
+                "status": "pass",
+                "message": "Legal disclaimer rendered"
+              },
+              {
+                "id": "legal.prohibitedWords",
+                "status": "pass",
+                "message": "Rendered copy is clear of prohibited terms"
+              }
+            ]
+          },
+          "durationMs": 285
+        }
+      ]
+    }
+  ],
+  "failures": [],
+  "warnings": [],
+  "estimatedCostUsd": {
+    "generations": 1,
+    "unitPriceUsd": 0.134,
+    "totalUsd": 0.134,
+    "source": "ai.google.dev/gemini-api/docs/pricing, 2K output, verified 2026-08-28"
+  },
+  "estimatedTimeSaved": {
+    "baselineMinutesPerCreative": 25,
+    "manualMinutes": 600,
+    "pipelineMinutes": 0.57,
+    "savedMinutes": 599.43,
+    "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
+  }
+}

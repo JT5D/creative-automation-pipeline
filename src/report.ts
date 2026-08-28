@@ -57,6 +57,25 @@ export type CampaignReport = {
     validationFailed: number;
     generationRequests: number;
   };
+  /**
+   * The three metrics the assessment FAQ names when asked what matters most:
+   * "time saved, number of campaigns generated, and overall efficiency."
+   * Reported together, in that language, rather than left for a reader to
+   * assemble from the raw counters above.
+   */
+  successMetrics: {
+    /** Illustrative, from the baseline the brief supplies. Absent without one. */
+    timeSaved?: { minutes: number; baselineMinutesPerCreative: number; basis: string };
+    campaignsGenerated: { campaigns: number; creatives: number; markets: number };
+    efficiency: {
+      /** How much output each paid call produced. The headline number. */
+      creativesPerGenerationCall: number | null;
+      costPerCreativeUsd: number | null;
+      /** Share of heroes served from already-approved assets. */
+      reuseRate: number;
+      secondsPerCreative: number;
+    };
+  };
   products: ProductRecord[];
   /** Products that failed. Empty on a clean run; the run still completes. */
   failures: ProductFailure[];
@@ -103,6 +122,15 @@ export function createReport(args: {
   const { brief, markets, products, failures, preflight, mode, provider, startedAt, completedAt } =
     args;
   const creatives = products.flatMap((p) => p.creatives);
+  const generations = products.filter((p) => p.hero.source === "generated").length;
+  const reused = products.filter((p) => p.hero.source === "reused").length;
+  const heroes = products.length;
+  const cost = costEstimate(provider.model, generations);
+  const timeSaved = timeSavedEstimate(
+    brief.manualMinutesPerCreative,
+    creatives.length,
+    completedAt - startedAt,
+  );
 
   return {
     campaignId: brief.id,
@@ -132,18 +160,32 @@ export function createReport(args: {
       // Only a live call counts. A cache hit is explicitly not a request.
       generationRequests: products.filter((p) => p.hero.source === "generated").length,
     },
+    successMetrics: {
+      timeSaved: timeSaved && {
+        minutes: timeSaved.savedMinutes,
+        baselineMinutesPerCreative: timeSaved.baselineMinutesPerCreative,
+        basis: timeSaved.basis,
+      },
+      campaignsGenerated: {
+        campaigns: 1,
+        creatives: creatives.length,
+        markets: markets.length,
+      },
+      efficiency: {
+        creativesPerGenerationCall:
+          generations > 0 ? Number((creatives.length / generations).toFixed(1)) : null,
+        costPerCreativeUsd: cost ? Number((cost.totalUsd / creatives.length).toFixed(5)) : null,
+        reuseRate: heroes > 0 ? Number((reused / heroes).toFixed(3)) : 0,
+        secondsPerCreative: Number(
+          ((completedAt - startedAt) / 1000 / Math.max(1, creatives.length)).toFixed(2),
+        ),
+      },
+    },
     products,
     failures,
     warnings: args.warnings,
-    estimatedCostUsd: costEstimate(
-      provider.model,
-      products.filter((p) => p.hero.source === "generated").length,
-    ),
-    estimatedTimeSaved: timeSavedEstimate(
-      brief.manualMinutesPerCreative,
-      creatives.length,
-      completedAt - startedAt,
-    ),
+    estimatedCostUsd: cost,
+    estimatedTimeSaved: timeSaved,
   };
 }
 

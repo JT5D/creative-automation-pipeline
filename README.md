@@ -294,6 +294,41 @@ product succeeded, **2** partial success, **1** the run could not start. A
 pipeline that always exits 0 is a renderer; one that can refuse, and one that
 can partially succeed, is a system you can schedule.
 
+## Success metrics
+
+The assessment FAQ asks what matters most and answers: *"time saved, number of
+campaigns generated, and overall efficiency."* Every run reports exactly those
+three, in that language, at `report.json → successMetrics`:
+
+```
+  TIME SAVED           10.0 hours   illustrative, vs the 25 min/creative
+                                    baseline the brief itself supplies
+  CAMPAIGNS GENERATED  1 campaign · 24 creatives · 3 markets
+  EFFICIENCY           24 creatives per paid call · $0.00558 each
+                       50% reuse · 1.43s each
+```
+
+**Efficiency is the one that compounds.** *Creatives per paid generation call*
+is the number this architecture exists to move: it was 24 here because one of
+two products already had an approved hero and one hero served four formats
+across three markets. Add a market and it rises again at no cost. Approve more
+of the catalogue and it rises again.
+
+Time saved is honest but soft — it derives from a baseline the brief supplies,
+not from a stopwatch, and is labelled that way everywhere it appears. The hard
+numbers are the ones underneath it: **one API call, 34 seconds, $0.134.**
+
+Across runs, the console tracks the same three plus **reuse rate**, which is
+what makes the cost curve bend as a catalogue matures.
+
+## Example output, without running anything
+
+[`docs/sample-output/`](docs/sample-output) holds a real run so a reviewer can
+see the result without cloning: the complete
+[`report.json`](docs/sample-output/report.json), the
+[file tree](docs/sample-output/file-tree.txt) of all 24 creatives, and four
+finished creatives spanning every format and market.
+
 ## Key design decisions
 
 ### 1. Asset origin is a boundary concern
