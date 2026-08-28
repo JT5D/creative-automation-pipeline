@@ -4,28 +4,19 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import sharp from "sharp";
+import type { FormatOption, RunState } from "./api.js";
 import { zipDirectory } from "./archive.js";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
-import { type PipelineEvent, runCampaign } from "./pipeline.js";
+import { runCampaign } from "./pipeline.js";
 import { MODEL_OPTIONS, PRICING_SOURCE } from "./pricing.js";
 import { providerStatus } from "./providers/index.js";
-import type { CampaignReport } from "./report.js";
 import { sanitizeId } from "./report.js";
-import { RATIOS, REQUIRED_RATIOS } from "./schema.js";
+import { RATIOS, type RatioKey, REQUIRED_RATIOS } from "./schema.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
 const OUTPUT_ROOT = path.resolve("outputs");
 const SAMPLES_DIR = path.resolve("samples");
-
-type RunState = {
-  runId: string;
-  status: "running" | "complete" | "failed";
-  startedAt: string;
-  events: PipelineEvent[];
-  report?: CampaignReport;
-  error?: string;
-};
 
 /** In-memory only. Runs are ephemeral; the outputs on disk are the artifact. */
 const runs = new Map<string, RunState>();
@@ -90,7 +81,6 @@ app.get("/api/briefs/:file", async (req, res) => {
   }
 });
 
-/** Model choices with published prices, so the picker cannot invent a number. */
 /**
  * Accept an approved asset the way the brief's data sources describe it:
  * a person supplying a file by hand.
@@ -157,6 +147,7 @@ app.post("/api/assets", async (req, res) => {
   res.json({ path: `samples/assets/${filename}`, width: meta.width, height: meta.height });
 });
 
+/** Model choices with published prices, so the picker cannot invent a number. */
 app.get("/api/models", (_req, res) => {
   res.json({ models: MODEL_OPTIONS, source: PRICING_SOURCE });
 });
@@ -167,15 +158,16 @@ app.get("/api/models", (_req, res) => {
  * assignment asks for, and the extra one is an opt-in demonstration of scale.
  */
 app.get("/api/formats", (_req, res) => {
-  res.json(
-    Object.entries(RATIOS).map(([key, v]) => ({
-      key,
-      label: v.label,
-      width: v.width,
-      height: v.height,
-      required: REQUIRED_RATIOS.includes(key as (typeof REQUIRED_RATIOS)[number]),
-    })),
-  );
+  // Annotated, so the compiler checks this against the shape the console
+  // imports rather than leaving the two ends to agree by convention.
+  const formats: FormatOption[] = (Object.keys(RATIOS) as RatioKey[]).map((key) => ({
+    key,
+    label: RATIOS[key].label,
+    width: RATIOS[key].width,
+    height: RATIOS[key].height,
+    required: REQUIRED_RATIOS.includes(key),
+  }));
+  res.json(formats);
 });
 
 /** Cross-run learning: reuse rate, spend and time saved over every run so far. */
@@ -251,15 +243,6 @@ app.get("/api/runs/:runId", (req, res) => {
     return;
   }
   res.json(state);
-});
-
-app.get("/api/runs/:runId/report", (req, res) => {
-  const state = runs.get(req.params.runId);
-  if (!state?.report) {
-    res.status(404).json({ error: "Report not ready" });
-    return;
-  }
-  res.json(state.report);
 });
 
 /**

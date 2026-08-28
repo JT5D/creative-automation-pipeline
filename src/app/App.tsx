@@ -83,6 +83,23 @@ export function App() {
     ? [...new Set(run.report.products.flatMap((p) => p.creatives.map((c) => c.ratio)))]
     : [];
 
+  // What the stage is actually showing, counted the same way Results filters.
+  const shownCount =
+    run?.report?.products
+      .flatMap((p) => p.creatives)
+      .filter(
+        (c) =>
+          (filterLocale === "all" || c.locale === filterLocale) &&
+          (filterRatio === "all" || c.ratio === filterRatio),
+      ).length ?? 0;
+
+  // A finished multi-market run opens on its first market. Set from the report
+  // rather than at request time, because the run decides which markets exist.
+  const reportMarkets = run?.report?.markets;
+  useEffect(() => {
+    if (reportMarkets && reportMarkets.length > 1) setFilterLocale(reportMarkets[0].locale);
+  }, [reportMarkets]);
+
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refreshInsights = useCallback(() => {
@@ -327,9 +344,15 @@ export function App() {
             </label>
           )}
           {provider && (
-            <div className={`pill ${provider.configured ? "ok" : "off"}`}>
-              <span className="dot" />
-              {provider.label}
+            <div className="provider">
+              <div className={`pill ${provider.configured ? "ok" : "off"}`}>
+                <span className="dot" />
+                {provider.label}
+              </div>
+              {/* The hand-off, as a sentence. Not a Firefly button: this repo
+                  has no entitlement to run that adapter, and a control that
+                  quietly does nothing is worse than an absent one. */}
+              {provider.handoff && <p className="handoff">{provider.handoff}</p>}
             </div>
           )}
           <ThemeToggle />
@@ -369,14 +392,27 @@ export function App() {
               {/* Each filter appears when its own axis has more than one value.
                   The format filter used to be gated on the number of MARKETS,
                   so a default run producing three formats in one market showed
-                  no way to narrow them. */}
+                  no way to narrow them.
+
+                  Markets open on ONE language rather than all of them. A
+                  producer reviews a campaign one market at a time -- mixed
+                  together, the same headline appears in three languages beside
+                  itself and nothing is comparable. The count beside the tabs
+                  says how much of the run is on screen, because a banner
+                  reading "24 creatives exported" over eight visible cards is
+                  the dead end this console has already shipped once. */}
               {run.report.markets.length > 1 && (
-                <Chips
-                  value={filterLocale}
-                  onChange={setFilterLocale}
-                  options={run.report.markets.map((m) => m.locale)}
-                  allLabel="All markets"
-                />
+                <>
+                  <Chips
+                    value={filterLocale}
+                    onChange={setFilterLocale}
+                    options={run.report.markets.map((m) => m.locale)}
+                    allLabel="All markets"
+                  />
+                  <span className="showing">
+                    {shownCount} of {run.report.metrics.variantsCreated} creatives
+                  </span>
+                </>
               )}
               <Chips
                 value={filterRatio}

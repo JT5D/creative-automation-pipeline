@@ -7,6 +7,28 @@
   "objective": "Drive first-purchase conversion for the autumn skincare range in DACH",
   "callToAction": "Jetzt entdecken",
   "toneOfVoice": "Calm, clinical, warm. Understated luxury - never hype.",
+  "manualBaseline": [
+    {
+      "task": "Locate the approved hero and the market's signed-off copy",
+      "minutes": 6
+    },
+    {
+      "task": "Lay the format out and fit the headline",
+      "minutes": 7
+    },
+    {
+      "task": "Place localized copy and proof it for that market",
+      "minutes": 4
+    },
+    {
+      "task": "Check against brand guidelines and the legal claim list",
+      "minutes": 5
+    },
+    {
+      "task": "Export, name and file the asset",
+      "minutes": 3
+    }
+  ],
   "manualMinutesPerCreative": 25,
   "markets": [
     {

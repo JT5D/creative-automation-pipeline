@@ -1,11 +1,11 @@
 import { buildHeroPrompt, findApprovedHero } from "./assetResolver.js";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
 import {
+  baselineMinutes,
   type CampaignBrief,
   CampaignBriefSchema,
-  RATIOS,
   type RatioKey,
-  resolveMarkets,
+  selectScope,
   type ValidationResult,
 } from "./schema.js";
 import { preflight } from "./validation.js";
@@ -71,15 +71,11 @@ export async function estimateCampaign(
 
   const pre = await preflight(brief);
 
-  const allRatios = Object.keys(RATIOS) as RatioKey[];
-  const ratios = options.ratios?.length
-    ? allRatios.filter((r) => options.ratios?.includes(r))
-    : allRatios;
-
-  const markets = resolveMarkets(brief);
-  const locales = options.locales?.length
-    ? markets.filter((m) => options.locales?.includes(m.locale)).map((m) => m.locale)
-    : markets.map((m) => m.locale);
+  // The same selection the run makes, from the same function. This is the
+  // whole reason the estimate is trustworthy: it is not a parallel model of
+  // the pipeline, it calls the pipeline's own decisions.
+  const { ratios, markets } = selectScope(brief, options);
+  const locales = markets.map((m) => m.locale);
 
   const products: PlannedProduct[] = [];
   for (const product of brief.products) {
@@ -115,6 +111,6 @@ export async function estimateCampaign(
     variants,
     generations,
     estimatedCostUsd: costEstimate(model, generations),
-    estimatedTimeSaved: timeSavedEstimate(brief.manualMinutesPerCreative, variants, projectedMs),
+    estimatedTimeSaved: timeSavedEstimate(baselineMinutes(brief), variants, projectedMs),
   };
 }

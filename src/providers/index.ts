@@ -8,7 +8,23 @@ export type ProviderStatus = {
   model: string;
   label: string;
   configured: boolean;
+  /**
+   * What happens to the provider that is NOT running, in one sentence.
+   *
+   * Adobe Firefly is the right production choice here and the adapter is
+   * written, but Firefly Services needs an enterprise entitlement this project
+   * does not have, so it has never been executed. The console says that in a
+   * line rather than offering a Firefly button that would do nothing -- a
+   * control that silently fails is worse than an absent one, because someone
+   * will press it in a demo. Absent when Firefly IS the selected provider.
+   */
+  handoff?: string;
 };
+
+const FIREFLY_HANDOFF =
+  "Adobe Firefly Image Model 5 is the production target: the adapter is written " +
+  "(src/providers/firefly.ts) and has never been executed, because Firefly " +
+  "Services needs an enterprise entitlement.";
 
 const CHOOSE =
   "Set IMAGE_PROVIDER=gemini or IMAGE_PROVIDER=firefly - both are configured and " +
@@ -20,7 +36,8 @@ const CHOOSE =
  * An earlier version let Firefly win simply because two environment variables
  * happened to be present. That is the wrong default for an adapter this repo
  * has never executed against a live endpoint: the run that matters would have
- * silently changed provider. So selection is stated, not inferred - * `IMAGE_PROVIDER` decides, and the only inference left is the unambiguous
+ * silently changed provider. So selection is stated, not inferred:
+ * `IMAGE_PROVIDER` decides, and the only inference left is the unambiguous
  * case where exactly one real provider is configured.
  *
  * There is no runtime fallback. If the selected provider cannot be built the
@@ -86,6 +103,7 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
             ? `Google Gemini - ${g.model}`
             : "Offline preview - no model will be called",
       configured: g.provider !== "offline-placeholder",
+      handoff: g.provider === "adobe-firefly" ? undefined : FIREFLY_HANDOFF,
     };
   } catch (error) {
     return {
@@ -93,6 +111,7 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
       model: "-",
       label: error instanceof Error ? error.message : "Generation unavailable",
       configured: false,
+      handoff: FIREFLY_HANDOFF,
     };
   }
 }

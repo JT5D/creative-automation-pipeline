@@ -7,7 +7,7 @@ import { templateFor } from "../src/composer.js";
 import { loadBriefFile, runCampaign } from "../src/pipeline.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
 import { RATIOS, type RatioKey } from "../src/schema.js";
-import { compareSignatures, visualSignature } from "../src/signature.js";
+import { colourSignature, compareSignatures, visualSignature } from "../src/signature.js";
 
 /**
  * Visual regression.
@@ -22,7 +22,7 @@ import { compareSignatures, visualSignature } from "../src/signature.js";
  */
 const baselines = JSON.parse(
   readFileSync(path.resolve("tests/baselines/creatives.json"), "utf8"),
-) as Record<string, number[]>;
+) as Record<string, { luma: number[]; rgb: number[] }>;
 
 /**
  * Tolerances, set from measurement rather than taste.
@@ -44,8 +44,26 @@ const baselines = JSON.parse(
 const MAX_MEAN_DRIFT = 0.3;
 const MAX_CELLS_CHANGED = 6;
 
+/**
+ * Colour tolerances, set from measurement.
+ *
+ * Mean RGB moves a little with font rasterization, so it is a per-channel
+ * budget rather than an equality: it catches a palette swap or a lost brand
+ * colour, not an antialiasing difference between macOS and Linux.
+ *
+ * The floor on distinct colours is the one that matters, and 512 is not a round
+ * number picked for comfort. A palette PNG cannot hold more than 256 colours --
+ * that is a hard ceiling, not a tendency -- and the lowest count across all 24
+ * creatives in this fixture is 768, on the 16:9 whose left half is a flat brand
+ * panel. 512 sits between the two with headroom on both sides. The repo's real
+ * photographic creative measures 11,102, and 256 after `.png({ quality: 95 })`.
+ */
+const MAX_CHANNEL_DRIFT = 6;
+const MIN_DISTINCT_COLOURS = 512;
+
 let outputs: string;
 let signatures: Record<string, number[]>;
+let colours: Record<string, Awaited<ReturnType<typeof colourSignature>>>;
 
 beforeAll(async () => {
   outputs = await mkdtemp(path.join(tmpdir(), "cap-visual-"));
@@ -60,10 +78,13 @@ beforeAll(async () => {
   });
 
   signatures = {};
+  colours = {};
   for (const product of report.products) {
     for (const creative of product.creatives) {
-      signatures[`${product.productId}/${creative.ratio}/${creative.locale}`] =
-        await visualSignature(path.join(outputs, creative.outputPath));
+      const key = `${product.productId}/${creative.ratio}/${creative.locale}`;
+      const file = path.join(outputs, creative.outputPath);
+      signatures[key] = await visualSignature(file);
+      colours[key] = await colourSignature(file);
     }
   }
 }, 120_000);
@@ -78,21 +99,57 @@ describe("visual regression", () => {
   });
 
   it.each(Object.keys(baselines))("%s matches its committed appearance", (key) => {
-    const drift = compareSignatures(signatures[key], baselines[key]);
+    const drift = compareSignatures(signatures[key], baselines[key].luma);
     expect(drift.meanDrift).toBeLessThanOrEqual(MAX_MEAN_DRIFT);
     expect(drift.cellsChanged).toBeLessThanOrEqual(MAX_CELLS_CHANGED);
+
+    // The half the luminance grid cannot see. Until this existed, "matches its
+    // committed appearance" meant "matches its committed greyscale", and the
+    // creatives could have gone out in any palette at all.
+    for (let channel = 0; channel < 3; channel++) {
+      expect(Math.abs(colours[key].rgb[channel] - baselines[key].rgb[channel])).toBeLessThanOrEqual(
+        MAX_CHANNEL_DRIFT,
+      );
+    }
+    expect(colours[key].distinctColours).toBeGreaterThan(MIN_DISTINCT_COLOURS);
   });
 
   /**
    * A regression test that cannot fail is decoration. This moves a headline by
    * a plausible amount and asserts the signature notices.
    */
+  /**
+   * The colour half of the same argument. This is the exact defect that got
+   * past 24 committed baselines and the whole suite: PNG `quality` is not JPEG
+   * quality, it switches libvips into palette mode. Re-encoding one creative
+   * that way here proves the check now goes red on it.
+   */
+  it("actually detects a creative quantised to a palette", async () => {
+    const sharp = (await import("sharp")).default;
+    const file = path.join(outputs, "lumen-autumn-glow-de/radiance-serum/1x1/en-gb.png");
+    const quantised = await sharp(file).png({ quality: 95 }).toBuffer();
+
+    const before = await colourSignature(file);
+    const after = await colourSignature(quantised);
+
+    expect(before.distinctColours).toBeGreaterThan(MIN_DISTINCT_COLOURS);
+    expect(after.distinctColours).toBeLessThanOrEqual(256);
+
+    // And the tone grid, which is what used to guard these files, does not
+    // notice at all. That is the finding, stated as an assertion.
+    const tonal = compareSignatures(
+      await visualSignature(quantised),
+      signatures["radiance-serum/1x1/en-GB"],
+    );
+    expect(tonal.meanDrift).toBeLessThanOrEqual(MAX_MEAN_DRIFT);
+  });
+
   it("actually detects a layout change", async () => {
     const key = "radiance-serum/1x1/en-GB";
     const shifted = await visualSignature(
       await shiftCopyBand(path.join(outputs, "lumen-autumn-glow-de/radiance-serum/1x1/en-gb.png")),
     );
-    const drift = compareSignatures(shifted, baselines[key]);
+    const drift = compareSignatures(shifted, baselines[key].luma);
 
     expect(drift.meanDrift).toBeGreaterThan(MAX_MEAN_DRIFT);
     expect(drift.cellsChanged).toBeGreaterThan(MAX_CELLS_CHANGED);

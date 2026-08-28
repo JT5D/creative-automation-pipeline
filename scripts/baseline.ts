@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { loadBriefFile, runCampaign } from "../src/pipeline.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
-import { visualSignature } from "../src/signature.js";
+import { colourSignature, visualSignature } from "../src/signature.js";
 
 /**
  * Regenerates the visual baselines.
@@ -29,11 +29,22 @@ const report = await runCampaign(await loadBriefFile("samples/campaign.yaml"), {
   generator: new TestDoubleHeroGenerator(),
 });
 
-const signatures: Record<string, number[]> = {};
+/**
+ * Two signatures per creative, because one of them is blind.
+ *
+ * `luma` is the 12x12 tone grid, which sees geometry. `rgb` is the mean colour,
+ * which is the half that greyscaling threw away -- the reason a 256-colour
+ * palette bug once passed all 24 of these.
+ */
+const signatures: Record<string, { luma: number[]; rgb: number[] }> = {};
 for (const product of report.products) {
   for (const creative of product.creatives) {
     const key = `${product.productId}/${creative.ratio}/${creative.locale}`;
-    signatures[key] = await visualSignature(path.join(OUT, creative.outputPath));
+    const file = path.join(OUT, creative.outputPath);
+    signatures[key] = {
+      luma: await visualSignature(file),
+      rgb: (await colourSignature(file)).rgb,
+    };
   }
 }
 

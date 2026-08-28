@@ -67,11 +67,17 @@ jobs:
           "
 
       # The README's first instruction is `npm run dev`, and the required demo
-      # video exists to help a reviewer set up and run this locally. Until now
-      # nothing proved the local app actually starts -- src/server.ts had no
+      # video exists to help a reviewer set up and run this locally. Until this
+      # job existed nothing proved the local app starts -- src/server.ts had no
       # coverage at all, so a boot failure would have surfaced on the
       # reviewer's machine rather than here.
-      - name: The local app boots and answers, from a clean clone with no key
+      #
+      # It asserts EVERY route the console calls, and says how many that was.
+      # It used to check four of them and then print "answered every route the
+      # console calls", which is this repo's recurring defect in one line: a
+      # claim broader than the measurement under it. The count below is derived
+      # from the list, so the sentence cannot drift from what ran.
+      - name: The local app boots and answers every route the console calls
         run: |
           npx tsx src/server.ts & SERVER_PID=$!
           trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
@@ -81,18 +87,61 @@ jobs:
             sleep 1
           done
 
-          # Keyless, so the console must say offline preview -- not "ready".
-          curl -sf http://127.0.0.1:8787/api/provider | tee /dev/stderr | grep -q '"configured":false'
-          # The exercise's three required formats are marked by the server.
-          curl -sf http://127.0.0.1:8787/api/formats  | grep -q '"required":true'
-          # The sample library the console loads on first paint.
-          curl -sf http://127.0.0.1:8787/api/briefs   | grep -q 'campaign.yaml'
+          B=http://127.0.0.1:8787
+          checked=0
+          expect() { # expect <label> <grep-pattern> <curl args...>
+            local label="$1" pattern="$2"; shift 2
+            curl -s "$@" | grep -q "$pattern" \
+              || { echo "✗ $label did not answer as expected"; exit 1; }
+            checked=$((checked + 1))
+            echo "  ✓ $label"
+          }
+
+          # Every fetch() in src/app, in the order the console makes them.
+          # Keyless, so the provider pill must say offline preview, not "ready".
+          expect "GET  /api/provider"        '"configured":false' "$B/api/provider"
+          expect "GET  /api/briefs"          'campaign.yaml'      "$B/api/briefs"
+          expect "GET  /api/briefs/:file"    'lumen-autumn-glow'  "$B/api/briefs/campaign.yaml"
+          expect "GET  /api/formats"         '"required":true'    "$B/api/formats"
+          expect "GET  /api/models"          'gemini'             "$B/api/models"
+          expect "GET  /api/insights"        '"runs"'             "$B/api/insights"
+
+          # The dry run the Estimate button makes. Spends nothing, and must
+          # report the same reuse/generate split the run above took.
+          expect "POST /api/estimate"        '"generations":1' -X POST "$B/api/estimate" \
+            -H 'Content-Type: application/json' \
+            --data "$(node -e 'const fs=require("fs");process.stdout.write(JSON.stringify({brief:fs.readFileSync("samples/campaign.yaml","utf8")}))')"
+
+          # The Run button: start a run, then poll the way the console polls.
+          RUN_ID=$(curl -s -X POST "$B/api/runs" -H 'Content-Type: application/json' \
+            --data "$(node -e 'const fs=require("fs");process.stdout.write(JSON.stringify({brief:fs.readFileSync("samples/campaign-minimal.yaml","utf8"),ratios:["1x1"],locales:[]}))')" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).runId))')
+          [ -n "$RUN_ID" ] || { echo "✗ POST /api/runs returned no runId"; exit 1; }
+          checked=$((checked + 1)); echo "  ✓ POST /api/runs"
+
+          for _ in $(seq 1 60); do
+            STATUS=$(curl -sf "$B/api/runs/$RUN_ID" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).status))')
+            [ "$STATUS" = "running" ] || break
+            sleep 1
+          done
+          [ "$STATUS" = "complete" ] || { echo "✗ run ended $STATUS"; exit 1; }
+          checked=$((checked + 1)); echo "  ✓ GET  /api/runs/:runId"
+
+          # The gallery reads exported files straight off disk through this,
+          # and the banner links the report and the zip.
+          expect "GET  /outputs/<file>"      '"campaignId"' \
+            "$B/outputs/lumen-autumn-glow-de/report.json"
+          curl -sf "$B/api/campaigns/lumen-autumn-glow-de/archive" -o /tmp/campaign.zip \
+            && unzip -tq /tmp/campaign.zip \
+            || { echo "✗ archive did not produce a readable zip"; exit 1; }
+          checked=$((checked + 1)); echo "  ✓ GET  /api/campaigns/:id/archive"
 
           # The asset upload is the one write this server makes. Assert it
           # refuses a crafted product id, because that is the input that would
           # otherwise decide a filesystem path.
-          curl -s -X POST http://127.0.0.1:8787/api/assets \
-            -H 'Content-Type: application/json' \
-            -d '{"productId":"../../etc/passwd","mimeType":"image/png","dataBase64":"aGk="}' \
-            | grep -q 'letters, digits and hyphens'
-          echo "local app booted on 127.0.0.1:8787 and answered every route the console calls"
+          expect "POST /api/assets (rejects traversal)" 'letters, digits and hyphens' \
+            -X POST "$B/api/assets" -H 'Content-Type: application/json' \
+            -d '{"productId":"../../etc/passwd","mimeType":"image/png","dataBase64":"aGk="}'
+
+          echo "local app booted on 127.0.0.1:8787 and answered $checked routes"
+          [ "$checked" -eq 12 ] || { echo "✗ expected 12 routes, checked $checked"; exit 1; }

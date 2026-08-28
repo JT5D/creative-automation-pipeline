@@ -15,8 +15,10 @@ const args = process.argv.slice(2);
 
 // An unrecognised flag used to fall through to a full campaign against the live
 // key, so `--help` spent real money. Anything this does not understand stops
-// here instead.
-const KNOWN = new Set(["--all", "--dry-run", "--prompts"]);
+// here instead. `--help` is itself a documented flag and belongs in the set:
+// left out, asking for help printed the help, then reported "Unrecognised:
+// --help", then exited 2, telling a script that reading the manual was an error.
+const KNOWN = new Set(["--all", "--dry-run", "--prompts", "--help"]);
 const unknown = args.filter((a) => a.startsWith("--") && !KNOWN.has(a));
 if (unknown.length || args.includes("--help")) {
   console.log(`
@@ -139,18 +141,33 @@ function total<T>(rows: T[], pick: (row: T) => number | undefined): number {
   return rows.reduce((sum, row) => sum + (pick(row) ?? 0), 0);
 }
 
+/**
+ * Every brief in the library, back to back.
+ *
+ * The exit code used to count any refused brief as a failure, and the manifest
+ * always contains one brief whose whole purpose is to be refused -- so this
+ * could never return 0. A status that cannot report success is as useless as
+ * one that cannot report failure: nobody looks at it, and the day a real
+ * failure arrives the 2 is indistinguishable from the 2 that was always there.
+ *
+ * Each entry already declares what it expects, so that is what gets checked. A
+ * brief that should be refused and is refused passes. One that should be
+ * refused and RUNS fails, which is the case actually worth catching.
+ */
 async function runPortfolio(): Promise<number> {
-  const manifest: { file: string; label: string }[] = JSON.parse(
+  const manifest: { file: string; label: string; expect: string }[] = JSON.parse(
     await readFile(path.resolve("samples/briefs.json"), "utf8"),
   );
 
   const done: CampaignReport[] = [];
   const blocked: { label: string; why: string }[] = [];
+  const wrong: string[] = [];
   const startedAt = Date.now();
 
   console.log(`\nPORTFOLIO RUN  ${manifest.length} briefs\n`);
 
   for (const entry of manifest) {
+    const shouldBlock = entry.expect.includes("blocked");
     try {
       const report = await runCampaign(await loadBriefFile(path.resolve("samples", entry.file)));
       done.push(report);
@@ -159,12 +176,18 @@ async function runPortfolio(): Promise<number> {
         `  ✓ ${entry.label.padEnd(26)} ${String(m.variantsCreated).padStart(3)} creatives · ` +
           `${m.approvedAssetsReused} reused · ${m.liveHeroGenerations} generated`,
       );
+      if (shouldBlock) {
+        wrong.push(`${entry.label} was expected to be refused and produced creatives`);
+      }
     } catch (error) {
       // A brief that fails preflight is a correct outcome, not a crash: the
       // legal-fail sample is in the manifest precisely to be refused.
       const why = error instanceof Error ? error.message : String(error);
       blocked.push({ label: entry.label, why });
-      console.log(`  ✗ ${entry.label.padEnd(26)} refused - ${why.split("\n")[0]}`);
+      console.log(
+        `  ${shouldBlock ? "✓" : "✗"} ${entry.label.padEnd(26)} refused - ${why.split("\n")[0]}`,
+      );
+      if (!shouldBlock) wrong.push(`${entry.label} was refused: ${why.split("\n")[0]}`);
     }
   }
 
@@ -184,7 +207,7 @@ async function runPortfolio(): Promise<number> {
   console.log(`
 PORTFOLIO COMPLETE
 
-  Campaigns produced          ${unique.length}${blocked.length ? `  (${blocked.length} refused at preflight)` : ""}
+  Campaigns produced          ${unique.length}${blocked.length ? `  (${blocked.length} refused at preflight, as the library says they should be)` : ""}
   Creatives exported          ${creatives}
   Approved heroes reused      ${reused}
   Live hero generations       ${generations}
@@ -197,6 +220,11 @@ PORTFOLIO COMPLETE
   // it displaces is the figure that matters, and only appears when a brief
   // states its rate.
   const failed = unique.some((r) => r.failures.length > 0);
+  if (wrong.length > 0) {
+    console.log("  Briefs that did not do what the library says they do:");
+    for (const line of wrong) console.log(`    ✗ ${line}`);
+    console.log("");
+  }
   if (savedUsd > 0 && spend > 0) {
     console.log(
       `  ${(savedMin / 60).toFixed(1)} studio hours and $${savedUsd.toLocaleString()} of labour avoided,\n` +
@@ -204,5 +232,5 @@ PORTFOLIO COMPLETE
     );
   }
 
-  return blocked.length > 0 || failed ? 2 : 0;
+  return wrong.length > 0 || failed ? 2 : 0;
 }

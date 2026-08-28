@@ -19,7 +19,6 @@
     "format": "biome check --write src tests scripts",
     "check": "bash scripts/check.sh",
     "test:baseline": "tsx scripts/baseline.ts",
-    "shots": "tsx scripts/shot-variants.ts",
     "portfolio": "tsx src/cli.ts --all"
   },
   "dependencies": {

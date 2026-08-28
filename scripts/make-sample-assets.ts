@@ -2,7 +2,7 @@ import "dotenv/config";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import "../src/fonts.js";
+import { measureText } from "../src/fonts.js";
 import { selectGenerator } from "../src/providers/index.js";
 
 /**
@@ -18,46 +18,120 @@ import { selectGenerator } from "../src/providers/index.js";
  */
 const ASSETS = path.resolve("samples/assets");
 
-const BRAND = { deep: "#14322B", gold: "#C9A227", cream: "#F4F1EA" };
+/**
+ * Reversed lockups are drawn in one light tone so they hold over any hero.
+ * A two-colour version put gold under the wordmark and it disappeared against
+ * a sunlit wall; brand systems ship a reversed variant for exactly this reason.
+ */
+const CREAM = "#F4F1EA";
 
 /**
- * The wordmark is drawn in code - deterministic, and mine, not a model's.
+ * Every sample brand gets a wordmark, drawn in code - deterministic, and mine,
+ * not a model's.
  *
- * It is the reversed, single-colour lockup: every element is the same light
- * tone so it holds over any background. An earlier two-colour version put gold
- * under the wordmark, which disappeared against a sunlit wall. Brand systems
- * ship a reversed variant for exactly this reason.
+ * They exist because the exercise names "presence of logo" as its example of a
+ * brand check, and a check with nothing to measure is not a check. Two brands
+ * shipped without one, and the logo rule went absent rather than red, so those
+ * campaigns reported every creative passing a brand suite that had quietly
+ * skipped the brand's most visible asset.
  *
- * The mark is a leaf inside a ring: the ring is the "lumen", the leaf is the
- * "botanicals". It replaced a cross inside a ring, which was a mistake worth
- * recording - a cross-in-circle is the visual language of pharmacy and first
- * aid, and this brand sells a *cosmetic*. Its own brief bans "clinically
- * proven" and hedges to "Dermatologist tested" precisely to stay clear of
- * medical claims, so leading the lockup with a medical symbol undercut the
- * compliance position the copy was working to hold. It also meant nothing:
- * neither light nor plant.
+ * Each mark is a symbol inside a ring plus the name, so the four read as one
+ * system without being the same drawing. Lumen's is a leaf: the ring is the
+ * "lumen", the leaf the "botanicals". It replaced a cross inside a ring, which
+ * is worth recording as a mistake - a cross-in-circle is the visual language of
+ * pharmacy and first aid, and this brand sells a *cosmetic*. Its own brief bans
+ * "clinically proven" and hedges to "Dermatologist tested" precisely to stay
+ * clear of medical claims, so leading the lockup with a medical symbol undercut
+ * the compliance position the copy was holding.
  *
- * The typeface is the bundled one. The previous version asked for
+ * The typeface is the bundled one. An earlier version asked for
  * "Helvetica, Arial", neither of which ships here - on this machine fontconfig
  * found a system Helvetica, and on a Linux CI box it would have silently
  * substituted something else. Same class of bug as the font chain described in
  * assets/fonts/LICENSE.md, in the one asset that had escaped the fix.
  */
-async function makeLogo() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200">
-    <rect width="640" height="200" fill="none"/>
-    <circle cx="92" cy="100" r="52" fill="none" stroke="${BRAND.cream}" stroke-width="6"/>
-    <path d="M92 64 C118 84 118 116 92 136 C66 116 66 84 92 64 Z"
-          fill="none" stroke="${BRAND.cream}" stroke-width="6" stroke-linejoin="round"/>
-    <path d="M92 78 L92 130" stroke="${BRAND.cream}" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
-    <text x="176" y="92" font-family="Rubik" font-size="52"
-          font-weight="700" letter-spacing="6" fill="${BRAND.cream}">LUMEN</text>
-    <text x="178" y="136" font-family="Rubik" font-size="25"
-          letter-spacing="10.5" fill="${BRAND.cream}" opacity="0.82">BOTANICALS</text>
-  </svg>`;
-  const out = path.join(ASSETS, "lumen-logo.png");
-  await sharp(Buffer.from(svg)).png().toFile(out);
-  console.log(`  ✓ logo            ${out}`);
+type Lockup = { file: string; name: string; sub?: string; glyph: string };
+
+const LOCKUPS: Lockup[] = [
+  {
+    file: "lumen-logo.png",
+    name: "LUMEN",
+    sub: "BOTANICALS",
+    // Leaf: light and plant, the two halves of the name.
+    glyph: `<path d="M92 64 C118 84 118 116 92 136 C66 116 66 84 92 64 Z"
+              fill="none" stroke="${CREAM}" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M92 78 L92 130" stroke="${CREAM}" stroke-width="4"
+              stroke-linecap="round" opacity="0.9"/>`,
+  },
+  {
+    file: "nordisk-brew-logo.png",
+    name: "NORDISK",
+    sub: "BREW",
+    // Bean: an ellipse with its seam, the category's oldest mark.
+    glyph: `<ellipse cx="92" cy="100" rx="24" ry="33" fill="none"
+              stroke="${CREAM}" stroke-width="6" transform="rotate(-28 92 100)"/>
+            <path d="M78 78 C98 92 86 108 106 122" fill="none" stroke="${CREAM}"
+              stroke-width="5" stroke-linecap="round"/>`,
+  },
+  {
+    file: "nordvik-logo.png",
+    name: "NORDVIK",
+    // Headland and water: "nord" + "vik", north inlet. Drawn as two angles
+    // rather than a line over an arc, which read as a smiling face.
+    glyph: `<path d="M62 116 L92 72 L122 116" fill="none" stroke="${CREAM}"
+              stroke-width="6" stroke-linejoin="round"/>
+            <path d="M64 132 L120 132" stroke="${CREAM}" stroke-width="5"
+              stroke-linecap="round" opacity="0.85"/>`,
+  },
+  {
+    file: "atelier-ferro-logo.png",
+    name: "ATELIER",
+    sub: "FERRO",
+    // Flacon: shoulders, neck and stopper, reduced to four strokes.
+    glyph: `<path d="M78 84 L78 132 L106 132 L106 84 Z" fill="none" stroke="${CREAM}"
+              stroke-width="6" stroke-linejoin="round"/>
+            <path d="M86 84 L86 72 L98 72 L98 84" fill="none" stroke="${CREAM}"
+              stroke-width="5" stroke-linejoin="round"/>`,
+  },
+];
+
+/**
+ * Wordmark tracking is measured, never guessed.
+ *
+ * The names are different lengths, so a single hardcoded size and letter
+ * spacing would run the longest one off the 640px canvas. This reads Rubik's
+ * real advance widths through the same measureText the compositor uses, then
+ * picks the largest size that fits - the same measured-typography argument the
+ * creatives make, applied to the one asset that used to sidestep it.
+ */
+function fitWordmark(text: string, maxWidth: number, maxSize: number, tracking: number) {
+  for (let size = maxSize; size >= 18; size -= 1) {
+    const width = measureText(text, size, "bold") + tracking * size * 0.1 * text.length;
+    if (width <= maxWidth) return { size, spacing: Number((size * 0.1 * tracking).toFixed(2)) };
+  }
+  return { size: 18, spacing: 1 };
+}
+
+async function makeLogos() {
+  for (const lockup of LOCKUPS) {
+    const name = fitWordmark(lockup.name, 430, 52, 1.2);
+    const sub = lockup.sub ? fitWordmark(lockup.sub, 430, 25, 4.2) : null;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200">
+      <circle cx="92" cy="100" r="52" fill="none" stroke="${CREAM}" stroke-width="6"/>
+      ${lockup.glyph}
+      <text x="176" y="${sub ? 92 : 118}" font-family="Rubik" font-size="${name.size}"
+            font-weight="700" letter-spacing="${name.spacing}" fill="${CREAM}">${lockup.name}</text>
+      ${
+        sub
+          ? `<text x="178" y="136" font-family="Rubik" font-size="${sub.size}"
+            letter-spacing="${sub.spacing}" fill="${CREAM}" opacity="0.82">${lockup.sub}</text>`
+          : ""
+      }
+    </svg>`;
+    const out = path.join(ASSETS, lockup.file);
+    await sharp(Buffer.from(svg)).png().toFile(out);
+    console.log(`  ✓ ${lockup.file.padEnd(26)} ${path.relative(process.cwd(), out)}`);
+  }
 }
 
 const PROMPTS = {
@@ -107,14 +181,14 @@ async function main() {
   await mkdir(ASSETS, { recursive: true });
   console.log("\nBuilding sample input assets\n");
 
-  await makeLogo();
+  await makeLogos();
 
-  // The logo is pure SVG, so it can be redrawn without touching a paid model.
+  // The logos are pure SVG, so they can be redrawn without touching a paid model.
   // One asset at a time, so regenerating a single fixture does not pay for both.
   const only = process.argv.find((a) => a.startsWith("--only="))?.split("=")[1];
 
   if (process.argv.includes("--logo-only")) {
-    console.log("\n  logo only - skipping generation\n");
+    console.log("\n  logos only - skipping generation\n");
     return;
   }
 

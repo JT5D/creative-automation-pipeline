@@ -12,6 +12,7 @@ message: Back in stock
 
 brand:
   name: Lumen Botanicals
+  logoPath: samples/assets/lumen-logo.png
   primaryColor: "#14322B"
   secondaryColor: "#C9A227"
 

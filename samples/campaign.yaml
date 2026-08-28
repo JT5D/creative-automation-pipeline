@@ -13,8 +13,27 @@ callToAction: Jetzt entdecken             # rendered into every creative
 toneOfVoice: Calm, clinical, warm. Understated luxury - never hype.
 
 # SUCCESS - the documented baseline for the "time saved" figure in report.json.
-# Reported only because it is supplied here; it is an estimate from this
-# number, clearly labelled, never an invented measurement.
+#
+# Itemised on purpose. A single "25 minutes per creative" carries the whole
+# time-saved claim and tells a reviewer nothing about whether it is credible,
+# so the client states the steps and the pipeline adds them up. These are the
+# client's own assumptions about their current process; nothing here is
+# measured by this tool, and every figure derived from it is labelled an
+# estimate. Argue with a line, not with the total.
+manualBaseline:
+  - task: Locate the approved hero and the market's signed-off copy
+    minutes: 6
+  - task: Lay the format out and fit the headline
+    minutes: 7
+  - task: Place localized copy and proof it for that market
+    minutes: 4
+  - task: Check against brand guidelines and the legal claim list
+    minutes: 5
+  - task: Export, name and file the asset
+    minutes: 3
+
+# The same number, stated as a total. Preflight requires the two to agree, so
+# editing the list above without editing this fails the run before it spends.
 manualMinutesPerCreative: 25
 # Loaded studio rate. Stated by a human on purpose: without it the run
 # reports time saved only, and never invents a cost.

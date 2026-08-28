@@ -2,12 +2,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
 import {
+  baselineMinutes,
   type CampaignBrief,
   type CanonicalHeroAsset,
   type RatioKey,
   REQUIRED_RATIOS,
   type ValidationResult,
 } from "./schema.js";
+import type { SocialCopy } from "./socialCopy.js";
 
 export type CreativeRecord = {
   ratio: RatioKey;
@@ -33,6 +35,13 @@ export type ProductRecord = {
   productName: string;
   hero: CanonicalHeroAsset;
   creatives: CreativeRecord[];
+  /**
+   * Caption and hashtags per market, assembled from the brief's own approved
+   * copy. One per market rather than one per creative: the words do not change
+   * with the aspect ratio, and writing the same caption into twelve files would
+   * be a count, not an artifact.
+   */
+  socialCopy: SocialCopy[];
 };
 
 /** One machine-checkable assignment requirement, answered from real records. */
@@ -85,6 +94,8 @@ export type CampaignReport = {
       /** Only when the brief states manualHourlyRateUsd. */
       usd?: number;
       baselineMinutesPerCreative: number;
+      /** What that per-creative figure is made of, when the brief itemises it. */
+      baselineBreakdown?: { task: string; minutes: number }[];
       basis: string;
     };
     campaignsGenerated: { campaigns: number; creatives: number; markets: number };
@@ -167,7 +178,7 @@ export function createReport(args: {
   // studio hours by producing an asset they cannot ship.
   const shippable = creatives.filter((c) => c.validation.status === "pass").length;
   const timeSaved = timeSavedEstimate(
-    brief.manualMinutesPerCreative,
+    baselineMinutes(brief),
     shippable,
     completedAt - startedAt,
     brief.manualHourlyRateUsd,
@@ -207,6 +218,7 @@ export function createReport(args: {
         minutes: timeSaved.savedMinutes,
         usd: timeSaved.savedUsd,
         baselineMinutesPerCreative: timeSaved.baselineMinutesPerCreative,
+        baselineBreakdown: brief.manualBaseline,
         basis: timeSaved.basis,
       },
       campaignsGenerated: {

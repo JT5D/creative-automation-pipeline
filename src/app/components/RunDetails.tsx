@@ -13,7 +13,8 @@ import { Timeline } from "./Timeline.js";
  * Collapsed by default, and that is the design decision worth defending: an
  * operator must never need to open this to know whether the run succeeded --
  * the delivery banner already said so. What lives here is evidence for when
- * the answer is disputed: the event stream, the eight assignment checks, and
+ * the answer is disputed: the event stream, the assignment checks counted off
+ * the files on disk, and
  * the cross-run reuse rate.
  */
 export function RunDetails({

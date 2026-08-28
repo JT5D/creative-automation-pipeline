@@ -10,7 +10,8 @@ import type {
   ValidationCheck,
   ValidationResult,
 } from "./schema.js";
-import { RATIOS } from "./schema.js";
+import { baselineMinutes, RATIOS, resolveMarkets } from "./schema.js";
+import { socialCopy } from "./socialCopy.js";
 import { contrastRatio } from "./textLayout.js";
 
 /** Minimum opaque fraction of the text layer that counts as "copy rendered". */
@@ -59,25 +60,7 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
     });
   }
 
-  // Legal / MLR scan across every piece of copy that can reach a final image.
-  // Screen every string that can reach a rendered creative, in every market.
-  const copy = [
-    brief.message,
-    brief.callToAction,
-    brief.brand.disclaimer,
-    ...(brief.markets ?? []).flatMap((m) => [m.message, m.callToAction, m.disclaimer]),
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const hits = findProhibited(copy, brief.brand.prohibitedWords);
-  checks.push({
-    id: "legal.prohibitedWords",
-    status: hits.length === 0 ? "pass" : "fail",
-    message:
-      hits.length === 0
-        ? `No prohibited terms found (${brief.brand.prohibitedWords.length} screened)`
-        : `Prohibited term(s) in campaign copy: ${hits.join(", ")}`,
-  });
+  checks.push(prohibitedClaimCheck(brief));
 
   if (brief.brand.logoPath) {
     const ok = await exists(brief.brand.logoPath);
@@ -110,6 +93,9 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
   const font = headlineFontCheck(brief);
   if (font) checks.push(font);
 
+  const baseline = baselineCheck(brief);
+  if (baseline) checks.push(baseline);
+
   checks.push({
     id: "brand.colors",
     status: isHex(brief.brand.primaryColor) && isHex(brief.brand.secondaryColor) ? "pass" : "fail",
@@ -117,6 +103,60 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
   });
 
   return rollup(checks);
+}
+
+/**
+ * Every string this run can publish, screened against the brand's claim list.
+ *
+ * That is the rendered creative AND the caption written beside it. The caption
+ * is assembled from strings already screened here, plus the brand and product
+ * names -- so including it adds exactly one thing the scan could not otherwise
+ * see: a prohibited term inside a name. A brand shipping a product called
+ * "Miracle Balm" would have produced clean images with a banned claim in the
+ * post body underneath them.
+ */
+function prohibitedClaimCheck(brief: CampaignBrief): ValidationCheck {
+  const captions = resolveMarkets(brief).flatMap((market) =>
+    brief.products.map((product) => socialCopy(brief, product, market).caption),
+  );
+  const copy = [
+    brief.message,
+    brief.callToAction,
+    brief.brand.disclaimer,
+    ...(brief.markets ?? []).flatMap((m) => [m.message, m.callToAction, m.disclaimer]),
+    ...captions,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const hits = findProhibited(copy, brief.brand.prohibitedWords);
+  return {
+    id: "legal.prohibitedWords",
+    status: hits.length === 0 ? "pass" : "fail",
+    message:
+      hits.length === 0
+        ? `No prohibited terms found (${brief.brand.prohibitedWords.length} screened)`
+        : `Prohibited term(s) in campaign copy: ${hits.join(", ")}`,
+  };
+}
+
+/**
+ * The two ways of stating the manual baseline have to agree.
+ *
+ * Without this the report could show a five-line breakdown adding to 25 while
+ * the saving was computed from a stale 30 sitting two fields above it. Null
+ * when the brief states only one of the two, which is the common case.
+ */
+function baselineCheck(brief: CampaignBrief): ValidationCheck | null {
+  if (!brief.manualBaseline?.length || !brief.manualMinutesPerCreative) return null;
+  const summed = baselineMinutes(brief);
+  const ok = summed === brief.manualMinutesPerCreative;
+  return {
+    id: "brief.manualBaseline",
+    status: ok ? "pass" : "fail",
+    message: ok
+      ? `Manual baseline itemises to ${summed} min/creative, matching the stated total`
+      : `Manual baseline items add to ${summed} min but manualMinutesPerCreative says ${brief.manualMinutesPerCreative}`,
+  };
 }
 
 /**
@@ -249,16 +289,36 @@ const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
   };
 };
 
-const logoCheck: CreativeCheck = ({ brief, rendered }) =>
-  brief.brand.logoPath
-    ? {
-        id: "brand.logo",
-        status: rendered.logoRendered ? "pass" : "warning",
-        message: rendered.logoRendered
-          ? "Brand logo composited"
-          : "Logo configured but no logo pixels reached the creative",
-      }
-    : null;
+/**
+ * Presence of logo, which is the exercise's own example of a brand check.
+ *
+ * It never returns null. It used to, whenever the brief named no logoPath --
+ * so the two brands that shipped without one produced creatives reporting
+ * 16 of 16 checks passed, from a brand suite that had silently dropped the
+ * brand's most visible asset. An absent check reads as a passed check in every
+ * count that matters, which is the same defect as a label broader than its
+ * measurement, one level up: the measurement was not there at all.
+ *
+ * Not configured is a warning, not a failure. The brief is the authority on
+ * what this brand's identity contains, and a campaign can legitimately run
+ * without a lockup; what it cannot do is go unmentioned.
+ */
+const logoCheck: CreativeCheck = ({ brief, rendered }) => {
+  if (!brief.brand.logoPath) {
+    return {
+      id: "brand.logo",
+      status: "warning",
+      message: "No brand logo in the brief - nothing to check for logo presence",
+    };
+  }
+  return {
+    id: "brand.logo",
+    status: rendered.logoRendered ? "pass" : "warning",
+    message: rendered.logoRendered
+      ? "Brand logo composited"
+      : "Logo configured but no logo pixels reached the creative",
+  };
+};
 
 /**
  * Meta reserves the top 14% / bottom 35% / outer 6% of a 9:16 placement for its

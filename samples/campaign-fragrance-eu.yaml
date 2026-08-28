@@ -34,6 +34,7 @@ markets:
 
 brand:
   name: Atelier Ferro
+  logoPath: samples/assets/atelier-ferro-logo.png
   primaryColor: "#14141A"
   secondaryColor: "#B08D57"
   disclaimer: Eau de parfum. 50ml.

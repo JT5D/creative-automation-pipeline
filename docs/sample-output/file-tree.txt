@@ -10,6 +10,9 @@ lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png
 lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png
 lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png
 lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png
+lumen-autumn-glow-de/overnight-recovery-cream/copy/de-de.txt
+lumen-autumn-glow-de/overnight-recovery-cream/copy/en-gb.txt
+lumen-autumn-glow-de/overnight-recovery-cream/copy/fr-fr.txt
 lumen-autumn-glow-de/overnight-recovery-cream/source/generated-hero.png
 lumen-autumn-glow-de/radiance-serum/16x9/de-de.png
 lumen-autumn-glow-de/radiance-serum/16x9/en-gb.png
@@ -23,6 +26,8 @@ lumen-autumn-glow-de/radiance-serum/4x5/fr-fr.png
 lumen-autumn-glow-de/radiance-serum/9x16/de-de.png
 lumen-autumn-glow-de/radiance-serum/9x16/en-gb.png
 lumen-autumn-glow-de/radiance-serum/9x16/fr-fr.png
+lumen-autumn-glow-de/radiance-serum/copy/de-de.txt
+lumen-autumn-glow-de/radiance-serum/copy/en-gb.txt
+lumen-autumn-glow-de/radiance-serum/copy/fr-fr.txt
 lumen-autumn-glow-de/radiance-serum/source/approved-hero.png
 lumen-autumn-glow-de/report.json
-runs.jsonl

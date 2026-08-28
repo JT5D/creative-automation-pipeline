@@ -54,9 +54,9 @@ export type ComposedCreative = {
 /**
  * Per-format art direction. Each is a deliberate layout, not a resize.
  *
- *   1:1   full-bleed hero, copy over a bottom scrim          (feed)
+ *   1:1   full-bleed hero, copy in the top band over a scrim (feed)
  *   4:5   same treatment, taller canvas                      (portrait feed)
- *   9:16  full-bleed hero, copy inside the Meta safe zone    (story / reel)
+ *   9:16  same again, copy inside the Meta safe zone         (story / reel)
  *   16:9  hero right, brand copy panel left                  (landscape)
  *
  * 9:16 is the demanding one: fitting a square hero to it costs about 41% of the
@@ -104,19 +104,28 @@ type Template = {
    */
   ctaGap: number;
   /**
-   * Y coordinate of the disclaimer baseline.
+   * Y coordinate of the disclaimer baseline, or null when the legal line
+   * follows the CTA instead of being anchored to the frame.
    *
    * Bottom-anchored on every format except the story, where the Meta safe zone
    * pushes copy up the frame and a fixed baseline stranded the legal line in
    * open photo, mid-frame and low contrast. There it follows the CTA instead,
    * so headline, CTA and disclaimer read as one block on the scrim.
+   *
+   * One field, not two. It was a coordinate plus a boolean saying to ignore
+   * the coordinate, so the story template carried a baseline value nothing
+   * could ever read -- and a test compared against it.
    */
-  disclaimerY: number;
-  /** Story only: place the disclaimer under the CTA rather than at disclaimerY. */
-  disclaimerFollowsCta: boolean;
+  disclaimerY: number | null;
   /** True when this format must honour the Meta 9:16 safe zone. */
   enforceSafeZone: boolean;
-  scrim: false | "bottom" | "top";
+  /**
+   * True when copy sits on the photograph under a gradient scrim, false when
+   * it sits on a solid brand panel. It was a three-state union carrying a
+   * "bottom" variant no template returned, which kept about thirty lines of
+   * scrim code and a header comment describing a layout that does not exist.
+   */
+  scrim: boolean;
   maxLines: number;
   maxFontSize: number;
   minFontSize: number;
@@ -154,14 +163,13 @@ export function templateFor(ratio: RatioKey): Template {
       // Top-left lockup, the conventional brand position on a full-bleed post.
       logo: { left: margin, top: margin, maxWidth: 300 },
       ctaGap: 52,
-      disclaimerY: height - 46,
       // Bottom-anchored, unlike the story. Trailing the CTA pushed the legal
       // line into the lower half of the frame, which is exactly where the art
       // direction puts the product -- it was composited across the jar lid on
-      // every square creative. The bottom anchor was already here and unused.
-      disclaimerFollowsCta: false,
+      // every square creative.
+      disclaimerY: height - 46,
       enforceSafeZone: false,
-      scrim: "top",
+      scrim: true,
       maxLines: 3,
       maxFontSize: 74,
       minFontSize: 38,
@@ -179,10 +187,9 @@ export function templateFor(ratio: RatioKey): Template {
       copy: { left: margin, top: 470, width: width - margin * 2, height: 330 },
       logo: { left: margin, top: safe.top + 34, maxWidth: 260 },
       ctaGap: 52,
-      disclaimerY: safe.bottom - 40,
-      disclaimerFollowsCta: true,
+      disclaimerY: null,
       enforceSafeZone: true,
-      scrim: "top",
+      scrim: true,
       maxLines: 3,
       maxFontSize: 88,
       minFontSize: 42,
@@ -203,7 +210,6 @@ export function templateFor(ratio: RatioKey): Template {
     logo: { left: margin, top: 200, maxWidth: 240 },
     ctaGap: 48,
     disclaimerY: height - 46,
-    disclaimerFollowsCta: false,
     enforceSafeZone: false,
     scrim: false,
     maxLines: 4,
@@ -287,49 +293,28 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   // Fit the copy first: the scrim has to cover the block it makes readable,
   // and that block's height is not known until the headline has been wrapped.
   const fit = fitText(message, tpl.copy.width, tpl.maxLines, tpl.maxFontSize, tpl.minFontSize);
+  const geometry = textGeometry(tpl, fit, Boolean(disclaimer), callToAction);
 
-  // 3. Copy zone treatment. On the full-bleed 1:1 the copy sits over the photo,
-  //    so it needs a gradient scrim to stay readable; the panel formats do not.
+  // 3. Copy zone treatment. On the three full-bleed formats the copy sits on
+  //    the photograph, so it needs a gradient scrim sized to the luminance of
+  //    the band it will occupy. 16:9 puts it on a brand panel and needs none.
   const textColor = tpl.scrim ? "#FFFFFF" : readableTextColor(brand.primaryColor);
 
-  if (tpl.scrim === "bottom") {
-    const scrimTop = Math.max(0, tpl.copy.top - 180);
-    const copyLum = await bandLuminance(heroBuffer, scrimTop, height - scrimTop, width);
-    const topLum = await bandLuminance(heroBuffer, 0, 300, width);
-    const copyPeak = scrimOpacity(copyLum, 0.62, 0.9);
-    const copyMid = scrimOpacity(copyLum, 0.34, 0.66);
-    const topPeak = scrimOpacity(topLum, 0.34, 0.78);
-    const scrimSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height - scrimTop}">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
-        <stop offset="45%" stop-color="#000000" stop-opacity="${copyMid}"/>
-        <stop offset="100%" stop-color="#000000" stop-opacity="${copyPeak}"/>
-      </linearGradient></defs>
-      <rect width="${width}" height="${height - scrimTop}" fill="url(#g)"/>
-    </svg>`;
-    layers.push({ input: Buffer.from(scrimSvg), left: 0, top: scrimTop });
-
-    // A short top scrim so the corner lockup stays legible over a bright hero.
-    const topSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${scrimTop}">
-      <defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#000000" stop-opacity="${topPeak}"/>
-        <stop offset="55%" stop-color="#000000" stop-opacity="${scrimOpacity(topLum, 0.06, 0.2)}"/>
-        <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-      </linearGradient></defs>
-      <rect width="${width}" height="${scrimTop}" fill="url(#t)"/>
-    </svg>`;
-    layers.push({ input: Buffer.from(topSvg), left: 0, top: 0 });
-  } else if (tpl.scrim === "top") {
+  if (tpl.scrim) {
     // The scrim ends just past the copy, not at the bottom of the frame.
     //
     // It used to fade to `disclaimerY + 260`, which is mid-frame on a 9:16 and
     // the very bottom on a 1:1 -- so when the square formats moved their copy to
     // the top band, their scrim stretched over the whole image and went thin
     // everywhere. White copy then sat on a sunlit plaster wall at almost no
-    // contrast. Sizing it to the block it exists for keeps it strong where the
-    // words are and absent over the product.
-    const copyBottom = textBlockBottom(tpl, fit, Boolean(disclaimer), callToAction);
-    const fade = Math.min(height, copyBottom + 200);
+    // contrast.
+    //
+    // It is `scrimBottom`, not the bottom of the whole text block. Where the
+    // legal line is bottom-anchored it has its own foot scrim below, so
+    // including it here stretched this gradient across the entire frame again
+    // and dimmed the product -- the same defect, arrived at from the other
+    // direction, while this comment claimed it was fixed.
+    const fade = Math.min(height, geometry.scrimBottom + 200);
     const bandLum = await bandLuminance(heroBuffer, 0, fade, width);
     const peak = scrimOpacity(bandLum, 0.5, 0.82);
     const mid = scrimOpacity(bandLum, 0.4, 0.72);
@@ -348,11 +333,11 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     // gets its own short fade instead of depending on whatever the hero
     // happens to put behind it -- measured on this creative it was white on
     // sunlit travertine.
-    if (disclaimer && !tpl.disclaimerFollowsCta) {
+    if (disclaimer && tpl.disclaimerY !== null) {
       // Independent of the copy scrim above it -- they may overlap. Clamping
       // this to `fade` produced a zero-height layer whenever the copy block
       // reached the bottom of the frame, and libvips rejects that outright.
-      const footTop = Math.max(0, Math.min(height - 16, tpl.disclaimerY - 78));
+      const footTop = Math.max(0, Math.min(height - 16, geometry.disclaimerY - 78));
       const footHeight = height - footTop;
       const footLum = await bandLuminance(heroBuffer, footTop, footHeight, width);
       const footPeak = scrimOpacity(footLum, 0.55, 0.88);
@@ -367,15 +352,16 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
       layers.push({ input: Buffer.from(footSvg), left: 0, top: footTop });
     }
   } else {
-    // Solid brand panel fills everything outside the hero zone.
-    const panel =
-      ratio === "9x16"
-        ? { left: 0, top: tpl.hero.height, width, height: height - tpl.hero.height }
-        : { left: 0, top: 0, width: width - tpl.hero.width, height };
-    const panelSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${panel.width}" height="${panel.height}">
-      <rect width="${panel.width}" height="${panel.height}" fill="${brand.primaryColor}"/>
+    // Solid brand panel fills the column beside the hero. 16:9 is the only
+    // format that takes this branch: the hero is inset from the right edge and
+    // everything left of it is panel. The other three are full-bleed and
+    // scrimmed, so this used to carry a `ratio === "9x16"` case that nothing
+    // could reach.
+    const panelWidth = width - tpl.hero.width;
+    const panelSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${panelWidth}" height="${height}">
+      <rect width="${panelWidth}" height="${height}" fill="${brand.primaryColor}"/>
     </svg>`;
-    layers.push({ input: Buffer.from(panelSvg), left: panel.left, top: panel.top });
+    layers.push({ input: Buffer.from(panelSvg), left: 0, top: 0 });
   }
 
   // 4. Text layer, rendered in isolation so we can prove ink actually landed.
@@ -386,6 +372,7 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     height,
     tpl,
     fit,
+    geometry,
     textColor,
     accent: brand.secondaryColor,
     callToAction,
@@ -441,10 +428,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
     disclaimerRendered: disclaimerInkRatio > 0,
     ctaRendered: ctaInkRatio > 0,
     enforceSafeZone: tpl.enforceSafeZone,
-    scrimmed: Boolean(tpl.scrim),
+    scrimmed: tpl.scrim,
     textBounds: {
       top: logoInkRatio > 0 ? tpl.logo.top : tpl.copy.top - 34,
-      bottom: textBlockBottom(tpl, fit, Boolean(disclaimer), callToAction),
+      bottom: geometry.blockBottom,
       left: tpl.copy.left,
       right: tpl.copy.left + tpl.copy.width,
     },
@@ -452,36 +439,75 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   };
 }
 
+/** Gap between the CTA pill and a disclaimer that trails it. */
+const DISCLAIMER_GAP = 46;
+
+export type TextGeometry = {
+  lineHeight: number;
+  /** Baseline of the last headline line. */
+  headlineBottom: number;
+  ctaFontSize: number;
+  ctaPadY: number;
+  ctaTop: number;
+  /** Bottom of the CTA pill, or the headline baseline when there is no CTA. */
+  ctaBottom: number;
+  /** Baseline the legal line is actually drawn on. */
+  disclaimerY: number;
+  /** Lowest pixel any text element occupies. Feeds the safe-zone check. */
+  blockBottom: number;
+  /**
+   * How far down the copy scrim has to stay strong.
+   *
+   * Not the same as blockBottom. Where the legal line is bottom-anchored it
+   * gets its own short foot scrim, so the copy scrim only has to cover the
+   * headline and the CTA -- sizing it to blockBottom stretched it over the
+   * entire frame, which is the exact failure the code above says it fixed.
+   * Where the line trails the CTA it is part of the block and included.
+   */
+  scrimBottom: number;
+};
+
 /**
- * Lowest pixel any text element occupies, used by the safe-zone check.
+ * Where every text element lands, computed once.
  *
- * It has to mirror buildTextLayer exactly. When the disclaimer follows the CTA
- * the block grows with the headline, so the bottom cannot be read off a fixed
- * coordinate -- getting that wrong would have the safe-zone check measuring a
- * line that is no longer there.
+ * This used to be two functions: buildTextLayer positioned the elements, and
+ * textBlockBottom re-derived the same coordinates for the safe-zone check with
+ * a comment saying it "has to mirror buildTextLayer exactly". It did not quite
+ * -- the CTA height rounded its font size before taking the padding in one and
+ * after it in the other, so the two agreed on the sample by arithmetic luck and
+ * would have drifted on a different headline size. A check computed from a
+ * second copy of the layout is a check on the copy.
  */
-export function textBlockBottom(
+export function textGeometry(
   tpl: Template,
   fit: { lines: string[]; fontSize: number },
   hasDisclaimer: boolean,
   callToAction?: string,
-): number {
-  if (hasDisclaimer && !tpl.disclaimerFollowsCta) return tpl.disclaimerY;
-
+): TextGeometry {
   const lineHeight = Math.round(fit.fontSize * 1.16);
   const headlineBottom =
     tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;
 
-  const ctaBottom = callToAction?.trim()
-    ? headlineBottom +
-      tpl.ctaGap +
-      Math.round(
-        Math.max(24, fit.fontSize * 0.36) +
-          Math.round(Math.max(24, fit.fontSize * 0.36) * 0.62) * 2,
-      )
-    : headlineBottom;
+  const ctaFontSize = Math.round(Math.max(24, fit.fontSize * 0.36));
+  const ctaPadY = Math.round(ctaFontSize * 0.62);
+  const ctaTop = headlineBottom + tpl.ctaGap;
+  const ctaBottom = callToAction?.trim() ? ctaTop + ctaFontSize + ctaPadY * 2 : headlineBottom;
 
-  return hasDisclaimer ? ctaBottom + 46 : ctaBottom;
+  // Bottom-anchored, except on the story where it rides with the copy block:
+  // a fixed baseline there stranded the legal line in open photo, mid-frame.
+  const disclaimerY = tpl.disclaimerY ?? ctaBottom + DISCLAIMER_GAP;
+
+  return {
+    lineHeight,
+    headlineBottom,
+    ctaFontSize,
+    ctaPadY,
+    ctaTop,
+    ctaBottom,
+    disclaimerY,
+    blockBottom: hasDisclaimer ? disclaimerY : ctaBottom,
+    scrimBottom: tpl.disclaimerY === null ? disclaimerY : ctaBottom,
+  };
 }
 
 function buildTextLayer(args: {
@@ -489,6 +515,8 @@ function buildTextLayer(args: {
   height: number;
   tpl: Template;
   fit: { lines: string[]; fontSize: number };
+  /** Where each element lands. Computed once by textGeometry, never here. */
+  geometry: TextGeometry;
   textColor: string;
   accent: string;
   /** The brand's headline face, or the bundled display face. */
@@ -503,11 +531,19 @@ function buildTextLayer(args: {
   ctaSvg: string | null;
   disclaimerSvg: string | null;
 } {
-  const { width, height, tpl, fit, textColor, accent, callToAction, disclaimer, headlineFamily } =
-    args;
-  const lineHeight = Math.round(fit.fontSize * 1.16);
-  const headlineBottom =
-    tpl.copy.top + fit.fontSize + Math.max(0, fit.lines.length - 1) * lineHeight;
+  const {
+    width,
+    height,
+    tpl,
+    fit,
+    geometry,
+    textColor,
+    accent,
+    callToAction,
+    disclaimer,
+    headlineFamily,
+  } = args;
+  const { lineHeight } = geometry;
   // Two voices, deliberately. The headline is the advertisement speaking; the
   // CTA and the legal line are the interface speaking. Both families are
   // bundled, and fontconfig is pointed only at that directory, so the fallback
@@ -534,29 +570,21 @@ function buildTextLayer(args: {
   // reads as "this is the action", and how real social placements treat it.
   const cta = callToAction?.trim();
   let ctaSvg = "";
-  let ctaBottom = headlineBottom;
   if (cta) {
-    const ctaFont = Math.round(Math.max(24, fit.fontSize * 0.36));
-    const padX = Math.round(ctaFont * 0.9);
-    const padY = Math.round(ctaFont * 0.62);
-    const textW = measureText(cta, ctaFont, "bold");
-    const boxW = Math.round(textW + padX * 2);
-    const boxH = Math.round(ctaFont + padY * 2);
-    const boxY = headlineBottom + tpl.ctaGap;
-    ctaBottom = boxY + boxH;
+    const { ctaFontSize, ctaPadY, ctaTop, ctaBottom } = geometry;
+    const padX = Math.round(ctaFontSize * 0.9);
+    const boxW = Math.round(measureText(cta, ctaFontSize, "bold") + padX * 2);
+    const boxH = ctaBottom - ctaTop;
     ctaSvg =
-      `<rect x="${tpl.copy.left}" y="${boxY}" width="${boxW}" height="${boxH}" ` +
+      `<rect x="${tpl.copy.left}" y="${ctaTop}" width="${boxW}" height="${boxH}" ` +
       `rx="${Math.round(boxH / 2)}" fill="${accent}"/>` +
-      `<text x="${tpl.copy.left + padX}" y="${boxY + padY + ctaFont * 0.8}" ` +
-      `font-family="${font}" font-size="${ctaFont}" font-weight="700" ` +
+      `<text x="${tpl.copy.left + padX}" y="${ctaTop + ctaPadY + ctaFontSize * 0.8}" ` +
+      `font-family="${font}" font-size="${ctaFontSize}" font-weight="700" ` +
       `letter-spacing="0.6" fill="#141815">${escapeXml(cta)}</text>`;
   }
 
-  // Bottom-anchored, except on the story where it rides with the copy block.
-  const disclaimerY = tpl.disclaimerFollowsCta ? ctaBottom + 46 : tpl.disclaimerY;
-
   const disclaimerSvg = disclaimer
-    ? `<text x="${tpl.copy.left}" y="${disclaimerY}" font-family="${font}" ` +
+    ? `<text x="${tpl.copy.left}" y="${geometry.disclaimerY}" font-family="${font}" ` +
       `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(disclaimer)}</text>`
     : "";
 

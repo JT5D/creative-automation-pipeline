@@ -5,7 +5,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
-import { safeBoundsFor, templateFor, textBlockBottom } from "../src/composer.js";
+import { safeBoundsFor, templateFor, textGeometry } from "../src/composer.js";
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
@@ -54,6 +54,7 @@ audience: Urban professionals 28-45
 message: Wake up to visibly brighter skin
 brand:
   name: Lumen Botanicals
+  logoPath: ${assets}/logo.png
   primaryColor: "#14322B"
   secondaryColor: "#C9A227"
   disclaimer: Individual results may vary.
@@ -65,6 +66,18 @@ products:
   - id: product-b
     name: Overnight Cream
 ${overrides}
+`;
+
+/** The same brief with two markets, used by localization and by the copy tests. */
+const multiMarketBrief = () =>
+  `${briefYaml()}
+markets:
+  - locale: en-GB
+    message: Wake up to visibly brighter skin
+    callToAction: Discover now
+  - locale: de-DE
+    message: Wach auf mit sichtbar strahlenderer Haut
+    callToAction: Jetzt entdecken
 `;
 
 beforeAll(async () => {
@@ -79,6 +92,19 @@ beforeAll(async () => {
   })
     .png()
     .toFile(path.join(assets, "approved-hero.png"));
+
+  // And a real logo, so the brand-presence check has something to measure.
+  // Without one the suite ran every creative past a logo rule that had nothing
+  // to look at, which is exactly the hole the rule was written to close.
+  await sharp(
+    Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="100">' +
+        '<circle cx="50" cy="50" r="30" fill="none" stroke="#F4F1EA" stroke-width="6"/>' +
+        "</svg>",
+    ),
+  )
+    .png()
+    .toFile(path.join(assets, "logo.png"));
 });
 
 afterAll(async () => {
@@ -176,10 +202,30 @@ describe("asset resolution", () => {
     expect(withoutRef).not.toMatch(/preserve the supplied product/i);
 
     // With a reference: preserving the real product is the entire point, so
-    // telling it "no logos" would erase the packaging we supplied.
+    // telling it "no logos" would erase the packaging we supplied. It still has
+    // to forbid INVENTED lettering -- a macro framing of a blank reference jar
+    // came back carrying fabricated cosmetic claims.
     expect(withRef).toMatch(/preserve the supplied product/i);
-    expect(withRef).toMatch(/add no new packaging text/i);
     expect(withRef).not.toMatch(/no logos, no watermarks/i);
+
+    // BOTH branches end with the absolute typography rule, and it is the last
+    // clause in the prompt. Handed a completely blank jar, the model printed
+    // "Lumen Botanicals / Overnight Recovery Cream" on it -- accurate by luck,
+    // and an earlier run of the same instruction produced garbled cosmetic
+    // claims. Nothing downstream reads pixels, so no check would ever see it.
+    for (const prompt of [withRef, withoutRef]) {
+      expect(prompt).toMatch(/TYPOGRAPHY RULE, absolute/);
+      expect(prompt).toMatch(/must stay completely unlabelled/i);
+      expect(prompt.trimEnd().endsWith("image can have.")).toBe(true);
+    }
+
+    // And it must not promise colour it cannot hold: the campaign light is
+    // directional and dramatic by design, so the lid necessarily reads darker
+    // than it does on a packshot's white sweep. Measured dE76 12.3, of which
+    // 10.8 is lightness. Asking for hue is an instruction; asking for exact
+    // colour is a claim nothing in this repo measures.
+    expect(withRef).toMatch(/hue/i);
+    expect(withRef).not.toMatch(/EXACTLY as it appears/i);
   });
 
   it("builds a deterministic prompt that bans baked-in typography", () => {
@@ -242,39 +288,49 @@ describe("ratio templates", () => {
       lines: Array.from({ length: tpl.maxLines }, () => "X"),
       fontSize: tpl.maxFontSize,
     };
-    const bottom = textBlockBottom(tpl, worstCase, true, "Jetzt entdecken");
+    const { blockBottom } = textGeometry(tpl, worstCase, true, "Jetzt entdecken");
 
     expect(tpl.logo.top).toBeGreaterThanOrEqual(safe.top);
-    expect(bottom).toBeLessThanOrEqual(safe.bottom);
+    expect(blockBottom).toBeLessThanOrEqual(safe.bottom);
     expect(tpl.copy.left).toBeGreaterThanOrEqual(safe.left);
     expect(tpl.copy.left + tpl.copy.width).toBeLessThanOrEqual(safe.right);
   });
 
-  it("keeps the CTA clear of the disclaimer in every format", () => {
+  /**
+   * This used to pass `hasDisclaimer: false` and compare against
+   * `tpl.disclaimerY`, which is a coordinate the renderer never uses on 9:16 --
+   * there the legal line follows the CTA. So the one format where the two
+   * elements can actually collide was the one format the check was blind to,
+   * and on the other three it measured a disclaimer the scenario had removed.
+   *
+   * Both constraints are asserted here against the coordinates the compositor
+   * itself draws on, with a disclaimer present, because that is what every
+   * sample brief supplies.
+   */
+  it("keeps the CTA clear of the disclaimer, and the disclaimer on the canvas", () => {
     for (const ratio of Object.keys(RATIOS) as (keyof typeof RATIOS)[]) {
       const tpl = templateFor(ratio);
+      const { width, height } = RATIOS[ratio];
       const worstCase = {
         lines: Array.from({ length: tpl.maxLines }, () => "X"),
         fontSize: tpl.maxFontSize,
       };
-      const bottom = textBlockBottom(tpl, worstCase, false, "Jetzt entdecken");
-      expect(bottom).toBeLessThan(tpl.disclaimerY);
+      const g = textGeometry(tpl, worstCase, true, "Jetzt entdecken");
+
+      // The legal line is set at 24px, so it needs its own height of clearance
+      // below the pill or the two touch.
+      expect(g.ctaBottom + 24).toBeLessThanOrEqual(g.disclaimerY);
+
+      // And it has to land somewhere a viewer can read it: inside the Meta
+      // safe zone where one applies, inside the frame everywhere else.
+      const floor = tpl.enforceSafeZone ? safeBoundsFor(width, height).bottom : height - 24;
+      expect(g.disclaimerY).toBeLessThanOrEqual(floor);
     }
   });
 });
 
 describe("localization", () => {
-  const multiMarket = () =>
-    briefYaml() +
-    `
-markets:
-  - locale: en-GB
-    message: Wake up to visibly brighter skin
-    callToAction: Discover now
-  - locale: de-DE
-    message: Wach auf mit sichtbar strahlenderer Haut
-    callToAction: Jetzt entdecken
-`;
+  const multiMarket = multiMarketBrief;
 
   it("multiplies creatives per market without any extra generation", async () => {
     const single = new FakeApiGenerator();
@@ -758,6 +814,100 @@ describe("run history", () => {
  * the pixels did.
  */
 describe("checks that can actually fail", () => {
+  it("never lets the logo check go absent when a brief names no logo", async () => {
+    // The two newest sample brands shipped without a lockup, and this rule
+    // returned null for them -- so their creatives reported 16 of 16 checks
+    // passed from a brand suite that had silently dropped the exercise's own
+    // example of a brand check. An absent check reads as a passed check.
+    const report = await runCampaign(parseBrief(briefYaml().replace(/^ {2}logoPath:.*$/m, "")), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+    });
+
+    for (const creative of report.products.flatMap((p) => p.creatives)) {
+      const logo = creative.validation.checks.find((c) => c.id === "brand.logo");
+      expect(logo).toBeDefined();
+      expect(logo?.status).toBe("warning");
+    }
+  });
+
+  it("refuses a manual baseline whose line items do not add up to its total", async () => {
+    // The itemised baseline exists so the time-saved figure can be argued
+    // with. Two ways of writing one number is two numbers unless something
+    // makes them agree.
+    const honest = await preflight(
+      parseBrief(
+        `${briefYaml()}
+manualMinutesPerCreative: 25
+manualBaseline:
+  - { task: Layout, minutes: 15 }
+  - { task: Export, minutes: 10 }
+`,
+      ),
+    );
+    expect(honest.checks.find((c) => c.id === "brief.manualBaseline")?.status).toBe("pass");
+
+    const drifted = await preflight(
+      parseBrief(
+        `${briefYaml()}
+manualMinutesPerCreative: 25
+manualBaseline:
+  - { task: Layout, minutes: 15 }
+  - { task: Export, minutes: 4 }
+`,
+      ),
+    );
+    expect(drifted.status).toBe("fail");
+    expect(drifted.checks.find((c) => c.id === "brief.manualBaseline")?.message).toMatch(
+      /add to 19 min but manualMinutesPerCreative says 25/,
+    );
+  });
+
+  it("screens the caption for prohibited claims, not only the rendered copy", async () => {
+    // The caption is published copy. It is assembled from strings the brief
+    // already carries plus the product and brand names -- so a banned claim in
+    // a PRODUCT NAME would have shipped clean images with a prohibited term in
+    // the post body underneath them.
+    const result = await preflight(
+      parseBrief(briefYaml().replace("name: Overnight Cream", "name: Miracle Overnight Cream")),
+    );
+    expect(result.status).toBe("fail");
+    expect(result.checks.find((c) => c.id === "legal.prohibitedWords")?.message).toMatch(
+      /miracle/i,
+    );
+  });
+
+  it("writes a caption per product per market, built only from approved copy", async () => {
+    const report = await runCampaign(parseBrief(multiMarketBrief()), {
+      outputRoot: outputs,
+      mode: "final",
+      generator: new FakeApiGenerator(),
+    });
+
+    for (const product of report.products) {
+      expect(product.socialCopy.map((c) => c.locale)).toEqual(["en-GB", "de-DE"]);
+      for (const post of product.socialCopy) {
+        const market = report.markets.find((m) => m.locale === post.locale);
+        // That market's own signed-off message, verbatim. Nothing translated
+        // at runtime, nothing paraphrased.
+        expect(post.caption).toContain(market?.message);
+        expect(post.caption).toContain(product.productName);
+        expect(post.hashtags).toContain("#LumenBotanicals");
+
+        // And it is on disk beside the creatives, ready to paste.
+        const file = path.join(
+          outputs,
+          sanitizeId(report.campaignId),
+          sanitizeId(product.productId),
+          "copy",
+          `${sanitizeId(post.locale)}.txt`,
+        );
+        expect(await readFile(file, "utf8")).toContain(post.hashtags.join(" "));
+      }
+    }
+  });
+
   it("catches a logo that loads perfectly but renders nothing", async () => {
     // The exercise's first named bonus is "presence of logo". This file
     // decodes, resizes and composites without error -- and is fully

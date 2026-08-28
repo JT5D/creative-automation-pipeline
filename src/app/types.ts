@@ -1,189 +1,34 @@
-export type ValidationCheck = {
-  id: string;
-  status: "pass" | "warning" | "fail";
-  message: string;
-};
-export type ValidationResult = { status: "pass" | "warning" | "fail"; checks: ValidationCheck[] };
-
-export type Creative = {
-  ratio: "1x1" | "4x5" | "9x16" | "16x9";
-  locale: string;
-  width: number;
-  height: number;
-  outputPath: string;
-  bytes: number;
-  validation: ValidationResult;
-  durationMs: number;
-};
-
-export type Hero = {
-  productId: string;
-  source: "reused" | "generated" | "generated_cached" | "placeholder";
-  localPath: string;
-  width: number;
-  height: number;
-  sourceAssetPath?: string;
-  generation?: {
-    provider: string;
-    operation: string;
-    model?: string;
-    prompt: string;
-    durationMs: number;
-    requestId?: string;
-  };
-};
-
-export type ProductRecord = {
-  productId: string;
-  productName: string;
-  hero: Hero;
-  creatives: Creative[];
-};
-
-export type CampaignReport = {
-  campaignId: string;
-  campaignName: string;
-  region: string;
-  audience: string;
-  message: string;
-  markets: { locale: string; message: string }[];
-  mode: "dev" | "final";
-  provider: { provider: string; model: string };
-  durationMs: number;
-  preflight: ValidationResult;
-  metrics: {
-    productsProcessed: number;
-    productsFailed: number;
-    marketsProcessed: number;
-    approvedAssetsReused: number;
-    heroesGenerated: number;
-    heroesFromCache: number;
-    heroesPlaceholder: number;
-    variantsCreated: number;
-    validationPassed: number;
-    validationWarnings: number;
-    validationFailed: number;
-    liveHeroGenerations: number;
-  };
-  /** The three the assessment FAQ names, computed in src/report.ts. */
-  successMetrics: {
-    timeSaved?: {
-      minutes: number;
-      usd?: number;
-      baselineMinutesPerCreative: number;
-      basis: string;
-    };
-    campaignsGenerated: { campaigns: number; creatives: number; markets: number };
-    efficiency: {
-      creativesPerGenerationCall: number | null;
-      costPerCreativeUsd: number | null;
-      reuseRate: number;
-      secondsPerCreative: number;
-    };
-  };
-  assignmentProof: {
-    passed: boolean;
-    checks: { id: string; passed: boolean; message: string }[];
-  };
-  products: ProductRecord[];
-  failures: { productId: string; productName: string; stage: string; message: string }[];
-  warnings: string[];
-  estimatedCostUsd?: {
-    generations: number;
-    unitPriceUsd: number;
-    totalUsd: number;
-    source: string;
-  };
-  estimatedTimeSaved?: { baselineMinutesPerCreative: number; savedMinutes: number; basis: string };
-};
-
-export type PipelineEvent = {
-  at: string;
-  event: string;
-  detail?: Record<string, unknown>;
-};
-
-export type RunState = {
-  runId: string;
-  status: "running" | "complete" | "failed";
-  startedAt: string;
-  events: PipelineEvent[];
-  report?: CampaignReport;
-  error?: string;
-};
-
-export type ProviderStatus = {
-  provider: string;
-  model: string;
-  label: string;
-  configured: boolean;
-};
-
-export type BriefSummary = {
-  file: string;
-  label: string;
-  teaches: string;
-  expect: string;
-};
-
-export type ModelOption = { id: string; label: string; usdPer2K: number; note: string };
-
-export type FormatOption = {
-  key: "1x1" | "4x5" | "9x16" | "16x9";
-  label: string;
-  width: number;
-  height: number;
-  /** One of the three the exercise names. Selected by default. */
-  required: boolean;
-};
-
-export type PlannedProduct = {
-  productId: string;
-  productName: string;
-  action: "reuse" | "generate";
-  sourceAssetPath?: string;
-  usingReference: boolean;
-};
-
-export type CampaignEstimate = {
-  campaignId: string;
-  campaignName: string;
-  preflight: ValidationResult;
-  blocked: boolean;
-  model: string;
-  ratios: string[];
-  locales: string[];
-  products: PlannedProduct[];
-  variants: number;
-  generations: number;
-  estimatedCostUsd?: {
-    generations: number;
-    unitPriceUsd: number;
-    totalUsd: number;
-    source: string;
-  };
-  estimatedTimeSaved?: { baselineMinutesPerCreative: number; savedMinutes: number; basis: string };
-};
-
-export type Insights = {
-  runs: number;
-  campaigns: number;
-  creatives: number;
-  liveHeroGenerations: number;
-  reuseRate: number;
-  totalCostUsd: number;
-  costPerCreativeUsd: number;
-  totalSavedMinutes: number;
-  avgDurationMs: number;
-  history: {
-    at: string;
-    campaignName: string;
-    mode: string;
-    model: string;
-    variants: number;
-    reused: number;
-    liveHeroGenerations: number;
-    costUsd: number;
-    durationMs: number;
-  }[];
-};
+/**
+ * What the console renders, imported from the modules that produce it.
+ *
+ * This file used to redeclare the report, the creative, the hero, the estimate
+ * and the insights by hand -- about 170 lines of structural copies of types
+ * that already existed three directories up. They had already drifted: the
+ * browser's CampaignReport was missing startedAt and completedAt, and its
+ * estimatedTimeSaved had three of the six fields the server sends. A copy of a
+ * type is a type that will be wrong later, and nothing would have failed when
+ * it was.
+ *
+ * Re-exporting is safe in the bundle because every line here is `export type`,
+ * which is erased before the browser sees it -- no server module is pulled in.
+ * The three shapes that exist only because of HTTP live in src/api.ts, which
+ * both ends import.
+ */
+export type { BriefSummary, FormatOption, RunState } from "../api.js";
+export type { CampaignEstimate, PlannedProduct } from "../estimate.js";
+export type { Insights } from "../history.js";
+export type { PipelineEvent } from "../pipeline.js";
+export type { ModelOption } from "../pricing.js";
+export type { ProviderStatus } from "../providers/index.js";
+export type {
+  AssignmentCheck,
+  CampaignReport,
+  CreativeRecord as Creative,
+  ProductFailure,
+  ProductRecord,
+} from "../report.js";
+export type {
+  CanonicalHeroAsset as Hero,
+  ValidationCheck,
+  ValidationResult,
+} from "../schema.js";

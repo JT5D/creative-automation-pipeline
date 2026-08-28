@@ -46,6 +46,7 @@ export function Inspector({
 
   const h = product.hero;
   const generated = h.source !== "reused";
+  const post = product.socialCopy?.find((entry) => entry.locale === c.locale);
 
   return (
     <aside className="inspector">
@@ -83,6 +84,18 @@ export function Inspector({
         <dt>File</dt>
         <dd className="brk">{c.outputPath}</dd>
       </dl>
+
+      {post && (
+        <>
+          <span className="insp-label">Caption for {c.locale}</span>
+          {/* Assembled from copy the brief already carries, not written by a
+              model, and screened by the same prohibited-term list as the
+              pixels. It is here rather than on the card because it belongs to
+              the post, and a post is a product in a market. */}
+          <pre className="insp-caption">{post.caption}</pre>
+          <p className="insp-tags">{post.hashtags.join(" ")}</p>
+        </>
+      )}
 
       <span className="insp-label">Production checks</span>
       <ul className="checks">

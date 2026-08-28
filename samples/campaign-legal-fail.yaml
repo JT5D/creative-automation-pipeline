@@ -10,6 +10,7 @@ message: The clinically proven miracle that cures dull skin overnight
 
 brand:
   name: Lumen Botanicals
+  logoPath: samples/assets/lumen-logo.png
   primaryColor: "#14322B"
   secondaryColor: "#C9A227"
   prohibitedWords: [cure, cures, miracle, clinically proven, guaranteed]

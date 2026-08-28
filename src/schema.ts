@@ -100,8 +100,28 @@ export const CampaignBriefSchema = z.object({
    * Documented baseline for the "manual time saved" figure. Reported only
    * when supplied, and always labelled as an estimate from this number --
    * never invented.
+   *
+   * Prefer `manualBaseline` below, which says what the number is made of.
    */
   manualMinutesPerCreative: z.number().positive().optional(),
+
+  /**
+   * The same baseline, itemised.
+   *
+   * "25 minutes per creative" is one opaque number carrying the entire time-
+   * saved claim, and the first thing anyone senior asks is what is in it. The
+   * honest answer is that a human has to state it either way -- so let them
+   * state the steps instead of the total, and derive the total by adding up.
+   * Nothing here is measured by this pipeline and nothing is invented by it;
+   * the line items are the client's assumption, and now they are visible and
+   * arguable rather than folded into a single figure.
+   *
+   * When both forms are present preflight requires them to agree, so the total
+   * cannot drift away from the work it claims to represent.
+   */
+  manualBaseline: z
+    .array(z.object({ task: z.string().min(1), minutes: z.number().positive() }))
+    .optional(),
   /**
    * Loaded cost of the studio hour this pipeline replaces. Optional and
    * deliberately without a default: money saved is only reported when a
@@ -131,6 +151,20 @@ export type Market = z.infer<typeof MarketSchema>;
  * Collapses the single-market and multi-market forms into one list, so the
  * pipeline only ever deals with an array of markets.
  */
+/**
+ * Minutes per creative the brief claims a human would spend.
+ *
+ * The itemised form wins when it is present, because it is the one a reader
+ * can argue with. Preflight refuses a brief where the two forms disagree, so
+ * this can never quietly pick a different number than the one on display.
+ */
+export function baselineMinutes(brief: CampaignBrief): number | undefined {
+  if (brief.manualBaseline?.length) {
+    return Number(brief.manualBaseline.reduce((sum, item) => sum + item.minutes, 0).toFixed(2));
+  }
+  return brief.manualMinutesPerCreative;
+}
+
 export function resolveMarkets(brief: CampaignBrief): Market[] {
   if (brief.markets?.length) return brief.markets;
   return [
@@ -192,6 +226,38 @@ export type RatioKey = keyof typeof RATIOS;
  * `assignmentProof` in the report checks for exactly them.
  */
 export const REQUIRED_RATIOS: RatioKey[] = ["1x1", "9x16", "16x9"];
+
+/**
+ * Which formats and markets a run will actually produce.
+ *
+ * pipeline.ts and estimate.ts both need this and both had their own copy of
+ * it. estimate exists to PREDICT pipeline, so two implementations of the very
+ * thing it predicts made their agreement coincidental: a change to one would
+ * have made the dry run quietly wrong about the run it was quoting for, and
+ * the test that compares them would have had to be wrong in the same way to
+ * notice. One function, both callers.
+ *
+ * It throws on an empty selection rather than producing nothing, and it does
+ * so here so the estimate refuses exactly what the run refuses.
+ */
+export function selectScope(
+  brief: CampaignBrief,
+  request: { ratios?: RatioKey[]; locales?: string[] } = {},
+): { ratios: RatioKey[]; markets: Market[] } {
+  const allRatios = Object.keys(RATIOS) as RatioKey[];
+  const ratios = request.ratios?.length
+    ? allRatios.filter((r) => request.ratios?.includes(r))
+    : allRatios;
+
+  const allMarkets = resolveMarkets(brief);
+  const markets = request.locales?.length
+    ? allMarkets.filter((m) => request.locales?.includes(m.locale))
+    : allMarkets;
+
+  if (markets.length === 0) throw new Error("No markets selected");
+  if (ratios.length === 0) throw new Error("No formats selected");
+  return { ratios, markets };
+}
 
 export type ValidationCheck = {
   id: string;

@@ -20,6 +20,7 @@ manualMinutesPerCreative: 25
 
 brand:
   name: Nordvik
+  logoPath: samples/assets/nordvik-logo.png
   primaryColor: "#12263A"
   secondaryColor: "#D08C4A"
   disclaimer: Roasted in small batches. Contains caffeine.

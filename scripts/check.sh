@@ -8,6 +8,10 @@ step() { printf '\n▸ %s\n' "$1"; }
 
 step "Types";      npx tsc --noEmit
 step "Lint";       npx biome check src tests scripts
+# One run, not two. This used to finish with a second `vitest run -t advertises`
+# so the gate could print a line naming the sample-brief tests -- 29 seconds to
+# re-run tests the line above had already run and already reported. The tests
+# are named well enough to find in that output.
 step "Tests";      npx vitest run
 step "Build";      npx vite build >/dev/null
 
@@ -28,8 +32,5 @@ fi
 if git ls-files | grep -vE '^docs/sample-output/' | grep -qE '(^|/)(report\.json|runs\.jsonl)$'; then
   fail "a generated run artifact is tracked outside docs/sample-output/"
 fi
-
-step "Sample briefs match their advertised results"
-npx vitest run -t "advertises" >/dev/null
 
 printf '\n  All checks passed.\n\n'

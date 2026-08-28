@@ -245,19 +245,6 @@ body {
 .pill.ok {
   color: var(--ink);
 }
-@media (max-width: 1180px) {
-  /* One column: drop the explicit placement or the panels keep their
-     two-column row assignments and stack out of order. */
-  .columns {
-    grid-template-columns: 1fr;
-  }
-}
-.hint {
-  margin: 6px 0 12px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .brief {
   width: 100%;
   height: 214px;
@@ -272,14 +259,6 @@ body {
     SFMono-Regular,
     Menlo,
     monospace;
-}
-.opt-label {
-  font-size: 10.5px;
-  letter-spacing: 1.1px;
-  text-transform: uppercase;
-  color: var(--muted);
-  width: 62px;
-  flex: none;
 }
 .chips {
   display: flex;
@@ -563,10 +542,6 @@ body {
   color: var(--red);
 }
 
-.dim {
-  margin-left: auto;
-}
-
 .checks {
   list-style: none;
   margin: 0;
@@ -592,46 +567,12 @@ body {
   color: var(--red);
 }
 
-.summary {
-  margin-top: 20px;
-  padding: 18px 20px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.stats {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-}
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.stat .value {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-.stat .label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-}
-
 .lb-backdrop {
   position: absolute;
   inset: 0;
   background: transparent;
   border: 0;
   cursor: zoom-out;
-}
-@media (max-width: 900px) {
-  .lb-inner {
-    grid-template-columns: 1fr;
-  }
 }
 
 .failures {
@@ -661,26 +602,6 @@ body {
   margin: 8px 0 0;
   font-size: 11.5px;
   color: var(--muted);
-}
-.proof-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 13px;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-.proof-why {
-  margin: 0;
-  padding: 0 13px 10px;
-  color: var(--muted);
-  font-size: 12px;
 }
 
 /* Which products a human still has to look at. */
@@ -1231,4 +1152,45 @@ body {
 .verdict-proof {
   font-size: 12px;
   color: var(--muted);
+}
+
+/* The provider block: what is running, and one line about what is not. */
+.provider {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 320px;
+}
+.handoff {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* How much of the run the market tabs are showing. Named exactly, because a
+   banner reading "24 creatives exported" over eight cards is a dead end. */
+.showing {
+  font-size: 11px;
+  color: var(--muted);
+  align-self: center;
+}
+
+/* The caption that ships beside the creative. */
+.insp-caption {
+  margin: 0 10px 6px;
+  padding: 9px 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  font: 11.5px / 1.55 inherit;
+  color: var(--ink);
+}
+/* Not gold: gold belongs to the creatives, and the tool never wears a
+   client's colour. See the palette note at the top of this file. */
+.insp-tags {
+  margin: 0 10px 12px;
+  font-size: 11.5px;
+  color: var(--text-2);
 }

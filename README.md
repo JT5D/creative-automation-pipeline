@@ -9,7 +9,7 @@ and calling a GenAI image model only for what is genuinely missing.
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one hero reused, one
 generated, one live generation.** Select every format and market and that same
-single generation produces **24 creatives in 39.3s for $0.134** - because a
+single generation produces **24 creatives in 31.5s for $0.134** - because a
 model is called once per missing hero, not once per output.
 
 Every number on this page comes from the run committed in
@@ -133,15 +133,17 @@ outputs/lumen-autumn-glow-de/
 │   ├── source/approved-hero.png        ← the asset that was reused
 │   ├── 1x1/en-gb.png  de-de.png  fr-fr.png
 │   ├── 4x5/…   9x16/…   16x9/…
+│   └── copy/en-gb.txt  de-de.txt  fr-fr.txt   ← caption + hashtags per market
 ├── overnight-recovery-cream/
 │   ├── source/generated-hero.png       ← the asset the model produced
 │   └── …
 └── report.json
 ```
 
-Four sample briefs ship with the repo and the console loads any of them in a
-click: the canonical run, the same brief in JSON, a cold start for a different
-brand with no approved assets at all, and one carrying a prohibited claim that
+Seven sample briefs ship with the repo and the console loads any of them in a
+click: the canonical run, the same brief in JSON, a restock where nothing is
+generated at all, a cold start for a different brand with no approved assets,
+two other brands in other categories, and one carrying a prohibited claim that
 is stopped at preflight before a credit is spent.
 
 Committed evidence without running anything:
@@ -229,7 +231,28 @@ No text LLM runs at any point. Localized copy is supplied per market in the
 brief, because a localized claim on a regulated cosmetic carries legal weight
 and needs human sign-off. Markets multiply output at zero additional generation.
 
-### 7. Checks that can actually fail
+### 7. A creative is not a post
+
+A picture still needs words beside it. Whoever schedules these has to write a
+caption and a tag set for every product in every market, which is the same
+per-market multiplication the images were costing before this existed - so
+producing the image and stopping there stops one step short.
+
+Each product gets `copy/<locale>.txt`, and the same content lands in
+`report.json` under that product's `socialCopy`. It is **assembled, not
+generated**: the market's own signed-off message, its call to action, its
+disclaimer, the product name, the brand name. No model runs, nothing is
+translated at runtime, and no claim appears that a human has not already
+approved for that market. Hashtags come from the brand and product names only -
+adding the region or a campaign theme would be inventing marketing decisions
+out of string manipulation.
+
+It is screened by the same prohibited-term scan as the pixels, in preflight.
+A caption is published copy; gating the image on the legal list and not the
+words underneath it would be a strange place to stop. That scan now sees one
+thing it could not before: a banned claim inside a **product name**.
+
+### 8. Checks that can actually fail
 
 A validation rule earns its place only if it can go red on real input. Four
 checks in this repo could not, and each was fixed only after the defect was
@@ -256,8 +279,15 @@ typeface is actually bundled.
 
 **Per rendered creative**: exact output dimensions · the full campaign message
 fits and is rasterized · text/background contrast vs WCAG 2.2 AA where a named
-background exists · Meta 9:16 safe zone · no prohibited term in the copy that
-reached the pixels.
+background exists · Meta 9:16 safe zone · logo presence · no prohibited term in
+the copy that reached the pixels.
+
+The logo rule **never returns nothing**. It used to skip itself whenever a brief
+named no `logoPath`, so the two brands that shipped without a lockup produced
+creatives reporting 16 of 16 checks passed from a brand suite that had silently
+dropped the exercise's own example of a brand check. An absent check reads as a
+passed check in every count that matters. A brief with no logo now gets a
+warning that says so, and all seven sample brands ship one.
 
 Four elements are measured, not assumed: the headline, CTA, disclaimer and logo
 are each rasterized **alone** and their opaque pixels counted. A combined layer
@@ -277,9 +307,27 @@ Intelligence; this repo does not claim to replace it.
 The FAQ names three. All three are counted off the run in
 `report.json → successMetrics`:
 
-- **Time saved** - derived from the `manualMinutesPerCreative` baseline the
-  brief supplies, and labelled an illustrative estimate everywhere it appears.
-  It is not a measurement.
+- **Time saved** - derived from the baseline the brief supplies, and labelled an
+  illustrative estimate everywhere it appears. It is not a measurement.
+
+  The brief states that baseline as **line items**, not as one number, because
+  "25 minutes per creative" carries the whole claim and tells a reviewer nothing
+  about whether it is credible:
+
+  | The manual step being replaced | min |
+  |---|---|
+  | Locate the approved hero and the market's signed-off copy | 6 |
+  | Lay the format out and fit the headline | 7 |
+  | Place localized copy and proof it for that market | 4 |
+  | Check against brand guidelines and the legal claim list | 5 |
+  | Export, name and file the asset | 3 |
+  | **Total** | **25** |
+
+  The pipeline adds them up; a human still has to state them, and they are the
+  client's assumptions about their own process, not anything measured here.
+  A brief may state the total instead, and if it states both, **preflight fails
+  the run when they disagree** - two ways of writing one number is two numbers
+  otherwise. Argue with a line, not with the total.
 - **Campaigns generated** - creatives, products and markets actually produced.
 - **Overall efficiency** - creatives per live generation, cost per creative,
   and reuse rate.
@@ -339,7 +387,7 @@ director.
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Campaign velocity | One brief → 24 validated creatives in 39.3s | **Delivered** |
+| 1 · Campaign velocity | One brief → 24 validated creatives in 31.5s | **Delivered** |
 | 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
 | 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
 | 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
@@ -347,7 +395,7 @@ director.
 
 | Pain point | What this does about it |
 |---|---|
-| 1 · Manual production overload | One brief → 24 finished creatives, 1.41s each |
+| 1 · Manual production overload | One brief → 24 finished creatives, 1.31s each |
 | 2 · Inconsistent quality | Brand rules are code, not a style guide someone remembers |
 | 3 · Approval bottlenecks | Prohibited claims stop the run before production; a human only reviews what a model touched |
 | 4 · Analysis at scale | Every run writes provenance and per-check results as data |
@@ -397,7 +445,26 @@ director.
   legibility is handled earlier - the scrim is sized from the measured luminance
   of the band the copy will occupy - and not re-expressed as a WCAG ratio after.
 - **The prohibited-word scan is literal.** It catches the claims a legal team
-  enumerates; it is not semantic claim detection.
+  enumerates; it is not semantic claim detection. It also cannot read pixels:
+  it screens the copy this pipeline composites and the caption it writes, not
+  anything a model drew inside the hero.
+- **A generated hero is not colour-managed against its reference.** The prompt
+  asks for the product's hue and colour family to be preserved, and says
+  plainly that lightness will move, because the campaign is lit hard and
+  directional while the packshot is lit flat on a white sweep. Measured on the
+  committed run, the lid drifts **dE76 11.6** from the supplied packshot, of
+  which 8.1 is lightness. It was previously asking for "colours EXACTLY", which
+  is an instruction the art direction argues with and a claim nothing measured.
+  Method and figures: [`docs/CREATIVE_STANDARDS.md`](docs/CREATIVE_STANDARDS.md)
+  §8. The production answer is compositing the approved packshot into a
+  generated scene rather than asking a model to redraw it.
+- **A model can still draw packaging text, and nothing here can read it back.**
+  Handed a completely blank jar, the model returned one printed with the brand
+  and product name - accurate by luck; an earlier generation of the same
+  instruction produced garbled cosmetic claims. The typography rule is now the
+  last clause of the prompt and absolute in both branches, and the committed run
+  came back clean. That is a mitigation, not a guarantee, and it is the specific
+  reason every product a model touched is badged **Review generated hero**.
 - **Run state is in memory**, so restarting the server forgets past runs. The
   outputs and `report.json` on disk are the durable artifact.
 - **Single machine, no queue.** `npm run portfolio` runs every brief in the
@@ -459,6 +526,7 @@ for.
 | Brand compliance checks (bonus) | `src/validation.ts` | logo ink, brand colour, contrast, disclaimer, safe zone |
 | Legal content checks (bonus) | word-boundary prohibited scan | `samples/campaign-legal-fail.yaml` fails preflight |
 | Logging / reporting (bonus) | `src/report.ts` | `report.json`, live event stream, `runs.jsonl` |
+| Caption + hashtags per post | `src/socialCopy.ts` - assembled from approved copy, no model call | `copy/<locale>.txt` per product, and `socialCopy` in report.json |
 
 `report.json → assignmentProof` answers the exercise's minimum from the run's
 own records - nine facts counted off the files on disk, every coverage figure
@@ -490,14 +558,16 @@ generation, driven by a real filesystem check - delete the approved file and the
 same brief takes the generate path.
 
 **1:30-2:00 · The output.** Six creatives, each an intentional template rather
-than a resize, served straight off disk. Click any one for its provenance and
-production checks. Files land in
-`outputs/<campaign>/<product>/<ratio>/<locale>.png`.
+than a resize, served straight off disk. Click any one for its provenance, its
+production checks, and the caption and hashtags that ship beside it. Files land
+in `outputs/<campaign>/<product>/<ratio>/<locale>.png`, with the post copy in
+`copy/<locale>.txt`.
 
 **2:00-2:30 · Scale, and the guardrail.** Add 4:5 and two more markets: 24
-creatives, still one generation, still $0.134. Then pick the *Rejected copy*
-brief, which carries a prohibited claim and is stopped at preflight before a
-credit is spent.
+creatives, still one generation, still $0.134. The market tabs open on one
+language, and say how many of the 24 are on screen. Then pick the *Rejected
+copy* brief, which carries a prohibited claim and is stopped at preflight
+before a credit is spent.
 
 Running with **no key at all** also works: a labelled offline preview that
 reports `assignmentProof.passed = false`, because a preview has not demonstrated
@@ -515,7 +585,9 @@ src/
 ├── composer.ts        per-format templates, text layout, ink measurement
 ├── validation.ts      preflight + per-creative checks
 ├── report.ts          run record, success metrics, assignmentProof
+├── socialCopy.ts      caption + hashtags, assembled from the brief's own copy
 ├── providers/         HeroGenerator: gemini · firefly · offline placeholder
+├── api.ts             the wire contract, imported by the server and the console
 ├── server.ts          local API the console calls
 └── app/               React console
 docs/                  standards, model strategy, API contracts, sample output

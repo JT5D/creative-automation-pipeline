@@ -38,6 +38,7 @@ markets:
 
 brand:
   name: Nordisk Brew
+  logoPath: samples/assets/nordisk-brew-logo.png
   primaryColor: "#1F2A24"
   secondaryColor: "#B87333"
   disclaimer: Subscription renews monthly. Cancel anytime.

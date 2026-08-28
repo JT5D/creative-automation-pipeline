@@ -113,7 +113,7 @@
       The exercise asks for two products across 1:1, 9:16 and 16:9. That is what the
       console runs by default - <strong>6 finished creatives from one paid generation
       call</strong>. Select every format and market and that same single call produces
-      <strong>24 creatives in 39.3 seconds for $0.134</strong>, because generation
+      <strong>24 creatives in 31.5 seconds for $0.134</strong>, because generation
       happens once per missing hero, not once per output.
     </p>
     <div class="byline">
@@ -211,7 +211,9 @@
           The campaign-message check renders the text layer in isolation and
           counts opaque pixels. If the font fails to resolve, ink goes to zero
           and the creative is marked failed. A check that cannot go red is
-          decoration.
+          decoration - and so is a check that is absent. The logo rule used to
+          skip itself for brands with no lockup, so those campaigns reported
+          every check passing from a suite that had quietly dropped one.
         </p>
       </div>
       <div class="card">
@@ -221,6 +223,17 @@
           sides free of text. My first version put the headline inside the bottom
           35%, where the platform's own overlay would have covered the entire
           message. The bounds are now derived from the spec and pinned by a test.
+        </p>
+      </div>
+      <div class="card">
+        <h3>A creative is not a post</h3>
+        <p>
+          Every product gets a caption and a tag set per market, written to
+          <code>copy/&lt;locale&gt;.txt</code> beside the images. It is assembled from copy
+          the brief already carries and a human already signed off, not generated - so it
+          costs nothing, cannot hallucinate a claim, and goes through the same legal scan
+          as the pixels. Producing the image and leaving the words is stopping one step
+          short of the thing being automated.
         </p>
       </div>
       <div class="card">
@@ -293,6 +306,7 @@
       <tr><td>Organized outputs</td><td><span class="tick">✓</span> By campaign / product / ratio / locale</td></tr>
       <tr><td>Brand compliance</td><td><span class="tick">✓</span> Logo, brand colour, WCAG contrast, safe zone</td></tr>
       <tr><td>Legal / MLR checks</td><td><span class="tick">✓</span> Prohibited-claim scan, run before any spend</td></tr>
+      <tr><td>Caption and hashtags per post</td><td><span class="tick">✓</span> Assembled from the market's own signed-off copy - no model call, no runtime translation - and screened by the same prohibited-claim list as the pixels</td></tr>
       <tr><td>Logging and reporting</td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
       <tr><td>Documentation</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
       <tr><td>Engineering discipline</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate - <code>npm run check</code></td></tr>

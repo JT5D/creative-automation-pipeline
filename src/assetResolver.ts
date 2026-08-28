@@ -204,6 +204,26 @@ export function campaignSet(brief: CampaignBrief): string {
 }
 
 /**
+ * The quality bar, stated before anything brand-specific.
+ *
+ * Every clause below it was already a correct technical instruction and the
+ * output still came back looking like stock photography. The reason is that a
+ * precise catalogue brief produces a precise catalogue photograph: evenly lit,
+ * everything in focus, nothing to look at. Naming the standard first, in the
+ * language the reference imagery is captioned in, moves the whole distribution
+ * before a single product detail is specified.
+ *
+ * It is brand-agnostic on purpose. Nothing here mentions a product, a palette
+ * or a category, so it lifts any campaign the pipeline runs, not the sample.
+ */
+const CINEMATIC_BAR =
+  "Award-winning cinematic advertising photography, editorial quality, shot for " +
+  "a global luxury brand campaign. Rich, filmic colour grade with deep tonal " +
+  "range. Beautiful shallow depth of field. Dramatic natural light with real " +
+  "atmosphere and mood. Hyper-detailed, photorealistic, sharp on the subject. " +
+  "Not a flat studio packshot, not a stock catalogue render.";
+
+/**
  * Deterministic art direction. Pure string composition -- no LLM call, so the
  * same brief always produces the same prompt and the same cache key.
  *
@@ -226,86 +246,11 @@ export function campaignSet(brief: CampaignBrief): string {
  * section 7. The reference is the category's craft conventions, not anyone's
  * imagery -- no style is reproduced and every pixel is generated from this brief.
  */
-/**
- * The quality bar, stated before anything brand-specific.
- *
- * Every clause below it was already a correct technical instruction and the
- * output still came back looking like stock photography. The reason is that a
- * precise catalogue brief produces a precise catalogue photograph: evenly lit,
- * everything in focus, nothing to look at. Naming the standard first, in the
- * language the reference imagery is captioned in, moves the whole distribution
- * before a single product detail is specified.
- *
- * It is brand-agnostic on purpose. Nothing here mentions a product, a palette
- * or a category, so it lifts any campaign the pipeline runs, not the sample.
- */
-/**
- * One camera set-up in a product shoot.
- *
- * The campaign path deliberately generates ONE hero and crops it, because a
- * crop is free and a generation is not. That buys consistency and costs
- * coverage: every format is the same photograph. A real shoot covers a product
- * from several set-ups and edits down.
- *
- * These are those set-ups, written as camera briefs rather than adjectives.
- * They change the composition while the identity, set and light stay fixed, so
- * the results read as one session. Each one is a separate generation and is
- * therefore opt-in, never part of the default campaign cost.
- */
-export type Shot = { id: string; label: string; camera: string };
-
-export const SHOT_SET: Shot[] = [
-  {
-    id: "hero",
-    label: "Hero",
-    camera:
-      "eye-level three-quarter view, product centred and filling the middle of " +
-      "the frame, full container in shot, generous quiet space around it",
-  },
-  {
-    id: "macro",
-    label: "Macro detail",
-    camera:
-      "extreme close-up on the cap and the shoulder of the container, the form " +
-      "deliberately cropped by the frame edge, texture and the specular edge " +
-      "reading sharply, background almost entirely dissolved",
-  },
-  {
-    id: "overhead",
-    label: "Overhead",
-    camera:
-      "directly overhead bird's-eye view looking straight down at the closed " +
-      "lid, the product small and precisely centred in a wide field of surface",
-  },
-  {
-    id: "establishing",
-    label: "Wide establishing",
-    camera:
-      "wide establishing shot with the product small in the lower third, the " +
-      "set and its light doing most of the work, deep negative space above",
-  },
-];
-
-const CINEMATIC_BAR =
-  "Award-winning cinematic advertising photography, editorial quality, shot for " +
-  "a global luxury brand campaign. Rich, filmic colour grade with deep tonal " +
-  "range. Beautiful shallow depth of field. Dramatic natural light with real " +
-  "atmosphere and mood. Hyper-detailed, photorealistic, sharp on the subject. " +
-  "Not a flat studio packshot, not a stock catalogue render.";
-
 export function buildHeroPrompt(
   product: Product,
   brief: CampaignBrief,
   /** True when an approved packshot is being sent as an identity anchor. */
   hasReference = false,
-  /**
-   * Optional camera brief for one shot in a set. Omitted, the hero is framed
-   * for compositing (product low, headline space above), which is what the
-   * campaign path needs. Supplied, it replaces that framing with a specific
-   * perspective, which is how a photographer covers a product in a session
-   * rather than taking the same picture repeatedly.
-   */
-  shot?: Shot,
 ): string {
   if (product.generationPrompt) return product.generationPrompt;
 
@@ -373,16 +318,12 @@ export function buildHeroPrompt(
     // over-corrected by nearly half, aiming at 33% when the safe area is 56%.
     // Every hero came back looking photographed from across the room. Say the
     // real number, once, as a positive instruction.
-    shot
-      ? `Camera: ${shot.camera}`
-      : [
-          "The product sits in the LOWER HALF of the frame, horizontally centred,",
-          "and is large, close and unmistakably the subject -- it fills most of the",
-          "central 50% of the width, with its base and lid entirely in frame. The",
-          "UPPER HALF is quiet, empty background: no product, no props, nothing but",
-          "surface and light, because the campaign headline is composited there.",
-          "Do not crop the product and do not place it off to one side.",
-        ].join(" "),
+    "The product sits in the LOWER HALF of the frame, horizontally centred,",
+    "and is large, close and unmistakably the subject -- it fills most of the",
+    "central 50% of the width, with its base and lid entirely in frame. The",
+    "UPPER HALF is quiet, empty background: no product, no props, nothing but",
+    "surface and light, because the campaign headline is composited there.",
+    "Do not crop the product and do not place it off to one side.",
 
     // Retouch standard, stated rather than implied.
     "Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical,",
@@ -397,15 +338,42 @@ export function buildHeroPrompt(
     // it. With an approved packshot we are paying for the opposite: the real
     // product, preserved. Telling the model "no logos" while handing it the
     // brand's own jar is an instruction to erase the thing we supplied.
+    //
+    // It asks for hue rather than "colours EXACTLY". The campaign light is
+    // dramatic and directional by design, so the lid necessarily reads
+    // different from the way it reads on a packshot's white sweep. An
+    // instruction the art direction contradicts is not an instruction, and
+    // "exactly" was a claim nothing in this repo measures. The drift is real
+    // and is measured against the committed run rather than asserted here:
+    // method and figures in docs/CREATIVE_STANDARDS.md section 8.
     hasReference
-      ? "Preserve the supplied product EXACTLY as it appears in the reference: " +
-        "its geometry, proportions, cap, closure, surface finish, colours, and " +
-        "any label or brand mark already on it. Do not restyle, redraw, " +
-        "relabel or substitute the product. Add no new packaging text, no new " +
-        "claims, no invented logos. No typography anywhere else in the scene, " +
-        "and no watermarks."
+      ? "Preserve the supplied product's identity from the reference: its " +
+        "geometry, proportions, cap, closure, surface finish, hue and any " +
+        "label or brand mark already on it. Relighting it into this scene will " +
+        "change how light and dark it reads, and that is expected; its shape, " +
+        "material and colour family must not change. Do not restyle, redraw, " +
+        "relabel or substitute the product."
       : "Absolutely no text, no lettering, no typography, no logos, no " +
         "watermarks, and no packaging claims of any kind in the image.",
+
+    // Last clause in the prompt, and absolute in both branches.
+    //
+    // It was one sub-clause at the end of the reference branch, saying "add no
+    // new packaging text", and the model ignored it: handed a completely blank
+    // jar it returned one printed "Lumen Botanicals / Overnight Recovery
+    // Cream". That text was accurate by luck -- an earlier run of the same
+    // instruction produced "Skin plattored a. Overnigtrent cream" on a
+    // regulated cosmetic. Nothing downstream can read pixels, so neither the
+    // prohibited-claim scan nor any other check would have seen it.
+    //
+    // Phrased without needing to know whether the reference is labelled, which
+    // this pipeline cannot determine: copy what is there, originate nothing.
+    "TYPOGRAPHY RULE, absolute: do NOT write, draw, print, emboss or add any " +
+      "text, lettering, numerals, wordmark or logo anywhere in this image. If " +
+      "the reference product already carries printed text, reproduce exactly " +
+      "that and nothing more. If it carries none, the product must stay " +
+      "completely unlabelled and blank. Inventing packaging copy is the single " +
+      "worst failure this image can have.",
   ]
     .filter(Boolean)
     .join(" ");

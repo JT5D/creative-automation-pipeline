@@ -213,3 +213,57 @@ same pixels.
 
 16:9 is exempt because it is a panel layout: the copy sits beside the
 photograph rather than over it, so the hero is free to fill its own region.
+
+---
+
+## 8. Reference fidelity - what "preserve the product" does and does not mean
+
+When a product has no approved hero but does have a packshot, the packshot goes
+to the model as an identity anchor. The prompt used to demand the product be
+preserved "EXACTLY as it appears in the reference: its geometry, proportions,
+cap, closure, surface finish, colours". Two of those words were wrong.
+
+**Colour.** The campaign is lit with a hard, directional key and graded into
+shadow; the packshot is lit flat on a white sweep. The same lid cannot read the
+same way under both, and the art direction is what makes it not. Measured on
+the run committed in [`docs/sample-output/`](sample-output/), comparing the mean
+CIELAB of the deep-green lid pixels in the packshot against the same pixels in
+the generated hero:
+
+| | dE76 |
+|---|---|
+| Total | **11.6** |
+| Lightness (L\*) alone | 8.1 |
+| Hue and chroma (a\*b\*) | 8.4 |
+
+Method: sample both images at 512px, take pixels where the green channel
+dominates by more than 12 levels and lightness is under 120, mean them, convert
+to CIELAB, take the Euclidean distance. It is a lid-region estimate, not a
+spectrophotometer reading, and it is stated that way.
+
+That is a visible difference. It is also an inevitable one, and demanding
+"exact colour" from a prompt while the same prompt demands dramatic relighting
+is an instruction that argues with itself. The prompt now asks for the
+product's **hue and colour family** to be preserved and says plainly that
+lightness will move. Nothing in the pipeline measures colour fidelity per run,
+so nothing in the pipeline claims it.
+
+The production answer is not a better prompt. It is compositing the approved
+packshot into a generated scene rather than asking a model to redraw it -
+Photoshop API or Firefly Composite - which preserves the asset by construction.
+
+**Typography.** The reference branch also carried "add no new packaging text"
+as a sub-clause, and the model ignored it: handed a completely blank jar, it
+returned one printed `Lumen Botanicals / Overnight Recovery Cream`. That text
+was accurate by luck. An earlier generation of the same instruction produced
+`Skin plattored a. Overnigtrent cream` on a regulated cosmetic.
+
+Nothing downstream can read pixels, so neither the prohibited-claim scan nor any
+other check would ever have seen it. The rule is now the **last clause in the
+prompt, absolute, and identical in both branches**: reproduce the text the
+reference carries and originate none; if it carries none, the product stays
+unlabelled. That held on the committed run - the jar in every creative is blank.
+
+It is a mitigation, not a guarantee. A model can still draw a letter, and this
+pipeline cannot read it back. That is the specific reason every product a model
+touched is badged **Review generated hero** and is never presented as approved.

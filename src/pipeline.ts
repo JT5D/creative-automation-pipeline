@@ -15,13 +15,8 @@ import {
   sanitizeId,
   writeReport,
 } from "./report.js";
-import {
-  type CampaignBrief,
-  CampaignBriefSchema,
-  RATIOS,
-  type RatioKey,
-  resolveMarkets,
-} from "./schema.js";
+import { type CampaignBrief, CampaignBriefSchema, type RatioKey, selectScope } from "./schema.js";
+import { renderCopyFile, socialCopy } from "./socialCopy.js";
 import { preflight, preflightOrThrow, validateCreative } from "./validation.js";
 
 export type PipelineEvent = {
@@ -97,18 +92,7 @@ export async function runCampaign(
   // 1. Contract. An invalid brief never reaches the rest of the system.
   const brief =
     typeof rawBrief === "string" ? parseBrief(rawBrief) : CampaignBriefSchema.parse(rawBrief);
-  const allMarkets = resolveMarkets(brief);
-  const markets = options.locales?.length
-    ? allMarkets.filter((m) => options.locales?.includes(m.locale))
-    : allMarkets;
-
-  const allRatios = Object.keys(RATIOS) as RatioKey[];
-  const ratios = options.ratios?.length
-    ? allRatios.filter((r) => options.ratios?.includes(r))
-    : allRatios;
-
-  if (markets.length === 0) throw new Error("No markets selected");
-  if (ratios.length === 0) throw new Error("No formats selected");
+  const { ratios, markets } = selectScope(brief, options);
   emit("brief_validated", {
     campaignId: brief.id,
     products: brief.products.length,
@@ -203,9 +187,22 @@ export async function runCampaign(
         }
       }
 
+      // The words that go beside the picture, per market. Assembled from copy
+      // the brief already carries, so this costs nothing and cannot invent a
+      // claim; preflight has already screened it against the legal list.
+      const copy = markets.map((market) => socialCopy(brief, product, market));
+      await mkdir(path.join(productDir, "copy"), { recursive: true });
+      for (const post of copy) {
+        await writeFile(
+          path.join(productDir, "copy", `${sanitizeId(post.locale)}.txt`),
+          renderCopyFile(post),
+        );
+      }
+
       products.push({
         productId: product.id,
         productName: product.name,
+        socialCopy: copy,
         hero: {
           ...hero,
           // Everything published is relative: report.json has to be readable
