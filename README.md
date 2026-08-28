@@ -8,12 +8,13 @@ exist, and calling a GenAI image model only for what is genuinely missing.
 
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one product reused, one
-generated, one paid model call, 24.9s.**
+generated, one paid model call.**
 
-**Then the same run with every format and market selected: 24 creatives, still
-one paid call, 33.8s** — because generation happens once per missing hero, not
-once per output. Both figures are measured runs, reported in
-[`docs/sample-output/report.json`](docs/sample-output/report.json).
+**Select every format and market and that same single call produces 24
+creatives in 35.9s for $0.134** — because generation happens once per missing
+hero, not once per output. That run is the one committed in
+[`docs/sample-output/report.json`](docs/sample-output/report.json); every number
+on this page comes from it.
 
 A working proof-of-concept: it runs locally, calls a real image model, and
 writes real files. What it is not is a deployed system — storage is local, there
@@ -63,7 +64,7 @@ and spends model budget only where a human genuinely needs something new.
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Accelerate campaign velocity | `runCampaign()` — brief in, 24 validated creatives out in 33.8s | **Delivered** |
+| 1 · Accelerate campaign velocity | `runCampaign()` — brief in, 24 validated creatives out in 35.9s | **Delivered** |
 | 2 · Ensure brand consistency | `src/validation.ts` — colour, logo, contrast, disclaimer and safe zone applied and checked by code, identically, every time | **Delivered** |
 | 3 · Maximize relevance & personalization | `markets[]` — per-market message, CTA and disclaimer rasterized into each export, at zero extra generation | **Delivered** |
 | 4 · Optimize marketing ROI | Cost side only: `report.json → successMetrics.efficiency` reports creatives per paid call, cost per creative and reuse rate | **Half.** CTR and conversion are post-publication and this pipeline never publishes, so no CTR number is invented here — see [Production extension path](#production-extension-path) |
@@ -219,13 +220,13 @@ CAMPAIGN COMPLETE  Lumen Botanicals — Autumn Glow (DACH)
   Channel variants created    24
   Validation passed           24 / 24
   Paid generation calls       1
-  Elapsed                     33.8s
+  Elapsed                     35.9s
 ```
 
 Run the exercise's minimum instead — the console's default, 1:1 · 9:16 · 16:9
 in one market — and the same brief produces **6 creatives from the same single
-paid call in 24.9s**. The generation cost does not move, because it is a
-function of missing heroes, not of outputs.
+paid call**. The generation cost does not move, because it is a function of
+missing heroes, not of outputs.
 
 ---
 
