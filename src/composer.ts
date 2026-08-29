@@ -176,8 +176,8 @@ export function templateFor(ratio: RatioKey): Template {
       enforceSafeZone: false,
       scrim: true,
       maxLines: 3,
-      maxFontSize: 74,
-      minFontSize: 38,
+      maxFontSize: 62,
+      minFontSize: 34,
     };
   }
 
@@ -196,8 +196,8 @@ export function templateFor(ratio: RatioKey): Template {
       enforceSafeZone: true,
       scrim: true,
       maxLines: 3,
-      maxFontSize: 88,
-      minFontSize: 42,
+      maxFontSize: 68,
+      minFontSize: 38,
     };
   }
 
@@ -218,8 +218,8 @@ export function templateFor(ratio: RatioKey): Template {
     enforceSafeZone: false,
     scrim: false,
     maxLines: 4,
-    maxFontSize: 72,
-    minFontSize: 36,
+    maxFontSize: 60,
+    minFontSize: 34,
   };
 }
 
@@ -578,31 +578,38 @@ function buildTextLayer(args: {
     )
     .join("\n");
 
-  // A short accent rule above the headline -- the kind of small brand device
-  // that separates a produced ad from an image with words on it.
-  const ruleY = tpl.copy.top - 34;
-  const rule = `<rect x="${tpl.copy.left}" y="${ruleY}" width="88" height="6" fill="${accent}"/>`;
+  // A hairline accent rule above the headline. Thin on purpose: a heavy slab
+  // reads as a template device, a hairline reads as art direction.
+  const ruleY = tpl.copy.top - 30;
+  const rule = `<rect x="${tpl.copy.left}" y="${ruleY}" width="56" height="2" fill="${accent}"/>`;
 
-  // CTA sits directly under the headline as a pill -- the shape a viewer
-  // reads as "this is the action", and how real social placements treat it.
+  // CTA: letterspaced caps sitting on a hairline rule.
+  //
+  // A filled pill is the visual grammar of programmatic display advertising.
+  // Premium beauty campaigns set the action as type and let the placement own
+  // the button, so that is what this draws. It occupies the same reserved box
+  // textGeometry already allocated, so the layout contract is unchanged.
   const cta = callToAction?.trim();
   let ctaSvg = "";
   if (cta) {
-    const { ctaFontSize, ctaPadY, ctaTop, ctaBottom } = geometry;
-    const padX = Math.round(ctaFontSize * 0.9);
-    const boxW = Math.round(measureText(cta, ctaFontSize, "bold") + padX * 2);
-    const boxH = ctaBottom - ctaTop;
+    const { ctaFontSize, ctaTop, ctaBottom } = geometry;
+    const size = Math.round(ctaFontSize * 0.82);
+    const tracking = size * 0.16;
+    const label = cta.toUpperCase();
+    // Optically centred in the reserved box, with the rule below the baseline.
+    const baseline = Math.round((ctaTop + ctaBottom) / 2 + size * 0.2);
+    const ruleW = Math.round(measureText(label, size, "bold") + tracking * label.length);
     ctaSvg =
-      `<rect x="${tpl.copy.left}" y="${ctaTop}" width="${boxW}" height="${boxH}" ` +
-      `rx="${Math.round(boxH / 2)}" fill="${accent}"/>` +
-      `<text x="${tpl.copy.left + padX}" y="${ctaTop + ctaPadY + ctaFontSize * 0.8}" ` +
-      `font-family="${font}" font-size="${ctaFontSize}" font-weight="700" ` +
-      `letter-spacing="0.6" fill="#141815">${escapeXml(cta)}</text>`;
+      `<text x="${tpl.copy.left}" y="${baseline}" ` +
+      `font-family="${font}" font-size="${size}" font-weight="600" ` +
+      `letter-spacing="${tracking.toFixed(2)}" fill="${textColor}">${escapeXml(label)}</text>` +
+      `<rect x="${tpl.copy.left}" y="${baseline + Math.round(size * 0.42)}" ` +
+      `width="${ruleW}" height="2" fill="${accent}"/>`;
   }
 
   const disclaimerSvg = disclaimer
     ? `<text x="${tpl.copy.left}" y="${geometry.disclaimerY}" font-family="${font}" ` +
-      `font-size="24" fill="${textColor}" opacity="0.72">${escapeXml(disclaimer)}</text>`
+      `font-size="20" fill="${textColor}" opacity="0.58">${escapeXml(disclaimer)}</text>`
     : "";
 
   const canvasSvg = (body: string) =>

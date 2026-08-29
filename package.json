@@ -14,7 +14,6 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
     "lint": "biome check src tests scripts",
     "format": "biome check --write src tests scripts",
     "check": "bash scripts/check.sh",
@@ -48,6 +47,6 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20.15"
+    "node": ">=22.12"
   }
 }

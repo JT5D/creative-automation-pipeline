@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ["20", "22"]
+        node: ["22", "24"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,10 +18,12 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
-      # Types, lint, tests and build. No API key is configured on purpose:
-      # the pipeline renders through the offline provider, so CI never touches
-      # a paid endpoint.
-      - run: npm run verify
+      # The same gate the release runs, so CI cannot pass something a local
+      # `npm run check` would stop. It ran a weaker subset until now, which left
+      # the secret scan and the punctuation gate off the public repo's path. No
+      # API key is configured on purpose: the pipeline renders through the
+      # offline provider, so CI never touches a paid endpoint.
+      - run: npm run check
 
   # The experience a reviewer has with no credentials: clone, install, run, get
   # real files. It asserts the OFFLINE PREVIEW semantics on purpose -- that the
@@ -34,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
       - run: npm ci
       - name: Produce a campaign with no API key at all

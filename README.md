@@ -9,7 +9,7 @@ and calling a GenAI image model only for what is genuinely missing.
 **The exercise asks for 2 products across at least 1:1, 9:16 and 16:9. That is
 what the console runs by default: 6 finished creatives, one hero reused, one
 generated, one live generation.** Select every format and market and that same
-single generation produces **24 creatives in 33.1s for $0.134** - because a
+single generation produces **24 creatives in 33.6s for $0.134** - because a
 model is called once per missing hero, not once per output.
 
 Every number on this page comes from the run committed in
@@ -61,7 +61,7 @@ argument for it.
 
 ## How to run it
 
-Requires Node.js 20+.
+Requires Node.js 22.12+. Node 20 reached end of life in April 2026.
 
 ```bash
 npm install
@@ -594,7 +594,7 @@ director.
 
 | Business goal | Where it is answered | Honest status |
 |---|---|---|
-| 1 · Campaign velocity | One brief → 24 validated creatives in 33.1s | **Delivered** |
+| 1 · Campaign velocity | One brief → 24 validated creatives in 33.6s | **Delivered** |
 | 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
 | 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
 | 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
@@ -602,7 +602,7 @@ director.
 
 | Pain point | What this does about it |
 |---|---|
-| 1 · Manual production overload | One brief → 24 finished creatives, 1.38s each |
+| 1 · Manual production overload | One brief → 24 finished creatives, 1.40s each |
 | 2 · Inconsistent quality | Brand rules are code, not a style guide someone remembers |
 | 3 · Approval bottlenecks | Prohibited claims stop the run before production; a human only reviews what a model touched |
 | 4 · Analysis at scale | Every run writes provenance and per-check results as data |
@@ -694,9 +694,8 @@ Customer DAM / AEM / S3
 AssetResolver → HeroGenerator          ← replaced by Firefly Services / Composite APIs
       │
       ▼
-Firefly Creative Production            ← governed multi-model workflows
-Published Workflow API                 ← batch execution at real scale
-Photoshop API v2                       ← layered/templated production
+Firefly Creative Production            ← batch asset operations, 1000 files
+Photoshop API                          ← layered/templated production
       │
       ▼
 GenStudio                              ← approval, activation, performance

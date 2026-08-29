@@ -66,6 +66,12 @@
   .stat .v{font-size:32px;font-weight:700;letter-spacing:-1px;display:block;line-height:1.1}
   .stat .l{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin-top:7px;display:block}
   .stat.hi .v{color:var(--accent)}
+  /* Seven cells is prime, so an auto-fit grid orphans the last one at every
+     width. The proof count is the number to lead with, so it takes the full
+     width on purpose instead of trailing the row it could not fill. */
+  .stat.proof{grid-column:1/-1;display:flex;align-items:baseline;gap:14px}
+  .stat.proof .v,.stat.proof .l{display:inline}
+  .stat.proof .l{margin-top:0}
 
   .grid2{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px}
@@ -113,7 +119,7 @@
       The exercise asks for two products across 1:1, 9:16 and 16:9. That is what the
       console runs by default - <strong>6 finished creatives from one paid generation
       call</strong>. Select every format and market and that same single call produces
-      <strong>24 creatives in 33.1 seconds for $0.134</strong>, because generation
+      <strong>24 creatives in 33.6 seconds for $0.134</strong>, because generation
       happens once per missing hero, not once per output.
     </p>
     <div class="byline">
@@ -139,7 +145,7 @@
       <div class="stat"><span class="v">24</span><span class="l">Creatives</span></div>
       <div class="stat hi"><span class="v">1</span><span class="l">Paid generation</span></div>
       <div class="stat"><span class="v">24/24</span><span class="l">Creatives validated</span></div>
-      <div class="stat"><span class="v">11/11</span><span class="l">Assignment proof</span></div>
+      <div class="stat proof"><span class="v">11/11</span><span class="l">Assignment proof, counted off the files on disk</span></div>
     </div>
     <p style="margin-top:24px">
       The expensive, non-deterministic step happens <strong>once per product</strong>.
@@ -185,8 +191,8 @@
           The console is the production operator's view - whoever is accountable for
           getting a campaign out. A creative director's job starts where this ends: at
           the review badge on anything a model touched, and at the exported files. In
-          production that review surface is GenStudio or Firefly Creative Production;
-          this is the spine underneath it.
+          production that review surface is GenStudio for Performance Marketing, which
+          owns brand approval and activation; this is the spine underneath it.
         </p>
       </div>
       <div class="card">
@@ -310,7 +316,7 @@
       <tr><td>Caption and hashtags per post</td><td><span class="tick">✓</span> Assembled from the market's own signed-off copy - no model call, no runtime translation - and screened by the same prohibited-claim list as the pixels</td></tr>
       <tr><td>Logging and reporting</td><td><span class="tick">✓</span> <code>report.json</code> with real provenance and per-check results</td></tr>
       <tr><td>Documentation</td><td><span class="tick">✓</span> Plus verified API, creative-standards and model-strategy notes</td></tr>
-      <tr><td>Engineering discipline</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 20 and 22, an offline-preview smoke job, and a single release gate - <code>npm run check</code></td></tr>
+      <tr><td>Engineering discipline</td><td><span class="tick">✓</span> Pipeline and visual-regression coverage in CI on Node 22 and 24, an offline-preview smoke job, and a single release gate - <code>npm run check</code></td></tr>
     </table>
   </div>
 </section>

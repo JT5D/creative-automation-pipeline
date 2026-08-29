@@ -149,7 +149,7 @@ const CLAIMS: { where: string; doc: string; pattern: RegExp; expected: string }[
   {
     where: "microsite stat strip - assignment proof",
     doc: microsite,
-    pattern: /<span class="v">([\d/]+)<\/span><span class="l">Assignment proof<\/span>/,
+    pattern: /<span class="v">([\d/]+)<\/span><span class="l">Assignment proof[^<]*<\/span>/,
     expected: `${passedChecks}/${report.assignmentProof.checks.length}`,
   },
 ];

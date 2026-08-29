@@ -140,9 +140,7 @@ instinct:
 | Generative expand / reframe | Firefly Expand, Generative Fill |
 | Product-in-scene compositing | Generate Object Composite, Precise / Adaptive Composite |
 | Layered template production | Photoshop API **v2** (v1 reached EOL 2026-07-31) |
-| Repeatable creative workflows | Firefly Graph, Firefly Creative Production |
-| Governed multi-model access | Firefly Creative Production for Enterprise |
-| Batch execution at scale | Creative Production Workflow API |
+| Batch asset operations at scale | Creative Production, inside the Firefly app: background removal, cropping to platform presets, colour grading, up to 1000 files, with a job log (seen in the product 2026-08-30) |
 
 Firefly's UI exposes partner models (Gemini/Nano Banana, GPT Image, FLUX,
 Ideogram, Runway, Veo, Kling). Availability in that UI does **not** imply the

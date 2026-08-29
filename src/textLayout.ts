@@ -42,6 +42,36 @@ export function wrapText(
 }
 
 /**
+ * Balanced wrap: the same number of lines as a greedy wrap, with the rag evened
+ * out so no line is left holding an orphan.
+ *
+ * Greedy wrapping fills every line to the brim and strands the remainder --
+ * "Wake up to visibly brighter / skin". Narrowing the measure until the line
+ * count is about to grow spreads the words evenly across the same lines. This
+ * is what CSS text-wrap: balance does, and it is the difference between a
+ * headline that was set and one that was merely fitted.
+ */
+export function balancedWrap(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  face: Face = "display",
+): string[] {
+  const greedy = wrapText(text, maxWidth, fontSize, face);
+  if (greedy.length < 2) return greedy;
+
+  // Narrowest measure that still breaks into the same number of lines.
+  let tooNarrow = 0;
+  let wideEnough = maxWidth;
+  while (wideEnough - tooNarrow > 1) {
+    const mid = (tooNarrow + wideEnough) / 2;
+    if (wrapText(text, mid, fontSize, face).length <= greedy.length) wideEnough = mid;
+    else tooNarrow = mid;
+  }
+  return wrapText(text, wideEnough, fontSize, face);
+}
+
+/**
  * Shrinks the headline until it fits the copy zone -- but stops at
  * minFontSize and reports failure rather than rendering something illegible.
  * An unreadable ad is a worse outcome than a flagged one.
@@ -55,7 +85,7 @@ export function fitText(
   face: Face = "display",
 ): FitResult {
   for (let size = maxFontSize; size >= minFontSize; size -= 2) {
-    const lines = wrapText(text, maxWidth, size, face);
+    const lines = balancedWrap(text, maxWidth, size, face);
     if (lines.length <= maxLines) return { lines, fontSize: size, fits: true };
   }
   const lines = wrapText(text, maxWidth, minFontSize, face).slice(0, maxLines);

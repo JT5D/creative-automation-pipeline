@@ -305,6 +305,14 @@ export type CanonicalHeroAsset = {
   };
 };
 
+/**
+ * Channel formats, at the pixel sizes the platforms actually publish.
+ *
+ * Three of the four are the same numbers Adobe ships as presets in Firefly
+ * Creative Production (checked in the product, 2026-08-30): Instagram Post &
+ * Carousel 1080x1080, Ad & Portrait post 1080x1350, Stories & Reels and TikTok
+ * both 1080x1920. 16:9 is the exercise's own third ratio.
+ */
 export const RATIOS = {
   "1x1": { width: 1080, height: 1080, label: "1:1 · Feed" },
   "4x5": { width: 1080, height: 1350, label: "4:5 · Portrait feed" },
