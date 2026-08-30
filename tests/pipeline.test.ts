@@ -241,8 +241,11 @@ describe("asset resolution", () => {
     const withoutRef = buildHeroPrompt(brief.products[1], brief, false);
 
     // No reference: the model is inventing the packaging, so any lettering it
-    // draws is a fabricated claim on a regulated cosmetic.
-    expect(withoutRef).toMatch(/no logos/i);
+    // draws is a fabricated claim on a regulated cosmetic. Stated as the
+    // finish the product HAS rather than as a list of what it must not have,
+    // which is what Google's guide for this model asks for.
+    expect(withoutRef).toMatch(/unbranded/i);
+    expect(withoutRef).toMatch(/bare of any printing, mark or label/i);
     expect(withoutRef).not.toMatch(/preserve the supplied product/i);
 
     // With a reference: preserving the real product is the entire point, so
@@ -305,7 +308,7 @@ describe("asset resolution", () => {
     const brief = parseBrief(briefYaml());
     const prompt = buildHeroPrompt(brief.products[1], brief);
     expect(prompt).toContain("Overnight Cream");
-    expect(prompt).toMatch(/no text/i);
+    expect(prompt).toMatch(/do NOT write, draw, print, emboss or add any text/);
     expect(prompt).toBe(buildHeroPrompt(brief.products[1], brief)); // stable
   });
 });

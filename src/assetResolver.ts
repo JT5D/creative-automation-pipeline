@@ -232,22 +232,27 @@ export function buildHeroPrompt(
   const tone = brief.toneOfVoice ? `Art direction: ${sentence(brief.toneOfVoice)}.` : "";
   const objective = brief.objective ? `Campaign objective: ${sentence(brief.objective)}.` : "";
 
+  // Google's guide for this model names the elements of an image prompt as
+  // subject, action, location, composition and style
+  // (cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-nano-banana,
+  // verified 2026-08-29). It is a checklist of what to include, and this prompt
+  // includes all five. It is not an ordering: reordered to lead with the
+  // subject and close on style, the same brief on the same model came back
+  // flatter, so the style bar stays first where it sets the register for
+  // everything after it. The guide is advice; the image is evidence.
   return [
     slots.standard,
-    // Deliberately unstyled. The look is set once, in the standard above, so
-    // that overriding it cannot leave a contradicting adjective behind.
+    // SUBJECT, and who it is for. Deliberately unstyled: the look is set once,
+    // above, so an override cannot leave a contradicting adjective behind.
     `Campaign photograph of ${product.name} by ${brief.brand.name}.`,
     `Audience: ${brief.audience}. Market: ${brief.region}.`,
     objective,
     tone,
 
-    slots.optics,
-    slots.light,
-    `The product stands ${slots.set}.`,
+    // ACTION, then LOCATION. A correctly lit object sitting still is packshot
+    // photography; the moment is what a still-life photographer waits for.
     slots.moment,
-    slots.grade,
-    slots.materials,
-    slots.integrity,
+    `Set ${slots.set}.`,
 
     // Composition is LOCKED - derived from the crop arithmetic, not from taste.
     //
@@ -263,11 +268,20 @@ export function buildHeroPrompt(
     // room.
     COMPOSITION,
 
-    // Retouch standard, stated rather than implied.
-    "Retouched to catalogue standard: dust-free, fingerprint-free, symmetrical,",
-    "circular openings drawn as true undistorted ellipses. No lumps, no curdling,",
-    "no smears, no double lids, no warped geometry, no visible seams, and no",
-    "second product, prop or duplicate of the item anywhere in the frame.",
+    slots.optics,
+    slots.light,
+    slots.grade,
+    slots.materials,
+    slots.integrity,
+
+    // Retouch standard, stated rather than implied, and stated positively.
+    // Google's own guidance for this model is to describe what you want; the
+    // list this replaced named eight defects, which puts eight defects in front
+    // of the model.
+    "Retouched to catalogue standard: dust-free, fingerprint-free and",
+    "symmetrical, with smooth unbroken surfaces, clean continuous geometry,",
+    "circular openings drawn as true undistorted ellipses, and exactly one item",
+    "alone in the frame.",
 
     // The identity clause flips with the reference, or it fights itself.
     //
@@ -287,8 +301,8 @@ export function buildHeroPrompt(
         "change how light and dark it reads, and that is expected; its shape, " +
         "material and colour family must not change. Do not restyle, redraw, " +
         "relabel or substitute the product."
-      : "Absolutely no text, no lettering, no typography, no logos, no " +
-        "watermarks, and no packaging claims of any kind in the image.",
+      : "The product is unbranded: its surface is a clean, unbroken finish, " +
+        "bare of any printing, mark or label.",
 
     // Typography is LOCKED, and last. A model handed a blank product will
     // letter it whatever else the prompt says: asked to preserve a completely

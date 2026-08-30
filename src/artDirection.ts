@@ -55,12 +55,27 @@ export type SlotValues = Partial<Record<Slot, string>>;
  */
 export type LookName = "daylight" | "nocturne" | "nordic";
 
+/**
+ * The style bar, shared by every look.
+ *
+ * Depth of field is stated once, in OPTICS, where it is a lens decision rather
+ * than an adjective. It was said here as well and again at the end of OPTICS,
+ * and a prompt that says the same thing three times is telling the model that
+ * one of the three matters.
+ *
+ * The closing sentence stays NEGATIVE against Google's general advice, and that
+ * is a measured exception rather than an oversight. Rewritten positively as
+ * "the frame reads as a photograph made on location for a campaign", the same
+ * brief on the same model at the same size came back flatter: softer shadow,
+ * a more uniform background, less separation. Naming the two failure modes is
+ * what holds the style, so the negation earns its place here and nowhere else.
+ */
 const CINEMATIC_BAR =
   "Award-winning cinematic advertising photography, editorial quality, shot for " +
   "a global luxury brand campaign. Rich, filmic colour grade with deep tonal " +
-  "range. Beautiful shallow depth of field. Dramatic natural light with real " +
-  "atmosphere and mood. Hyper-detailed, photorealistic, sharp on the subject. " +
-  "Not a flat studio packshot, not a stock catalogue render.";
+  "range. Dramatic natural light with real atmosphere and mood. Hyper-detailed " +
+  "and photorealistic, with the subject critically sharp. Not a flat studio " +
+  "packshot, not a stock catalogue render.";
 
 /**
  * Optics, shared by every look.
@@ -69,12 +84,17 @@ const CINEMATIC_BAR =
  * across the whole frame at f/9 is catalogue lighting: technically clean, flat,
  * and the reason such output reads as stock. Depth is what separates an
  * advertisement from a packshot.
+ *
+ * It asks for the product's FORM to be sharp, not its label. Asking for a
+ * critically sharp label while the last clause of the same prompt forbids all
+ * lettering is one instruction contradicting another, and a model resolves that
+ * by picking one.
  */
 const OPTICS =
-  "Shot on a 100mm macro lens at f/4, focus stacked across the product itself " +
-  "so its label and edges are critically sharp, while the background falls into " +
-  "a soft, creamy out-of-focus wash with gentle bokeh. Tripod, no motion blur. " +
-  "Shallow, deliberate depth of field.";
+  "Shot on a 100mm macro lens at f/4, locked off on a tripod, with focus " +
+  "stacked across the product itself so its form, edges and surface texture are " +
+  "critically sharp while the background falls into a soft, creamy out-of-focus " +
+  "wash with gentle bokeh.";
 
 /** Material truth, where AI product photography usually fails. */
 const MATERIALS =
@@ -87,9 +107,8 @@ const MATERIALS =
  * renders the cream, and at 2K it comes out curdled.
  */
 const INTEGRITY =
-  "The container is CLOSED with its cap fully seated, and is opaque: the " +
-  "contents are NOT visible. Do not render cream, lotion, product texture or " +
-  "any substance inside or on the vessel.";
+  "The container is sealed and opaque, its cap fully seated, so only the " +
+  "outside of the packaging is visible and nothing of the contents shows.";
 
 /**
  * The moment. Google's prompting guide names the essential elements of an image
@@ -112,9 +131,8 @@ export const LOOKS: Record<LookName, SlotValues> = {
       "of light separating the product's edge from the background. A faint " +
       "atmospheric haze catches the light. Highlights roll off gently and are " +
       "never blown; shadows are deep but open, with real tonal separation " +
-      "between the product and the set. The lighting is felt, not seen: no " +
-      "softbox, reflector, light stand, modifier or any studio equipment " +
-      "appears in frame.",
+      "between the product and the set. The lighting is felt, not seen: only the " +
+      "light and the surfaces it falls on appear in the frame.",
     set:
       "on a honed travertine ledge against a seamless plaster wall, with soft " +
       "foliage shadow falling across the background",
@@ -140,8 +158,8 @@ export const LOOKS: Record<LookName, SlotValues> = {
       "with no fill on the opposite side so the shadow falls away into near " +
       "black. A narrow specular edge separates the product from the darkness " +
       "behind it. Most of the frame is unlit and is meant to be. The lighting " +
-      "is felt, not seen: no softbox, reflector, light stand, modifier or any " +
-      "studio equipment appears in frame.",
+      "is felt, not seen: only the light and the surfaces it falls on appear " +
+      "in the frame.",
     set: "on a dark polished stone plinth against a deep shadowed wall",
     moment:
       "Caught at a moment rather than posed: a thin haze drifts through the " +
@@ -160,8 +178,8 @@ export const LOOKS: Record<LookName, SlotValues> = {
     light:
       "Lit by flat, cool north-facing daylight with no direct sun, even across " +
       "the whole frame and almost shadowless, the way an overcast morning lights " +
-      "a room. Very low contrast. The lighting is felt, not seen: no softbox, " +
-      "reflector, light stand, modifier or any studio equipment appears in frame.",
+      "a room. Very low contrast. The lighting is felt, not seen: only the light " +
+      "and the surfaces it falls on appear in the frame.",
     set: "on a pale ash wood counter beside a linen cloth, with a soft haze in the air",
     moment:
       "Caught at a moment rather than posed: the linen has just been set down " +
@@ -191,9 +209,8 @@ export const COMPOSITION =
   "The product sits in the LOWER HALF of the frame, horizontally centred, and " +
   "is large, close and unmistakably the subject -- it fills most of the central " +
   "50% of the width, with its base and lid entirely in frame. The UPPER HALF is " +
-  "quiet, empty background: no product, no props, nothing but surface and " +
-  "light, because the campaign headline is composited there. Do not crop the " +
-  "product and do not place it off to one side.";
+  "quiet background: surface, light and shadow alone, because the campaign " +
+  "headline is composited there. The product is shown whole and centred.";
 
 /**
  * Last clause of every prompt that can reach a paid generation.
