@@ -5,10 +5,10 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import express from "express";
 import sharp from "sharp";
-import type { BatchCampaign, BatchState, FormatOption, RunState } from "./api.js";
+import type { BatchState, FormatOption, RunState } from "./api.js";
 import { zipDirectory } from "./archive.js";
 import { DEFAULT_LOOK, LOOK_OPTIONS } from "./artDirection.js";
-import { buildShotPrompt, findApprovedHero, SHOT_SET } from "./assetResolver.js";
+import { findApprovedHero } from "./assetResolver.js";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "./pipeline.js";
@@ -16,6 +16,7 @@ import { MODEL_OPTIONS, PRICING_SOURCE, priceFor } from "./pricing.js";
 import { providerStatus, selectGenerator } from "./providers/index.js";
 import { type CampaignReport, sanitizeId } from "./report.js";
 import { RATIOS, type RatioKey, REQUIRED_RATIOS } from "./schema.js";
+import { buildShotPrompt, SHOT_SET } from "./shots.js";
 import { preflight, preflightOrThrow } from "./validation.js";
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787);
@@ -57,19 +58,52 @@ app.get("/api/campaigns/:id/archive", async (req, res) => {
   }
 });
 
-app.get("/api/provider", (_req, res) => {
-  res.json(providerStatus());
+/**
+ * Everything the console needs to draw itself, in one request.
+ *
+ * These were six routes and six fetches, and none of them takes an argument or
+ * changes between calls -- they are the catalogues the UI renders from, plus
+ * whichever run is already on disk. Serving them together means the console has
+ * one thing that can fail instead of six, and a reviewer reading server.ts sees
+ * one bootstrap rather than counting endpoints.
+ *
+ * `insights` also has its own route below, because it is the only member of
+ * this set that changes when a run finishes.
+ */
+app.get("/api/console", async (_req, res) => {
+  const formats: FormatOption[] = (Object.keys(RATIOS) as RatioKey[]).map((key) => ({
+    key,
+    label: RATIOS[key].label,
+    width: RATIOS[key].width,
+    height: RATIOS[key].height,
+    // The exercise's own list, not a UI preference: the console defaults to
+    // exactly the formats the assignment asks for, and 4:5 is an opt-in
+    // demonstration that scale is free.
+    required: REQUIRED_RATIOS.includes(key),
+  }));
+
+  res.json({
+    provider: providerStatus(),
+    // The sample library, so a reviewer can see more than the flattering case.
+    briefs: await readBriefLibrary(),
+    // Model choices with published prices, so the picker cannot invent a number.
+    models: { models: MODEL_OPTIONS, source: PRICING_SOURCE },
+    formats,
+    // Served rather than hard-coded in the browser so that adding a look to
+    // LOOK_OPTIONS puts it in the picker; a copy in the bundle goes stale.
+    looks: { looks: LOOK_OPTIONS, default: DEFAULT_LOOK },
+    lastRun: await readLastRun(),
+    insights: await readInsights(OUTPUT_ROOT),
+  });
 });
 
-/** The sample library, so a reviewer can see more than the flattering case. */
-app.get("/api/briefs", async (_req, res) => {
+async function readBriefLibrary() {
   try {
-    const manifest = JSON.parse(await readFile(path.join(SAMPLES_DIR, "briefs.json"), "utf8"));
-    res.json(manifest);
+    return JSON.parse(await readFile(path.join(SAMPLES_DIR, "briefs.json"), "utf8"));
   } catch {
-    res.json([]);
+    return [];
   }
-});
+}
 
 app.get("/api/briefs/:file", async (req, res) => {
   // The filename is user input and becomes a path, so keep it inside samples/.
@@ -152,40 +186,6 @@ app.post("/api/assets", async (req, res) => {
   res.json({ path: `samples/assets/${filename}`, width: meta.width, height: meta.height });
 });
 
-/** Model choices with published prices, so the picker cannot invent a number. */
-app.get("/api/models", (_req, res) => {
-  res.json({ models: MODEL_OPTIONS, source: PRICING_SOURCE });
-});
-
-/**
- * `required` is the exercise's own list, not a UI preference, which is why it
- * comes from the server: the console defaults to exactly the formats the
- * assignment asks for, and the extra one is an opt-in demonstration of scale.
- */
-app.get("/api/formats", (_req, res) => {
-  // Annotated, so the compiler checks this against the shape the console
-  // imports rather than leaving the two ends to agree by convention.
-  const formats: FormatOption[] = (Object.keys(RATIOS) as RatioKey[]).map((key) => ({
-    key,
-    label: RATIOS[key].label,
-    width: RATIOS[key].width,
-    height: RATIOS[key].height,
-    required: REQUIRED_RATIOS.includes(key),
-  }));
-  res.json(formats);
-});
-
-/**
- * The art-direction looks the console may choose from.
- *
- * Served rather than hard-coded in the browser for the same reason the formats
- * are: adding a look to LOOK_OPTIONS should put it in the picker, and a copy of
- * the list in the bundle is a copy that goes stale.
- */
-app.get("/api/looks", (_req, res) => {
-  res.json({ looks: LOOK_OPTIONS, default: DEFAULT_LOOK });
-});
-
 /**
  * The most recent campaign still on disk, as a completed run.
  *
@@ -196,7 +196,7 @@ app.get("/api/looks", (_req, res) => {
  * Picked by completedAt from the report itself, not by file mtime: copying a
  * directory changes mtime and does not change which run finished last.
  */
-app.get("/api/last-run", async (_req, res) => {
+async function readLastRun(): Promise<RunState | null> {
   try {
     const entries = await readdir(OUTPUT_ROOT, { withFileTypes: true });
     const reports: CampaignReport[] = [];
@@ -210,11 +210,8 @@ app.get("/api/last-run", async (_req, res) => {
       }
     }
     const latest = reports.sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
-    if (!latest) {
-      res.status(404).json({ error: "No completed run on disk yet" });
-      return;
-    }
-    const state: RunState = {
+    if (!latest) return null;
+    return {
       runId: `restored-${latest.campaignId}`,
       status: "complete",
       startedAt: latest.startedAt,
@@ -222,11 +219,10 @@ app.get("/api/last-run", async (_req, res) => {
       report: latest,
       restored: true,
     };
-    res.json(state);
   } catch {
-    res.status(404).json({ error: "No completed run on disk yet" });
+    return null;
   }
-});
+}
 
 /**
  * The camera set-ups a shoot would cover, and what covering them costs.

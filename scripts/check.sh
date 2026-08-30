@@ -8,10 +8,6 @@ step() { printf '\n▸ %s\n' "$1"; }
 
 step "Types";      npx tsc --noEmit
 step "Lint";       npx biome check src tests scripts
-# One run, not two. This used to finish with a second `vitest run -t advertises`
-# so the gate could print a line naming the sample-brief tests -- 29 seconds to
-# re-run tests the line above had already run and already reported. The tests
-# are named well enough to find in that output.
 step "Tests";      npx vitest run
 step "Build";      npx vite build >/dev/null
 

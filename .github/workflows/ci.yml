@@ -85,7 +85,7 @@ jobs:
           trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
 
           for _ in $(seq 1 30); do
-            curl -sf http://127.0.0.1:8787/api/provider >/dev/null && break
+            curl -sf http://127.0.0.1:8787/api/console >/dev/null && break
             sleep 1
           done
 
@@ -99,13 +99,12 @@ jobs:
             echo "  ✓ $label"
           }
 
-          # Every fetch() in src/app, in the order the console makes them.
-          # Keyless, so the provider pill must say offline preview, not "ready".
-          expect "GET  /api/provider"        '"configured":false' "$B/api/provider"
-          expect "GET  /api/briefs"          'campaign.yaml'      "$B/api/briefs"
+          # Every fetch() in src/app. The console opens with one request;
+          # keyless, so the provider pill must say offline preview, not "ready".
+          expect "GET  /api/console"         '"configured":false' "$B/api/console"
+          expect "GET  /api/console (briefs)" 'campaign.yaml'     "$B/api/console"
+          expect "GET  /api/console (formats)" '"required":true'  "$B/api/console"
           expect "GET  /api/briefs/:file"    'lumen-autumn-glow'  "$B/api/briefs/campaign.yaml"
-          expect "GET  /api/formats"         '"required":true'    "$B/api/formats"
-          expect "GET  /api/models"          'gemini'             "$B/api/models"
           expect "GET  /api/insights"        '"runs"'             "$B/api/insights"
 
           # The dry run the Estimate button makes. Spends nothing, and must

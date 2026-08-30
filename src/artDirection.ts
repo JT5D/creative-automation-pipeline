@@ -46,15 +46,12 @@ export type SlotValues = Partial<Record<Slot, string>>;
  * A named look: one word in the brief that sets several slots at once.
  *
  * This is the layer that hides the complexity. A campaign that states nothing
- * gets `daylight`, which is the house style every sample was shot in before
- * looks existed. A campaign with an opinion says one word. A campaign with a
- * specific opinion overrides a slot on top.
+ * gets `daylight`, the house style. A campaign with an opinion says one word. A
+ * campaign with a specific opinion overrides a slot on top of that.
  *
- * The three here are not invented: they are the three the sample library
- * already needed. Skincare and coffee wanted warm directional daylight;
- * fragrance wanted a dark plinth and falloff to black and had no way to ask for
- * it; the Nordic brief wanted flat cool light on pale wood and was overriding
- * the set to approximate it.
+ * Three, because three cover the lighting decisions a still-life brief actually
+ * makes: warm and directional, dark with falloff to black, flat and overcast.
+ * A fourth would be a fourth set of slots to maintain and nothing new to say.
  */
 export type LookName = "daylight" | "nocturne" | "nordic";
 
@@ -135,9 +132,9 @@ export const LOOKS: Record<LookName, SlotValues> = {
   nocturne: {
     standard: CINEMATIC_BAR,
     optics: OPTICS,
-    // The whole point of the look: one hard low source and permission for the
-    // frame to go black. Saying "shadows are deep but open" here, as the
-    // daylight look does, is what was fighting the fragrance brief.
+    // The whole point of the look: one hard low source, and permission for the
+    // frame to go black. "Shadows are deep but open", which the daylight look
+    // says, would contradict it.
     light:
       "Lit by a single low raking light from one side, hard and directional, " +
       "with no fill on the opposite side so the shadow falls away into near " +
@@ -186,11 +183,9 @@ export const LOOKS: Record<LookName, SlotValues> = {
  *
  * Every format is a centre crop of one square hero. The narrowest is 9:16,
  * which keeps 9/16 = 56% of the width, so the product has to sit inside a
- * centred square of 56% - and nothing is gained by making it smaller. An
- * earlier version said "SMALL and distant" and "only the central third",
- * aiming at 33% when the safe area is 56%, and every hero came back looking
- * photographed from across the room. A brief that could override this would
- * slice its own product in half on the story format.
+ * centred square of 56%, and nothing is gained by making it smaller. Aiming
+ * lower photographs the product from across the room; a brief allowed to
+ * override this would slice its own product in half on the story format.
  */
 export const COMPOSITION =
   "The product sits in the LOWER HALF of the frame, horizontally centred, and " +

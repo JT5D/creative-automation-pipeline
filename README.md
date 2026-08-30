@@ -182,13 +182,13 @@ outputs/lumen-autumn-glow-de/
 └── report.json
 ```
 
-Ten sample briefs ship with the repo and the console loads any of them in a
-click: the canonical run, the same brief in JSON, a restock where nothing is
-generated at all, a cold start for a different brand with no approved assets,
-two other brands in other categories, and two that are refused for different
-reasons - one carrying a prohibited claim, stopped by the legal scan before a
-credit is spent, and one that never reaches preflight because it does not
-satisfy the brief contract at all.
+Six sample briefs ship with the repo and the console loads any of them in a
+click: the canonical run, a global launch of three products across five markets,
+a cold start for a different brand with no approved assets at all, a restock
+where nothing is generated, and two that are refused for different reasons - one
+carrying a prohibited claim, stopped by the legal scan before a credit is spent,
+and one that never reaches preflight because it does not satisfy the brief
+contract at all.
 
 Committed evidence without running anything:
 [`docs/sample-output/`](docs/sample-output/) - the report, the file tree, and

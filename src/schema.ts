@@ -333,15 +333,12 @@ export const REQUIRED_RATIOS: RatioKey[] = ["1x1", "9x16", "16x9"];
 /**
  * Which formats and markets a run will actually produce.
  *
- * pipeline.ts and estimate.ts both need this and both had their own copy of
- * it. estimate exists to PREDICT pipeline, so two implementations of the very
- * thing it predicts made their agreement coincidental: a change to one would
- * have made the dry run quietly wrong about the run it was quoting for, and
- * the test that compares them would have had to be wrong in the same way to
- * notice. One function, both callers.
+ * One function, called by both the estimate and the run. The estimate exists to
+ * PREDICT the run, so a second implementation of the thing it predicts would
+ * make their agreement coincidental rather than structural.
  *
- * It throws on an empty selection rather than producing nothing, and it does
- * so here so the estimate refuses exactly what the run refuses.
+ * It throws on an empty selection rather than producing nothing, here rather
+ * than in either caller, so the estimate refuses exactly what the run refuses.
  */
 export function selectScope(
   brief: CampaignBrief,

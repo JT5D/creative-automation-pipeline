@@ -37,24 +37,29 @@ const post = (path: string, body: unknown) =>
   });
 
 describe("server: reads", () => {
-  it("serves the brief library, the formats, the models and the looks", async () => {
-    const briefs = await (await get("/api/briefs")).json();
-    expect(Array.isArray(briefs)).toBe(true);
-    expect(briefs.length).toBeGreaterThan(1);
+  it("draws the whole console from one request", async () => {
+    // The bootstrap. If any member of this is missing the console renders a
+    // picker with no options in it and nothing anywhere reports a failure.
+    const boot = await (await get("/api/console")).json();
+
+    expect(Array.isArray(boot.briefs)).toBe(true);
+    expect(boot.briefs.length).toBeGreaterThan(1);
     // Every entry has to carry what the console renders, or the picker shows
     // blanks and nothing fails.
-    for (const b of briefs) expect(b).toMatchObject({ file: expect.any(String) });
+    for (const b of boot.briefs) expect(b).toMatchObject({ file: expect.any(String) });
 
-    const formats = await (await get("/api/formats")).json();
-    expect(formats.some((f: { required: boolean }) => f.required)).toBe(true);
+    expect(boot.formats.some((f: { required: boolean }) => f.required)).toBe(true);
 
-    const { models } = await (await get("/api/models")).json();
     // The picker must never offer a model that cannot serve the size the
     // adapter asks for.
-    for (const m of models) expect(m.maxImageSize).toBe("2K");
+    for (const m of boot.models.models) expect(m.maxImageSize).toBe("2K");
 
-    const { looks } = await (await get("/api/looks")).json();
-    expect(looks.map((l: { id: string }) => l.id)).toContain("daylight");
+    expect(boot.looks.looks.map((l: { id: string }) => l.id)).toContain("daylight");
+    expect(boot.provider).toMatchObject({ provider: expect.any(String) });
+    expect(boot.insights).toMatchObject({ runs: expect.any(Number) });
+    // Null rather than a 404 when nothing has run: an empty outputs directory
+    // is the state a fresh clone is in, not an error.
+    expect(boot.lastRun === null || boot.lastRun.status === "complete").toBe(true);
   });
 
   it("prices the shot catalogue without generating anything", async () => {

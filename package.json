@@ -9,7 +9,6 @@
     "dev:server": "tsx watch src/server.ts",
     "dev:ui": "vite",
     "campaign": "tsx src/cli.ts",
-    "make:samples": "tsx scripts/make-sample-assets.ts",
     "doctor": "tsx scripts/doctor.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -17,10 +16,7 @@
     "lint": "biome check src tests scripts",
     "format": "biome check --write src tests scripts",
     "check": "bash scripts/check.sh",
-    "test:baseline": "tsx scripts/baseline.ts",
-    "portfolio": "tsx src/cli.ts --all",
-    "shots": "tsx scripts/shot-variants.ts",
-    "look": "tsx scripts/look.ts"
+    "test:baseline": "tsx scripts/baseline.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

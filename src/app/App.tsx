@@ -8,12 +8,12 @@ import { Results, type Selection } from "./components/Results.js";
 import { RunDetails } from "./components/RunDetails.js";
 import type {
   BriefSummary,
+  ConsoleBootstrap,
   FormatOption,
   Insights as InsightsData,
   LookOption,
   ModelOption,
   ProviderStatus,
-  RunState,
 } from "./types.js";
 import { useCampaign } from "./useCampaign.js";
 
@@ -113,49 +113,40 @@ export function App() {
 
   useEffect(() => {
     /**
-     * Seven identical fetch-then-set blocks, collapsed.
+     * One request, because none of this changes between calls.
      *
-     * Every one of them was the same four lines: get, parse, hand to a setter,
-     * swallow the failure. The swallow is deliberate and shared - a console
-     * that cannot reach one endpoint should still render everything else, and
-     * the pieces that matter announce their own absence - so the shape is
-     * worth naming once instead of typing seven times.
+     * The console used to open with seven fetches for seven catalogues, which
+     * meant seven things that could each half-fail and leave the screen partly
+     * drawn. `/api/console` returns all of them together. The catch is still
+     * deliberate: a console that cannot reach the server renders its empty
+     * states rather than a blank page, and the pieces that matter announce
+     * their own absence.
      */
-    const load = <T,>(path: string, apply: (value: T) => void) =>
-      fetch(path)
-        .then((r) => (r.ok ? (r.json() as Promise<T>) : null))
-        .then((value) => {
-          if (value !== null) apply(value);
-        })
-        .catch(() => {});
-
-    load<BriefSummary[]>("/api/briefs", setLibrary);
-    load<ProviderStatus>("/api/provider", setProvider);
-    load<FormatOption[]>("/api/formats", (f) => {
-      setFormats(f);
-      // Default to exactly the formats the exercise asks for. 4:5 is one click
-      // away and demonstrates that scale is free -- but the first run a
-      // reviewer does should be unambiguously the assignment.
-      setSelectedFormats(f.filter((x) => x.required).map((x) => x.key));
-    });
-    load<{ models: ModelOption[] }>("/api/models", (d) => {
-      setModels(d.models);
-      setModel((m) => m || d.models[0]?.id || "");
-    });
-    // Show the last campaign that is still on disk, so opening the console
-    // after a restart shows creatives instead of an empty state.
-    //
-    // Only when it is the campaign currently selected. Without that test the
-    // console put a dry run for one brief directly above the finished
-    // creatives of another: "$0.134 estimated" over "$0.000 spent", six
-    // creatives over eight, one product's headline over a different product's
-    // pictures. Every number on screen was individually true and the screen as
-    // a whole was a lie, which is the same defect as a label broader than its
-    // measurement, wearing a different coat.
-    load<RunState>("/api/last-run", campaign.setRestored);
-    load<{ looks: LookOption[] }>("/api/looks", (d) => setLooks(d.looks));
-    refreshInsights();
-  }, [refreshInsights, campaign.setRestored]);
+    fetch("/api/console")
+      .then((r) => (r.ok ? (r.json() as Promise<ConsoleBootstrap>) : null))
+      .then((data) => {
+        if (!data) return;
+        setLibrary(data.briefs);
+        setProvider(data.provider);
+        setFormats(data.formats);
+        // Default to exactly the formats the exercise asks for. 4:5 is one
+        // click away and demonstrates that scale is free -- but the first run a
+        // reviewer does should be unambiguously the assignment.
+        setSelectedFormats(data.formats.filter((f) => f.required).map((f) => f.key));
+        setModels(data.models.models);
+        setModel((m) => m || data.models.models[0]?.id || "");
+        setLooks(data.looks.looks);
+        setInsights(data.insights);
+        // The last campaign still on disk, so opening the console after a
+        // restart shows creatives instead of an empty state -- and only when it
+        // is the campaign currently selected. Without that test the console put
+        // a dry run for one brief directly above the finished creatives of
+        // another: every number on screen individually true, and the screen as
+        // a whole a lie.
+        if (data.lastRun) campaign.setRestored(data.lastRun);
+      })
+      .catch(() => {});
+  }, [campaign.setRestored]);
 
   /**
    * Locales come from the brief text, so the toggles track what you typed.
@@ -341,10 +332,9 @@ export function App() {
           {batch && <BatchResults batch={batch} selected={selected} onSelect={setSelected} />}
           {activeRun?.report && !batch && producedRatios.length > 0 && (
             <div className="filters">
-              {/* Each filter appears when its own axis has more than one value.
-                  The format filter used to be gated on the number of MARKETS,
-                  so a default run producing three formats in one market showed
-                  no way to narrow them.
+              {/* Each filter appears when its own axis has more than one
+                  value, each gated on its OWN axis: a run producing three
+                  formats in one market still needs a format filter.
 
                   Markets open on ONE language rather than all of them. A
                   producer reviews a campaign one market at a time -- mixed

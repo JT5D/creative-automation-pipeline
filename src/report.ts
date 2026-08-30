@@ -5,6 +5,7 @@ import {
   baselineMinutes,
   type CampaignBrief,
   type CanonicalHeroAsset,
+  RATIOS,
   type RatioKey,
   REQUIRED_RATIOS,
   sanitizeId,
@@ -285,6 +286,11 @@ function proveAssignment(
       c.validation.checks.some((k) => k.id === "message.rendered" && k.status === "pass") &&
       c.validation.checks.some((k) => k.id === "message.legible" && k.status === "pass"),
   );
+  // Measured off the record each creative wrote, against the dimensions its
+  // format declares. Nothing else in the proof reads a pixel dimension.
+  const undersized = creatives.filter(
+    (c) => c.width !== RATIOS[c.ratio].width || c.height !== RATIOS[c.ratio].height,
+  );
   const failed = creatives.filter((c) => c.validation.status === "fail");
   const warned = creatives.filter((c) => c.validation.status === "warning");
 
@@ -309,16 +315,24 @@ function proveAssignment(
     }),
     {
       id: "ships_at_full_resolution",
-      // A preview generates its hero at 1K to reach the cheap models, and every
-      // format is a centre crop of that one square image - 9:16 needs 1080x1920
-      // out of it, so the source is upscaled about 1.9x and goes soft. Cheap
-      // iteration is the point of preview mode; pretending its output is the
-      // deliverable is not.
-      passed: mode !== "preview",
+      // Two things, because the label claims both. Every export has to carry
+      // the exact pixel dimensions its format specifies, and the hero has to
+      // have been generated at the full 2K those crops come out of. A preview
+      // generates at 1K to reach the cheap models, so 9:16 is upscaled about
+      // 1.9x and goes soft: cheap iteration is the point of preview mode, and
+      // pretending its output is the deliverable is not.
+      passed: mode !== "preview" && creatives.length > 0 && undersized.length === 0,
       message:
         mode === "preview"
           ? "preview run: hero generated at 1K to reach the cheap tier, so the exports are upscaled - re-run without --preview to ship"
-          : "hero generated at the full 2K every format is cut from",
+          : undersized.length
+            ? `${undersized.length} creative(s) exported at the wrong size: ${undersized
+                .map(
+                  (c) =>
+                    `${c.outputPath} is ${c.width}x${c.height}, ${c.ratio} specifies ${RATIOS[c.ratio].width}x${RATIOS[c.ratio].height}`,
+                )
+                .join("; ")}`
+            : `${creatives.length} creatives exported at the exact size their format specifies, from a 2K hero`,
     },
     {
       id: "real_genai_demonstrated",

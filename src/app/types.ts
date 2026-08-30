@@ -13,6 +13,7 @@ export type {
   BatchCampaign,
   BatchState,
   BriefSummary,
+  ConsoleBootstrap,
   FormatOption,
   LookOption,
   RunState,

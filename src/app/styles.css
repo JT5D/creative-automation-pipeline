@@ -1165,15 +1165,11 @@ body {
 }
 
 /*
- * The Firefly hand-off, demoted out of the focal point.
+ * The Firefly hand-off, kept out of the focal point.
  *
- * It used to sit inline in the control row, which turned five lines of
- * monospace caveat into the densest thing on the pre-run screen and put it
- * between the look picker and the primary action. The sentence is honest and
- * it stays -- an unexecuted adapter should say so where a reviewer sees it --
- * but leading the chrome with the weakest fact is a presentation error, not an
- * honesty requirement. It now sits under the controls, full width and quiet,
- * where it reads as a footnote to the provider rather than a competing control.
+ * An unexecuted adapter should say so where a reviewer sees it, so the sentence
+ * stays. It sits under the controls, full width and quiet, as a footnote to the
+ * provider rather than a control competing with the primary action.
  */
 .provider .pill {
   align-self: flex-start;

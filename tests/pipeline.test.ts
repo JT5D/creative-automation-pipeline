@@ -7,12 +7,7 @@ import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { zipDirectory } from "../src/archive.js";
 import { LOOK_OPTIONS, SLOTS } from "../src/artDirection.js";
-import {
-  buildHeroPrompt,
-  buildShotPrompt,
-  findApprovedHero,
-  SHOT_SET,
-} from "../src/assetResolver.js";
+import { buildHeroPrompt, findApprovedHero } from "../src/assetResolver.js";
 import { safeBoundsFor, templateFor, textGeometry } from "../src/composer.js";
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
@@ -30,6 +25,7 @@ import {
 import { sanitizeId } from "../src/report.js";
 import { withRetry } from "../src/retry.js";
 import { RATIOS } from "../src/schema.js";
+import { buildShotPrompt, SHOT_SET } from "../src/shots.js";
 import { fitText, wrapText } from "../src/textLayout.js";
 import { findProhibited, preflight } from "../src/validation.js";
 

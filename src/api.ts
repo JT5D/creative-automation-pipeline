@@ -1,4 +1,7 @@
+import type { Insights } from "./history.js";
 import type { PipelineEvent } from "./pipeline.js";
+import type { ModelOption } from "./pricing.js";
+import type { ProviderStatus } from "./providers/index.js";
 import type { CampaignReport } from "./report.js";
 import type { RatioKey } from "./schema.js";
 
@@ -63,7 +66,7 @@ export type BatchState = {
   campaigns: BatchCampaign[];
 };
 
-/** GET /api/briefs - the sample library, from samples/briefs.json. */
+/** The sample library, from samples/briefs.json. */
 export type BriefSummary = {
   file: string;
   label: string;
@@ -73,9 +76,8 @@ export type BriefSummary = {
   expect: string;
 };
 
-/** GET /api/formats. */
 /**
- * GET /api/looks. One art-direction look the console may run with.
+ * One art-direction look the console may run with.
  *
  * Structurally identical to what LOOK_OPTIONS holds, declared here because this
  * is the file both ends import: the browser must not reach into artDirection.ts
@@ -94,4 +96,22 @@ export type FormatOption = {
   height: number;
   /** One of the three the exercise names. Selected by default. */
   required: boolean;
+};
+
+/**
+ * GET /api/console. Everything the console needs to draw itself, in one request.
+ *
+ * The catalogues the UI renders from, plus whichever run is already on disk.
+ * None of them takes an argument or changes between calls, so serving them
+ * together gives the console one thing that can fail instead of six.
+ */
+export type ConsoleBootstrap = {
+  provider: ProviderStatus;
+  briefs: BriefSummary[];
+  models: { models: ModelOption[]; source: string };
+  formats: FormatOption[];
+  looks: { looks: LookOption[]; default: string };
+  /** Null when nothing has ever been run into the outputs directory. */
+  lastRun: RunState | null;
+  insights: Insights;
 };

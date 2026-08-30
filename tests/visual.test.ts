@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { templateFor } from "../src/composer.js";
 import { loadBriefFile, runCampaign } from "../src/pipeline.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
-import { RATIOS, type RatioKey } from "../src/schema.js";
+import { RATIOS, type RatioKey, selectScope } from "../src/schema.js";
 import { colourSignature, compareSignatures, visualSignature } from "../src/signature.js";
 
 /**
@@ -94,8 +94,20 @@ afterAll(async () => {
 });
 
 describe("visual regression", () => {
-  it("covers every creative the campaign produces", () => {
-    expect(Object.keys(signatures).sort()).toEqual(Object.keys(baselines).sort());
+  /**
+   * The baselines are a sample, so coverage is asserted in two halves: every
+   * committed key must still be produced, and the run must still produce
+   * exactly the number of creatives the brief asks for. Together those catch a
+   * renamed creative, a dropped one and a silently added one -- which is what
+   * comparing the two key sets used to do when all twenty-four were committed.
+   */
+  it("still produces every creative the baselines name, and no more than the brief asks for", async () => {
+    const brief = await loadBriefFile("samples/campaign.yaml");
+    const { ratios, markets } = selectScope(brief);
+    expect(Object.keys(signatures).length).toBe(
+      brief.products.length * ratios.length * markets.length,
+    );
+    for (const key of Object.keys(baselines)) expect(Object.keys(signatures)).toContain(key);
   });
 
   it.each(Object.keys(baselines))("%s matches its committed appearance", (key) => {

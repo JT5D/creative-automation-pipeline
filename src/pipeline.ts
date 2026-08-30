@@ -42,20 +42,17 @@ export type RunOptions = {
    * Art-direction look for this run only, overriding whatever the brief says.
    *
    * Same grain as `ratios` and `locales`: the brief states the campaign's
-   * intent, and the console is allowed to try something else without editing
-   * the file. It sets the look and nothing below it, so a brief that overrode
-   * an individual slot keeps that override on top - which is the whole point of
-   * the cascade.
+   * intent, and the console may try something else without editing the file. It
+   * sets the look and nothing below it, so a brief that overrode an individual
+   * slot keeps that override on top.
    */
   look?: LookName;
   /**
    * Preview: generate the hero at 1K on the cheapest model that can serve it.
    *
-   * A quarter of the price, and the cost is per GENERATION rather than per
-   * creative, so a full 24-creative preview run costs about three cents against
-   * thirteen. It exists because iterating on art direction is the expensive
-   * habit - not shipping - and nobody should be choosing between "try the dark
-   * look" and "spend the budget".
+   * Cost is per GENERATION rather than per creative, so a whole 24-creative
+   * preview run costs about three cents against thirteen. Iterating on art
+   * direction is the expensive habit, not shipping.
    *
    * A preview is never the deliverable and does not pretend to be: 9:16 needs
    * 1080x1920 out of a square hero, so a 1K source is upscaled about 1.9x and
@@ -68,10 +65,9 @@ export type RunOptions = {
 /**
  * Accepts JSON or YAML text; both normalize to the same validated object.
  *
- * Validation failures are rewritten into something a marketer can act on. Zod's
- * raw output is a JSON dump of issue objects, and anyone editing a brief in the
- * console would have seen that wall of text rather than "products: a campaign
- * needs at least 2 products".
+ * Validation failures are rewritten into something a marketer can act on, since
+ * the person editing a brief in the console is not the person who would enjoy a
+ * JSON dump of Zod issue objects.
  */
 export function parseBrief(raw: string): CampaignBrief {
   const trimmed = raw.trim();
@@ -157,19 +153,13 @@ export async function runCampaign(
   // a test can never write into the project's.
   const cacheDir = path.join(outputRoot, ".cache");
   /*
-   * A run that overrides the look gets its own folder.
+   * A run that overrides the look gets its own folder, so two looks of the same
+   * brief cannot overwrite each other.
    *
    * Market-level art direction is how business goal 3 - "adapt messaging,
-   * offers and CREATIVE to resonate with local cultures" - is actually reached
-   * here: select the markets, pick a look, run. Two runs of the same brief for
-   * different markets were landing in the same directory and the second
-   * silently overwrote the first, so the capability existed and could not be
-   * used.
-   *
-   * Suffixed only when the look is overridden, so the default path is byte for
-   * byte what it was: one hero, every market, one folder. Adapting creative per
-   * market is a deliberate act that costs another generation, and it should
-   * look like one.
+   * offers and CREATIVE to resonate with local cultures" - is reached here:
+   * select the markets, pick a look, run. Suffixed only when the look is
+   * overridden, so the default path stays one hero, every market, one folder.
    */
   const campaignDir = path.join(
     outputRoot,
