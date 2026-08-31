@@ -27,14 +27,23 @@ if (unknown.length || args.includes("--help")) {
   npm run campaign -- <brief>              produce a campaign
   npm run campaign -- <brief> --preview    the whole campaign for about 3 cents
   npm run campaign -- <brief> --dry-run    what it would cost, spending nothing
-  npm run campaign -- <brief> --dry-run --prompts   ...and the exact prompts
+  npm run campaign -- <brief> --prompts     the exact prompt it would send, free
   npm run campaign -- --all                every brief in samples/briefs.json
   npm run campaign -- --all --dry-run      what the whole library would cost
 ${unknown.length ? `\n  Unrecognised: ${unknown.join(", ")}\n` : ""}`);
   process.exit(unknown.length ? 2 : 0);
 }
 
-const dryRun = args.includes("--dry-run");
+/**
+ * --prompts implies --dry-run, and does not merely combine with it.
+ *
+ * This is the second flag found doing the opposite of its label. `--prompts`
+ * prints what a paid generation WOULD be asked for; it lived inside the dry-run
+ * branch, so passing it alone silently ran a real campaign and spent money
+ * while ignoring the flag entirely. A flag that exists to show you the prompt
+ * before you buy it must not be able to buy it.
+ */
+const dryRun = args.includes("--dry-run") || args.includes("--prompts");
 const file = args.find((a) => !a.startsWith("--")) ?? "samples/campaign.yaml";
 
 // --all runs every brief in samples/briefs.json back to back.

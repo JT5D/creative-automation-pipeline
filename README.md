@@ -113,7 +113,7 @@ npm run dev                                            # console + API
 npm run campaign -- samples/campaign.yaml              # same pipeline, CLI
 npm run campaign -- samples/campaign.yaml --dry-run    # what it costs, spending nothing
 npm run campaign -- --all                              # every brief in samples/, one command
-npm run campaign -- samples/campaign.yaml --prompts    # the exact prompt it would send, for nothing
+npm run campaign -- samples/campaign.yaml --prompts    # the exact prompt it would send, spending nothing
 npm run campaign -- samples/campaign.yaml --preview    # the whole campaign for about 3 cents
 npm run doctor                                         # is the key live and the model id real
 npm run check                                          # the release gate

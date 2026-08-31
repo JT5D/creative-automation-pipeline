@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -255,5 +256,39 @@ describe("the gates upstream of the proof", () => {
     );
     const logo = result.checks.find((c) => c.id === "brand.logoFile");
     expect(logo?.status).not.toBe("pass");
+  });
+});
+
+/**
+ * The CLI flags that promise to spend nothing.
+ *
+ * Two of them did not. `--all --dry-run` ran the whole sample library against
+ * the live key, and `--prompts` alone ran a real campaign while ignoring the
+ * flag it was given. Both were accepted, both were silent, and both cost money
+ * to discover. The pattern is the one this repo keeps finding, so it gets a
+ * test rather than a note: a flag whose label reads "spending nothing" must
+ * reach no provider.
+ *
+ * Asserted against the source, because the alternative is a test that proves
+ * it by spending. It reads the two things that actually decide it: what sets
+ * `dryRun`, and whether the `--all` branch consults it.
+ */
+describe("the flags that must not spend", () => {
+  const cli = readFileSync(path.resolve("src/cli.ts"), "utf8");
+
+  it("treats --prompts as a dry run, so it cannot reach a provider", () => {
+    expect(cli).toMatch(/const dryRun =[\s\S]{0,120}args\.includes\("--prompts"\)/);
+  });
+
+  it("makes --all consult dryRun before running the library", () => {
+    const branch = cli.slice(cli.indexOf('args.includes("--all")'));
+    const decision = branch.slice(0, branch.indexOf("\n}"));
+    expect(decision).toMatch(/dryRun \? await estimatePortfolio\(\)/);
+  });
+
+  it("names every flag it accepts, so an unknown one cannot fall through to a run", () => {
+    // An unrecognised flag used to reach a full campaign against the live key.
+    expect(cli).toMatch(/const KNOWN = new Set\(\[[^\]]*"--dry-run"[^\]]*\]\)/);
+    expect(cli).toMatch(/if \(unknown\.length \|\| args\.includes\("--help"\)\)/);
   });
 });

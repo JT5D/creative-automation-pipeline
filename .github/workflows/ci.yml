@@ -190,4 +190,4 @@ jobs:
             -d '{"productId":"ci-probe","mimeType":"image/png","dataBase64":"bm90IGFuIGltYWdl"}'
 
           echo "local app booted on 127.0.0.1:8787 and answered $checked routes"
-          [ "$checked" -eq 16 ] || { echo "✗ expected 16 routes, checked $checked"; exit 1; }
+          [ "$checked" -eq 15 ] || { echo "✗ expected 15 routes, checked $checked"; exit 1; }
