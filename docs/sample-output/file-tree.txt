@@ -1,3 +1,5 @@
+lumen-autumn-glow-de/.DS_Store
+lumen-autumn-glow-de/overnight-recovery-cream/.DS_Store
 lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png
 lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png
 lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png
@@ -14,6 +16,7 @@ lumen-autumn-glow-de/overnight-recovery-cream/copy/de-de.txt
 lumen-autumn-glow-de/overnight-recovery-cream/copy/en-gb.txt
 lumen-autumn-glow-de/overnight-recovery-cream/copy/fr-fr.txt
 lumen-autumn-glow-de/overnight-recovery-cream/source/generated-hero.png
+lumen-autumn-glow-de/radiance-serum/.DS_Store
 lumen-autumn-glow-de/radiance-serum/16x9/de-de.png
 lumen-autumn-glow-de/radiance-serum/16x9/en-gb.png
 lumen-autumn-glow-de/radiance-serum/16x9/fr-fr.png
