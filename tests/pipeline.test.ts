@@ -12,7 +12,13 @@ import { safeBoundsFor, templateFor, textGeometry } from "../src/composer.js";
 import { estimateCampaign } from "../src/estimate.js";
 import { readInsights } from "../src/history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "../src/pipeline.js";
-import { MODEL_OPTIONS, priceFor, REQUESTED_IMAGE_SIZE } from "../src/pricing.js";
+import {
+  formatUsd,
+  MODEL_OPTIONS,
+  PREVIEW_MODEL,
+  priceFor,
+  REQUESTED_IMAGE_SIZE,
+} from "../src/pricing.js";
 import { selectGenerator } from "../src/providers/index.js";
 import { TestDoubleHeroGenerator } from "../src/providers/placeholder.js";
 import {
@@ -825,6 +831,34 @@ describe("provider selection", () => {
     expect(MODEL_OPTIONS.map((m) => m.id)).not.toContain("gemini-3.1-flash-lite-image");
     // The catalog still prices them, so a hand-set override is costed honestly.
     expect(priceFor("gemini-3.1-flash-lite-image")).toBe(0.0336);
+  });
+
+  it("quotes a price at the precision the price actually has", () => {
+    // Three decimals is enough for the frontier tier and not for the cheap
+    // one. Rounded to three, the preview model reads $0.034 -- which
+    // overstates it, disagrees with every doc that quotes $0.0336, and put a
+    // total of $0.034 above a unit price of $0.0336 on a one-generation run.
+    expect(formatUsd(0.134)).toBe("$0.134");
+    expect(formatUsd(0.0336)).toBe("$0.0336");
+    // Still money, not a bare number, when the extra digit says nothing.
+    expect(formatUsd(0.1)).toBe("$0.100");
+    // Over a dollar it is plain currency; a third decimal on $849 is noise.
+    expect(formatUsd(849.07)).toBe("$849.07");
+  });
+
+  it("prices a preview against the model a preview actually runs", async () => {
+    // The console's model picker and its estimate quoted different numbers in
+    // preview mode, because the tier overrides the selection. Whatever the
+    // picker says, these two have to be the same model at the same price.
+    const brief = parseBrief(briefYaml());
+    const estimate = await estimateCampaign(brief, { preview: true });
+    expect(estimate.model).toBe(PREVIEW_MODEL.id);
+    expect(estimate.estimatedCostUsd?.unitPriceUsd).toBe(PREVIEW_MODEL.usdPer2K);
+    // And the total for a single generation IS the unit price, on screen too.
+    expect(formatUsd(estimate.estimatedCostUsd?.totalUsd ?? 0)).toBe(
+      formatUsd(PREVIEW_MODEL.usdPer2K),
+    );
+    expect(estimate.generations).toBe(1);
   });
 
   it("refuses a market the bundled typefaces cannot render", async () => {

@@ -12,7 +12,7 @@ import { findApprovedHero } from "./assetResolver.js";
 import { estimateCampaign } from "./estimate.js";
 import { readInsights } from "./history.js";
 import { loadBriefFile, parseBrief, runCampaign } from "./pipeline.js";
-import { MODEL_OPTIONS, PRICING_SOURCE, priceFor } from "./pricing.js";
+import { MODEL_OPTIONS, PREVIEW_MODEL, PRICING_SOURCE, priceFor } from "./pricing.js";
 import { providerStatus, selectGenerator } from "./providers/index.js";
 import { type CampaignReport, sanitizeId } from "./report.js";
 import { RATIOS, type RatioKey, REQUIRED_RATIOS } from "./schema.js";
@@ -61,11 +61,11 @@ app.get("/api/campaigns/:id/archive", async (req, res) => {
 /**
  * Everything the console needs to draw itself, in one request.
  *
- * These were six routes and six fetches, and none of them takes an argument or
- * changes between calls -- they are the catalogues the UI renders from, plus
- * whichever run is already on disk. Serving them together means the console has
- * one thing that can fail instead of six, and a reviewer reading server.ts sees
- * one bootstrap rather than counting endpoints.
+ * None of these takes an argument or changes between calls -- they are the
+ * catalogues the UI renders from, plus whichever run is already on disk.
+ * Serving them together gives the console one thing that can fail instead of
+ * six, and a reviewer reading server.ts one bootstrap rather than a count of
+ * endpoints.
  *
  * `insights` also has its own route below, because it is the only member of
  * this set that changes when a run finishes.
@@ -87,7 +87,7 @@ app.get("/api/console", async (_req, res) => {
     // The sample library, so a reviewer can see more than the flattering case.
     briefs: await readBriefLibrary(),
     // Model choices with published prices, so the picker cannot invent a number.
-    models: { models: MODEL_OPTIONS, source: PRICING_SOURCE },
+    models: { models: MODEL_OPTIONS, source: PRICING_SOURCE, preview: PREVIEW_MODEL },
     formats,
     // Served rather than hard-coded in the browser so that adding a look to
     // LOOK_OPTIONS puts it in the picker; a copy in the bundle goes stale.
@@ -229,8 +229,9 @@ async function readLastRun(): Promise<RunState | null> {
  *
  * Free. Deliberately a separate GET from the act of shooting, because the whole
  * point of putting this in the console is that the price is visible before the
- * button is pressed: nine set-ups is nine paid generations, which is an order
- * of magnitude more than the campaign that produced the hero.
+ * button is pressed: every set-up is another paid generation, and covering the
+ * catalogue costs an order of magnitude more than the campaign that produced
+ * the hero.
  */
 app.get("/api/shots", (_req, res) => {
   const model = process.env.GEMINI_IMAGE_MODEL ?? "gemini-3-pro-image";

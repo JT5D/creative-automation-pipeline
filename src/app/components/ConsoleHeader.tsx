@@ -1,3 +1,4 @@
+import { formatUsd } from "../../pricing.js";
 import type { ModelOption, ProviderStatus } from "../types.js";
 import { ThemeToggle } from "./ThemeToggle.js";
 
@@ -5,6 +6,8 @@ type Props = {
   models: ModelOption[];
   model: string;
   onModel: (id: string) => void;
+  /** The model the Preview tier uses instead of the chosen one. */
+  previewModel: ModelOption | null;
   preview: boolean;
   onPreview: (on: boolean) => void;
   provider: ProviderStatus | null;
@@ -32,6 +35,7 @@ export function ConsoleHeader({
   models,
   model,
   onModel,
+  previewModel,
   preview,
   onPreview,
   provider,
@@ -43,6 +47,17 @@ export function ConsoleHeader({
   onEstimate,
   onRun,
 }: Props) {
+  /*
+   * In Preview the tier picks the model, so the picker shows the model that
+   * will actually run and stops accepting a choice.
+   *
+   * Left live, it advertised "Gemini 3 Pro Image - $0.134 per image" while the
+   * estimate directly below it quoted $0.0336, because --preview overrides the
+   * selection. Two prices for one run, and the wrong one was the larger and
+   * more prominent.
+   */
+  const shown = preview && previewModel ? [previewModel] : models;
+
   return (
     <header className="topbar">
       <div className="brand">
@@ -58,16 +73,34 @@ export function ConsoleHeader({
 
       <div className="controls">
         {models.length > 0 && provider?.provider === "google-gemini" && (
+          /*
+           * In Preview the tier picks the model, so the picker shows the model
+           * that will actually run and stops accepting a choice.
+           *
+           * Left live, it advertised "Gemini 3 Pro Image - $0.134 per image"
+           * while the estimate directly below it quoted $0.0336, because
+           * `--preview` overrides the selection. Two prices for one run, and
+           * the wrong one was the larger and more prominent.
+           */
           <label className="model">
-            <select value={model} onChange={(e) => onModel(e.target.value)}>
-              {models.map((m) => (
+            <select
+              value={shown[0]?.id ?? model}
+              disabled={preview}
+              onChange={(e) => onModel(e.target.value)}
+              title={
+                preview
+                  ? "The Preview tier runs on the cheapest model that can serve 1K, whichever model is selected. Switch to Ship to choose."
+                  : undefined
+              }
+            >
+              {shown.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {/* Unit price only. What makes it unambiguous is the
-                      estimate panel underneath, which shows the total AND the
+                  {/* Unit price only. What makes it unambiguous is the estimate
+                      panel underneath, which shows the total AND the
                       arithmetic: "1 x $0.134 per image". A unit price beside
                       "24 creatives" with no visible multiplicand invites the
                       wrong sum, $3.22 for a run that costs $0.134. */}
-                  {m.label} - ${m.usdPer2K.toFixed(3)} per image
+                  {m.label} - {formatUsd(m.usdPer2K)} per image
                 </option>
               ))}
             </select>

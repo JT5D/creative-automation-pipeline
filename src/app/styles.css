@@ -337,9 +337,32 @@ body {
 }
 .est-figs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
   margin-bottom: 12px;
+}
+/*
+ * The spend takes its own row and reads across it.
+ *
+ * Sharing a three-column grid with the two counts left it 89px wide in the
+ * rail, which wrapped "1 x $0.134 per image" onto three lines and made the one
+ * number a person is deciding on the hardest thing on the panel to read.
+ */
+.est-figs .spend {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+/* The arithmetic is a sentence, not a label, so it is not set in caps. */
+.est-figs .spend em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
 }
 .est-figs div {
   display: flex;
@@ -995,13 +1018,33 @@ body {
 .stage:has(> .inspector) {
   grid-template-columns: 316px minmax(0, 1fr) 330px;
 }
+/*
+ * Pinned, and scrolls its own content when it is taller than the window.
+ *
+ * Sticky alone is a trap at this height: the rail runs to about 1,170px, so on
+ * a 900px screen the dry run hangs 285px below the fold and the page scroll
+ * moves the gallery instead of the rail. Pressing Estimate then showed a
+ * result that could not be reached, which is the one panel the cost argument
+ * rests on.
+ */
 .rail-col {
   position: sticky;
   top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
   display: flex;
   flex-direction: column;
   gap: 14px;
   min-width: 0;
+}
+/* Never compressed. A flex column shrinks its children to fit its own
+   max-height, and the rail card clips what overflows it, so without this the
+   panel silently loses its bottom instead of the column gaining a scrollbar. */
+.rail-col > * {
+  flex: none;
 }
 .work {
   min-width: 0;
@@ -1019,6 +1062,8 @@ body {
   }
   .rail-col {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
 }
 .workspace {
@@ -1117,11 +1162,22 @@ body {
 }
 
 /* ─── Inspector ───────────────────────────────────────────────────────── */
+/*
+ * Pinned, and scrolls its own content, for the same reason the control rail
+ * does: a sticky panel taller than the window keeps its bottom out of reach,
+ * because page scroll moves the gallery instead. This one runs past 1,100px
+ * with a creative, its provenance and its check list in it.
+ */
 .inspector {
   flex: 1 1 320px;
   max-width: 396px;
   position: sticky;
   top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1130,6 +1186,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+/* Not compressed to fit the max-height, or the panel loses its bottom instead
+   of gaining a scrollbar. */
+.inspector > * {
+  flex: none;
 }
 .insp-shot {
   border-radius: 9px;

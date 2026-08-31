@@ -17,6 +17,21 @@ export const PRICING_SOURCE =
  */
 export const REQUESTED_IMAGE_SIZE = "2K";
 
+/**
+ * A dollar amount, at the precision the amount actually has.
+ *
+ * Three decimals is enough for the frontier tier and not for the cheap one:
+ * $0.0336 rounds to "$0.034", which overstates it, disagrees with every other
+ * place this repo quotes that number, and made a one-generation preview show a
+ * total of $0.034 above a unit price of $0.0336. A fourth decimal appears only
+ * when it changes the number, and amounts over a dollar are plain currency.
+ */
+export function formatUsd(usd: number): string {
+  if (Math.abs(usd) >= 1) return `$${usd.toFixed(2)}`;
+  const three = usd.toFixed(3);
+  return `$${Number(three) === Number(usd.toFixed(4)) ? three : usd.toFixed(4)}`;
+}
+
 export type ModelOption = {
   id: string;
   label: string;

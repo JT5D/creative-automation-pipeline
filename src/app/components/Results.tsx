@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatUsd } from "../../pricing.js";
 import type { CampaignReport, Creative, ProductRecord } from "../types.js";
 
 export type Selection = { creative: Creative; product: ProductRecord };
@@ -159,9 +160,9 @@ type ShotResult = { id: string; label: string; path?: string; error?: string };
  * crop is free and a generation is not. That is the cost argument this whole
  * pipeline rests on, and coverage is what it gives up. This is what buying the
  * coverage back costs, and the reason it lives behind a disclosure with a
- * running total rather than behind a button: nine set-ups is nine paid
- * generations, roughly ten times the campaign that produced the hero. Nobody
- * should discover that afterwards.
+ * running total rather than behind a button: every set-up is another paid
+ * generation, and covering the catalogue costs roughly ten times the campaign
+ * that produced the hero. Nobody should discover that afterwards.
  *
  * Defaults to nothing selected. A control that spends money on load is not a
  * control.
@@ -225,7 +226,7 @@ function ShootPanel({ productId, brief }: { productId: string; brief: string }) 
       <div className="shoot-bill">
         {/* The number that is real money, before the button that spends it. */}
         <b>
-          {picked.length} x ${unit.toFixed(3)} = ${total.toFixed(3)}
+          {picked.length} x {formatUsd(unit)} = {formatUsd(total)}
         </b>
         <button type="button" onClick={shoot} disabled={busy || picked.length === 0}>
           {busy ? "Shooting…" : `Shoot ${picked.length || "nothing"}`}

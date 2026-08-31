@@ -36,6 +36,8 @@ export function App() {
   const [selectedLocales, setSelectedLocales] = useState<string[]>([]);
 
   const [models, setModels] = useState<ModelOption[]>([]);
+  // The model the Preview tier will actually use, which overrides `model`.
+  const [previewModel, setPreviewModel] = useState<ModelOption | null>(null);
   const [model, setModel] = useState("");
   // Empty means "whatever the brief asks for", which is not the same as
   // "daylight": the fragrance brief says nocturne and picking a look here has
@@ -133,6 +135,7 @@ export function App() {
         // reviewer does should be unambiguously the assignment.
         setSelectedFormats(data.formats.filter((f) => f.required).map((f) => f.key));
         setModels(data.models.models);
+        setPreviewModel(data.models.preview ?? null);
         setModel((m) => m || data.models.models[0]?.id || "");
         setLooks(data.looks.looks);
         setInsights(data.insights);
@@ -284,6 +287,7 @@ export function App() {
         models={models}
         model={model}
         onModel={setModel}
+        previewModel={previewModel}
         preview={preview}
         onPreview={setPreview}
         provider={provider}

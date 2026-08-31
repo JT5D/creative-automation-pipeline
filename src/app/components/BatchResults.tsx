@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatUsd } from "../../pricing.js";
 import type { BatchCampaign, BatchState } from "../types.js";
 import { DeliveryBanner } from "./DeliveryBanner.js";
 import { Results, type Selection } from "./Results.js";
@@ -51,7 +52,7 @@ export function BatchResults({
           {/* Counted off the reports, never off what was requested. */}
           <span>
             {totals.creatives} creatives · {totals.reused} heroes reused · {totals.live} generated
-            live · ${totals.cost.toFixed(3)}
+            live · {formatUsd(totals.cost)}
             {totals.refused > 0 && ` · ${totals.refused} refused`}
           </span>
         </div>

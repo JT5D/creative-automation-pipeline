@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { formatUsd } from "../src/pricing.js";
 import type { CampaignReport } from "../src/report.js";
 
 /**
@@ -60,7 +61,10 @@ const eff = report.successMetrics.efficiency;
 if (!saved) throw new Error("the committed run has no timeSaved to pin the microsite against");
 const savedHours = (saved.minutes / 60).toFixed(1);
 const savedUsd = String(Math.round(saved.usd ?? 0));
-const perCreativeUsd = (eff.costPerCreativeUsd ?? 0).toFixed(3);
+// Formatted the way the console formats money, so the page and the product
+// cannot round the same number two different ways. At three decimals this read
+// $0.006 for a figure that is $0.00558.
+const perCreativeUsd = formatUsd(eff.costPerCreativeUsd ?? 0).slice(1);
 const reusePct = String(Math.round(eff.reuseRate * 100));
 // Formats are not a field on the report. Every product is produced in every
 // format in every market, so the count divides out - and deriving it means the

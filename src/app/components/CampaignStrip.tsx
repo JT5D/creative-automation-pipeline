@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { formatUsd } from "../../pricing.js";
 import type { BriefSummary, CampaignEstimate, FormatOption, LookOption } from "../types.js";
 
 type Props = {
@@ -284,7 +285,7 @@ export function CampaignStrip(props: Props) {
                 <span>generations</span>
               </div>
               <div>
-                <b>${batchEstimate.costUsd.toFixed(3)}</b>
+                <b>{formatUsd(batchEstimate.costUsd)}</b>
                 <span>est. spend</span>
               </div>
               {batchEstimate.refused > 0 && (
@@ -364,19 +365,20 @@ function EstimateCard({
               <b>{e.generations}</b>
               <span>generations</span>
             </div>
-            <div>
-              <b>{e.estimatedCostUsd ? `$${e.estimatedCostUsd.totalUsd.toFixed(3)}` : "-"}</b>
-              {/* The total, then the arithmetic that produced it. A unit price
-                  on its own next to "24 creatives" invites the reader to
-                  multiply the wrong pair of numbers and arrive at $3.22 for a
-                  run that costs $0.134. Showing "1 x $0.134" makes the count
-                  that is actually charged visible, which is the number of
-                  missing heroes and never the number of outputs. */}
-              <span>
-                {e.estimatedCostUsd
-                  ? `est. spend · ${e.estimatedCostUsd.generations} × $${e.estimatedCostUsd.unitPriceUsd.toFixed(3)} per image`
-                  : "est. spend"}
-              </span>
+            {/* The total, then the arithmetic that produced it, on its own row.
+                A unit price on its own next to "24 creatives" invites the
+                reader to multiply the wrong pair of numbers and arrive at
+                $3.22 for a run that costs $0.134, so the count that is actually
+                charged stays visible: missing heroes, never outputs. */}
+            <div className="spend">
+              <b>{e.estimatedCostUsd ? formatUsd(e.estimatedCostUsd.totalUsd) : "-"}</b>
+              <span>est. spend</span>
+              {e.estimatedCostUsd && (
+                <em>
+                  {e.estimatedCostUsd.generations} × {formatUsd(e.estimatedCostUsd.unitPriceUsd)}{" "}
+                  per image
+                </em>
+              )}
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatUsd } from "../../pricing.js";
 import type {
   CampaignReport,
   Insights as InsightsData,
@@ -79,8 +80,8 @@ export function RunDetails({
                 </li>
                 <li>{Math.round(insights.reuseRate * 100)}% of heroes reused</li>
                 <li>
-                  {insights.liveHeroGenerations} live hero generations · $
-                  {insights.totalCostUsd.toFixed(3)}
+                  {insights.liveHeroGenerations} live hero generations ·{" "}
+                  {formatUsd(insights.totalCostUsd)}
                 </li>
               </ul>
             </div>

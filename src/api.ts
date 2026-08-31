@@ -108,7 +108,8 @@ export type FormatOption = {
 export type ConsoleBootstrap = {
   provider: ProviderStatus;
   briefs: BriefSummary[];
-  models: { models: ModelOption[]; source: string };
+  /** `preview` is the model the Preview tier picks, which overrides the chosen one. */
+  models: { models: ModelOption[]; source: string; preview: ModelOption };
   formats: FormatOption[];
   looks: { looks: LookOption[]; default: string };
   /** Null when nothing has ever been run into the outputs directory. */

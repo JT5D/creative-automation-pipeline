@@ -1,3 +1,4 @@
+import { formatUsd } from "../../pricing.js";
 import type { CampaignReport } from "../types.js";
 
 /**
@@ -116,7 +117,7 @@ export function DeliveryBanner({
           good={m.validationFailed === 0}
         />
         {report.estimatedCostUsd && (
-          <Cell v={`$${report.estimatedCostUsd.totalUsd.toFixed(3)}`} k="estimated GenAI cost" />
+          <Cell v={formatUsd(report.estimatedCostUsd.totalUsd)} k="estimated GenAI cost" />
         )}
       </div>
     </div>
