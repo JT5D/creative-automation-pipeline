@@ -156,11 +156,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
-  padding-bottom: 20px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 .brand {
   display: flex;
@@ -190,20 +190,26 @@ body {
   letter-spacing: -0.45px;
 }
 
-/* The product thesis in one line, set as a spec line rather than a tagline. */
+/* The product thesis, in the body face. Monospace here was the single
+   strongest "internal dev tool" signal on the screen: it is reserved for the
+   things that really are identifiers -- paths, model ids, request ids. */
 .topbar p {
-  margin: 4px 0 0;
+  margin: 5px 0 0;
+  max-width: 46ch;
   color: var(--muted);
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 11px;
-  letter-spacing: 0.1px;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
+/* Right-aligned so the primary action is the last thing on the row and the
+   rightmost thing on the screen, wherever the row breaks. */
 .controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 8px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 .model select {
   background: var(--panel);
@@ -423,6 +429,35 @@ body {
   font-size: 12.5px;
   margin: 10px 0 0;
 }
+.empty-frames {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+/* Real proportions, so the shapes themselves say what 1:1, 9:16 and 16:9 are.
+   Named apart from .frame, which is the creative card's own image box. */
+.empty-frame {
+  height: 132px;
+  border: 1px dashed var(--line-2);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: var(--panel);
+}
+.ef1x1 {
+  width: 132px;
+}
+.ef9x16 {
+  width: 74px;
+}
+.ef16x9 {
+  width: 235px;
+}
+
 .empty strong {
   display: block;
   color: var(--ink);
@@ -430,8 +465,14 @@ body {
   margin-bottom: 4px;
 }
 .empty {
+  padding: 26px 4px;
   color: var(--muted);
   font-size: 12.5px;
+}
+.empty p {
+  margin: 6px 0 0;
+  max-width: 62ch;
+  line-height: 1.55;
 }
 
 .timeline {
@@ -680,53 +721,79 @@ body {
   color: var(--ink);
 }
 
-/* ─── Campaign strip ──────────────────────────────────────────────────────
-   What this run is, in one row. It replaced a 700px-tall panel whose main
-   feature was a YAML textarea -- a real input contract, but not the default
-   view of a production tool. The source is one click away behind Edit source. */
-.strip {
+/* ─── The control rail ────────────────────────────────────────────────────
+   The brief, top to bottom, in the order a producer fills one in: what runs,
+   what it says and to whom, where it goes, what it costs. The YAML source is
+   one click away behind Edit source -- a real input contract, and not the
+   default view of a production tool. */
+.rail {
   display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  margin-bottom: 16px;
 }
-.cell {
-  flex: 1 1 210px;
-  padding: 14px 20px;
-  border-right: 1px solid var(--border);
+.rail-block {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
-.cell.wide {
-  flex: 2 1 260px;
-  border-right: 0;
+.rail-block:last-child {
+  border-bottom: 0;
 }
-.cell-k {
-  font-size: 12px;
+/* Section labels, not sentences: uppercase and tracked so the eye skips them
+   on the way to the value, which is the thing being read. */
+.rail-k {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   color: var(--muted);
 }
-.cell-v {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--text);
+.rail-msg {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--ink);
 }
-.cell-v.msg {
-  display: block;
+.rail-sub {
+  font-size: 11.5px;
   line-height: 1.45;
+  color: var(--muted);
 }
-.cell-note {
-  font-size: 12px;
+.rail-sub b {
+  color: var(--text-2);
+  font-weight: 600;
+  margin-right: 5px;
+}
+.rail-select {
+  background: var(--app);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+}
+.rail-note {
+  font-size: 11.5px;
   color: var(--muted);
   line-height: 1.4;
+}
+/* The dry run is the last thing in the rail and the only card inside it. */
+.rail .estimate {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 .cell select {
   background: var(--app);
@@ -799,6 +866,9 @@ body {
   flex-wrap: wrap;
   align-items: stretch;
   gap: 0;
+  /* The banner is a bar, not a panel. It carries the same eight figures it
+     always has; it just no longer takes 380px of the fold to say them, which
+     is what put the first creative below the bottom of the screen. */
   background: var(--surface);
   border: 1px solid var(--border);
   border-left: 3px solid var(--success);
@@ -815,17 +885,16 @@ body {
   border-left-color: var(--error);
 }
 .verdict {
-  flex: 1 1 320px;
-  min-width: 280px;
+  flex: 1 1 100%;
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 18px 22px;
-  border-right: 1px solid var(--border);
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
 }
 .verdict .tick {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   flex: none;
   border-radius: 50%;
   display: grid;
@@ -845,19 +914,23 @@ body {
   border-color: var(--error-line);
   color: var(--error);
 }
+/* The verdict reads as one line: heading, then the counts behind it, wrapping
+   only when it has to. Stacked in a column it was a paragraph of status above
+   the work it describes. */
 .verdict div {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 10px;
   min-width: 0;
 }
 .verdict strong {
-  font-size: 19px;
-  font-weight: 500;
-  letter-spacing: -0.015em;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .verdict span {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-2);
   line-height: 1.45;
 }
@@ -867,18 +940,19 @@ body {
    the same width whatever the count. */
 .dmetrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  flex: 3 1 480px;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  flex: 1 1 100%;
+  min-width: 0;
 }
 .dcell {
-  padding: 18px 20px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
   border-right: 1px solid var(--border);
 }
 .dcell .v {
-  font-size: 24px;
+  font-size: 19px;
   letter-spacing: -0.02em;
   color: var(--text);
 }
@@ -890,28 +964,62 @@ body {
   color: var(--muted);
   line-height: 1.3;
 }
+/* The two downloads sit at the end of the metric row, not stacked in a column
+   of their own: a producer collects the folder once, at the end of reading the
+   numbers. */
+/* End of the verdict line, not a column of its own: a producer collects the
+   folder once, after reading the verdict. */
 .dl-group {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 14px 18px;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: none;
 }
 .delivery .dl {
-  align-self: center;
-  margin: 0 18px;
+  margin: 0;
+  white-space: nowrap;
 }
 
 /* ─── Stage: workspace + inspector ────────────────────────────────────── */
+/* ─── The shell ───────────────────────────────────────────────────────────
+   Controls, work, provenance. The rail is fixed because a control column that
+   grows with its longest label rearranges the gallery beside it; the work
+   takes whatever is left. */
 .stage {
+  display: grid;
+  grid-template-columns: 316px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+.stage:has(> .inspector) {
+  grid-template-columns: 316px minmax(0, 1fr) 330px;
+}
+.rail-col {
+  position: sticky;
+  top: 16px;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 16px;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
 }
 .work {
-  flex: 1 1 560px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* One column under about 1120px: two 300px control columns beside a gallery
+   is not a gallery. */
+@media (max-width: 1119px) {
+  .stage,
+  .stage:has(> .inspector) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rail-col {
+    position: static;
+  }
 }
 .workspace {
   display: flex;
@@ -1402,6 +1510,29 @@ body {
   font-size: 10.5px;
   line-height: 1.45;
   color: var(--muted);
+  text-align: right;
+}
+.handoff summary {
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+}
+.handoff summary::-webkit-details-marker {
+  display: none;
+}
+.handoff summary::before {
+  content: "+ ";
+}
+.handoff[open] summary::before {
+  content: "- ";
+}
+.handoff summary:hover {
+  color: var(--text-2);
+}
+.handoff p {
+  margin: 5px 0 0 auto;
+  max-width: 78ch;
+  text-align: left;
 }
 
 /* How much of the run the market tabs are showing. Named exactly, because a
@@ -1435,20 +1566,46 @@ body {
    holds one of them cannot express that. */
 .briefs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 2px 0 6px;
+  flex-direction: column;
+  gap: 1px;
+  /* Pulled out to the block's padding so the hover row reaches the panel edge
+     without the list itself becoming wider than the rail. */
+  margin: 0 -7px;
 }
+/* One row each, with what it produces under the name. Wrapped in two ragged
+   columns these read as a debug form; the campaign a reviewer is about to run
+   should look like a choice, and what it costs should be legible from the
+   list. */
 .briefs label {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  color: var(--muted);
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--text-2);
   cursor: pointer;
+}
+.briefs label:hover {
+  background: var(--panel);
 }
 .briefs label.on {
   color: var(--ink);
+  background: var(--panel-2);
+}
+.brief-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.brief-body em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.briefs input {
+  margin-top: 2px;
 }
 .briefs input {
   accent-color: var(--brand);

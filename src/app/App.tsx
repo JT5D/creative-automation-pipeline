@@ -286,9 +286,6 @@ export function App() {
         models={models}
         model={model}
         onModel={setModel}
-        looks={looks}
-        look={look}
-        onLook={setLook}
         preview={preview}
         onPreview={setPreview}
         provider={provider}
@@ -301,34 +298,50 @@ export function App() {
         onRun={batching ? onRunBatch : onRun}
       />
 
-      <CampaignStrip
-        library={library}
-        active={active}
-        onSelect={loadBrief}
-        selectedBriefs={selectedBriefs}
-        onToggleBrief={(file) => toggle(selectedBriefs, setSelectedBriefs, file)}
-        batchEstimate={batchEstimate}
-        onApproveAsset={onApproveAsset}
-        brief={brief}
-        onBriefChange={setBrief}
-        message={message}
-        formats={formats}
-        selectedFormats={selectedFormats}
-        onToggleFormat={(k) => toggle(selectedFormats, setSelectedFormats, k)}
-        locales={locales}
-        selectedLocales={selectedLocales}
-        onToggleLocale={(l) => toggle(selectedLocales, setSelectedLocales, l)}
-        estimate={estimate}
-      />
-
-      {(error || run?.error) && <p className="error">{error ?? run?.error}</p>}
-
-      {activeRun?.report && !batch && (
-        <DeliveryBanner report={activeRun.report} restored={activeRun.restored} />
-      )}
-
       <main className="stage">
+        {/*
+         * Controls on the left, the work on the right, provenance on the right
+         * of that when a creative is open.
+         *
+         * This is the one layout rule the console follows: in a creative tool
+         * the work is the hero. Stacked full-width, the header, the brief, the
+         * dry run and the delivery banner put the first creative 1,141px down a
+         * 900px screen, so a creative director opened this and saw controls.
+         * Beside the work instead, every panel says exactly what it said before
+         * and none of them is between the reviewer and the pictures.
+         */}
+        <aside className="rail-col">
+          <CampaignStrip
+            library={library}
+            active={active}
+            onSelect={loadBrief}
+            selectedBriefs={selectedBriefs}
+            onToggleBrief={(file) => toggle(selectedBriefs, setSelectedBriefs, file)}
+            batchEstimate={batchEstimate}
+            onApproveAsset={onApproveAsset}
+            brief={brief}
+            onBriefChange={setBrief}
+            message={message}
+            formats={formats}
+            selectedFormats={selectedFormats}
+            onToggleFormat={(k) => toggle(selectedFormats, setSelectedFormats, k)}
+            locales={locales}
+            selectedLocales={selectedLocales}
+            onToggleLocale={(l) => toggle(selectedLocales, setSelectedLocales, l)}
+            estimate={estimate}
+            looks={looks}
+            look={look}
+            onLook={setLook}
+          />
+        </aside>
+
         <div className="work">
+          {(error || run?.error) && <p className="error">{error ?? run?.error}</p>}
+
+          {activeRun?.report && !batch && (
+            <DeliveryBanner report={activeRun.report} restored={activeRun.restored} />
+          )}
+
           {batch && <BatchResults batch={batch} selected={selected} onSelect={setSelected} />}
           {activeRun?.report && !batch && producedRatios.length > 0 && (
             <div className="filters">
@@ -377,12 +390,16 @@ export function App() {
           )}
         </div>
 
-        <Inspector
-          creative={shownSelection?.creative ?? null}
-          product={shownSelection?.product ?? null}
-          onClose={() => setSelected(null)}
-          onApproveAsset={onApproveAsset}
-        />
+        {/* Only when it has something to show. An empty provenance panel held
+            380px of the widest column open across every pre-run screen. */}
+        {shownSelection && (
+          <Inspector
+            creative={shownSelection.creative}
+            product={shownSelection.product}
+            onClose={() => setSelected(null)}
+            onApproveAsset={onApproveAsset}
+          />
+        )}
       </main>
 
       <RunDetails

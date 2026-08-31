@@ -29,11 +29,28 @@ export function Results({
 }) {
   if (!report)
     return (
-      <p className="empty">
+      /*
+       * The empty state draws the three formats the exercise names, at their
+       * real proportions, because this is the screen a reviewer opens on and a
+       * sentence in the top-left corner of 800px of black is not a first
+       * impression. It also does the teaching: these shapes are what one
+       * generation is about to become.
+       */
+      <div className="empty">
+        <div className="empty-frames" aria-hidden="true">
+          {(["1:1", "9:16", "16:9"] as const).map((r) => (
+            <div key={r} className={`empty-frame ef${r.replace(":", "x")}`}>
+              <span>{r}</span>
+            </div>
+          ))}
+        </div>
         <strong>No creatives yet</strong>
-        Run the campaign to produce them. Every file shown here is read from disk, not re-rendered
-        in the browser.
-      </p>
+        <p>
+          Estimate prices the run without spending anything. Run campaign produces every format and
+          market from one generation per product. Every file shown here is then read back off disk,
+          not re-rendered in the browser.
+        </p>
+      </div>
     );
 
   return (

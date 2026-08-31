@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { BriefSummary, CampaignEstimate, FormatOption } from "../types.js";
+import type { BriefSummary, CampaignEstimate, FormatOption, LookOption } from "../types.js";
 
 type Props = {
   library: BriefSummary[];
@@ -34,6 +34,9 @@ type Props = {
    * is about to cost money. A capability nobody can find is not a capability.
    */
   onApproveAsset: (productId: string, file: File) => Promise<void>;
+  looks: LookOption[];
+  look: string;
+  onLook: (id: string) => void;
 };
 
 /**
@@ -120,6 +123,9 @@ export function CampaignStrip(props: Props) {
     onToggleBrief,
     batchEstimate,
     onApproveAsset,
+    looks,
+    look,
+    onLook,
   } = props;
 
   const [editing, setEditing] = useState(false);
@@ -127,12 +133,18 @@ export function CampaignStrip(props: Props) {
 
   return (
     <>
-      <div className="strip">
-        <div className="cell wide">
-          <span className="cell-k">Campaigns</span>
+      {/*
+       * The control rail: what runs, who it is for, where it goes, what it
+       * costs. Read top to bottom it is the brief itself, in the order a
+       * producer fills one in, and it sits beside the creatives rather than
+       * above them so the work is never pushed off the screen by its controls.
+       */}
+      <div className="rail">
+        <section className="rail-block">
+          <span className="rail-k">Campaign</span>
           {/* Checkboxes, not a dropdown. The client in this exercise launches
               hundreds of campaigns a month, and a control that can only hold
-              one of them cannot express that. Clicking a label previews that
+              one of them cannot express that. Clicking a name previews that
               brief; the box decides what runs. */}
           <div className="briefs">
             {library.map((b) => (
@@ -142,38 +154,92 @@ export function CampaignStrip(props: Props) {
                   checked={selectedBriefs.includes(b.file)}
                   onChange={() => onToggleBrief(b.file)}
                 />
-                <button type="button" onClick={() => onSelect(b.file)}>
-                  {b.label}
-                </button>
+                <span className="brief-body">
+                  <button type="button" onClick={() => onSelect(b.file)}>
+                    {b.label}
+                  </button>
+                  <em>{b.expect}</em>
+                </span>
               </label>
             ))}
           </div>
-          <div className="cell-v">
-            <button type="button" className="link" onClick={() => setEditing(true)}>
-              Edit source: {current?.label ?? active}
-            </button>
-          </div>
-          {current && <span className="cell-note">{current.expect}</span>}
-        </div>
+          <button type="button" className="link" onClick={() => setEditing(true)}>
+            Edit source: {current?.file ?? active}
+          </button>
+        </section>
 
-        <div className="cell">
-          <span className="cell-k">Markets</span>
-          <div className="chips">
-            {locales.map((l) => (
-              <button
-                type="button"
-                key={l}
-                className={selectedLocales.includes(l) ? "on" : ""}
-                onClick={() => onToggleLocale(l)}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Audience and objective are two of the four things the exercise
+            requires a brief to carry, and both were readable only by opening
+            the YAML. They are inputs to the prompt, so they belong beside the
+            proposition rather than behind Edit source. */}
+        <section className="rail-block">
+          <span className="rail-k">Campaign message</span>
+          <p className="rail-msg">{message || "-"}</p>
+          {estimate?.audience && (
+            <span className="rail-sub">
+              <b>Audience</b> {estimate.audience}
+            </span>
+          )}
+          {estimate?.objective && (
+            <span className="rail-sub">
+              <b>Objective</b> {estimate.objective}
+            </span>
+          )}
+        </section>
 
-        <div className="cell">
-          <span className="cell-k">Formats</span>
+        {/* Art direction sits with the brief it directs, not in the app
+            chrome. It is a property of this run in exactly the way the markets
+            and the formats are. */}
+        {looks.length > 0 && (
+          <section className="rail-block">
+            <span className="rail-k">Art direction</span>
+            <select
+              className="rail-select"
+              value={look}
+              onChange={(e) => onLook(e.target.value)}
+              title="The brief's own look is used unless you pick one."
+            >
+              <option value="">From the brief</option>
+              {looks.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+            <span className="rail-note">
+              {looks.find((l) => l.id === look)?.description ??
+                "One word that sets optics, light, set and grade together."}
+            </span>
+          </section>
+        )}
+
+        <section className="rail-block">
+          <span className="rail-k">Markets</span>
+          {locales.length > 0 ? (
+            <div className="chips">
+              {locales.map((l) => (
+                <button
+                  type="button"
+                  key={l}
+                  className={selectedLocales.includes(l) ? "on" : ""}
+                  onClick={() => onToggleLocale(l)}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          ) : (
+            /* A brief with no `markets:` block still runs, in one market
+               derived from its region. An empty panel under a label reads as
+               broken, and this brief is not broken. */
+            <span className="rail-note">
+              {estimate?.locales.join(" · ") ?? "One market, from the brief's region."}
+            </span>
+          )}
+        </section>
+
+        <section className="rail-block">
+          <span className="rail-k">Formats</span>
           <div className="chips">
             {formats.map((f) => (
               <button
@@ -181,35 +247,50 @@ export function CampaignStrip(props: Props) {
                 key={f.key}
                 className={selectedFormats.includes(f.key) ? "on" : ""}
                 onClick={() => onToggleFormat(f.key)}
-                title={`${f.width}×${f.height} · ${f.label}${f.required ? " · required by the exercise" : ""}`}
+                title={`${f.width}x${f.height} · ${f.label}${f.required ? " · required by the exercise" : ""}`}
               >
                 {f.key.replace("x", ":")}
               </button>
             ))}
           </div>
-          <span className="cell-note">
-            Adding a format or a market costs <strong>no extra generation</strong>.
+          <span className="rail-note">
+            Another format or market costs <strong>no extra generation</strong>.
           </span>
-        </div>
+        </section>
 
-        <div className="cell wide">
-          <span className="cell-k">Message</span>
-          <span className="cell-v msg">{message || "-"}</span>
-          {/* Audience and objective are two of the four things the exercise
-              requires a brief to carry, and both were readable only by opening
-              the YAML. They are inputs to the prompt, so they belong beside the
-              proposition rather than behind Edit source. */}
-          {estimate?.audience && (
-            <span className="cell-sub">
-              <b>Audience</b> {estimate.audience}
-            </span>
-          )}
-          {estimate?.objective && (
-            <span className="cell-sub">
-              <b>Objective</b> {estimate.objective}
-            </span>
-          )}
-        </div>
+        {estimate && !editing && (
+          <EstimateCard estimate={estimate} onApproveAsset={onApproveAsset} />
+        )}
+
+        {/* The batch guardrail: what all of it costs, before any of it is spent. */}
+        {batchEstimate && (
+          <div className="estimate">
+            <div className="est-head">
+              <strong>Dry run · {batchEstimate.campaigns} campaigns</strong>
+              <span>nothing generated</span>
+            </div>
+            <div className="est-figs">
+              <div>
+                <b>{batchEstimate.variants}</b>
+                <span>creatives</span>
+              </div>
+              <div>
+                <b>{batchEstimate.generations}</b>
+                <span>generations</span>
+              </div>
+              <div>
+                <b>${batchEstimate.costUsd.toFixed(3)}</b>
+                <span>est. spend</span>
+              </div>
+              {batchEstimate.refused > 0 && (
+                <div>
+                  <b>{batchEstimate.refused}</b>
+                  <span>refused at the gate</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {editing && (
@@ -237,38 +318,6 @@ export function CampaignStrip(props: Props) {
               </button>
             </div>
             {estimate && <EstimateCard estimate={estimate} onApproveAsset={onApproveAsset} />}
-          </div>
-        </div>
-      )}
-
-      {estimate && !editing && <EstimateCard estimate={estimate} onApproveAsset={onApproveAsset} />}
-
-      {/* The batch guardrail: what all of it costs, before any of it is spent. */}
-      {batchEstimate && (
-        <div className="estimate">
-          <div className="est-head">
-            <strong>Dry run · {batchEstimate.campaigns} campaigns</strong>
-            <span>nothing generated</span>
-          </div>
-          <div className="est-figs">
-            <div>
-              <b>{batchEstimate.variants}</b>
-              <span>creatives</span>
-            </div>
-            <div>
-              <b>{batchEstimate.generations}</b>
-              <span>generations</span>
-            </div>
-            <div>
-              <b>${batchEstimate.costUsd.toFixed(3)}</b>
-              <span>est. spend</span>
-            </div>
-            {batchEstimate.refused > 0 && (
-              <div>
-                <b>{batchEstimate.refused}</b>
-                <span>refused at the gate</span>
-              </div>
-            )}
           </div>
         </div>
       )}

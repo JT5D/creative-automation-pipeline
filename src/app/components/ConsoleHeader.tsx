@@ -1,13 +1,10 @@
-import type { LookOption, ModelOption, ProviderStatus } from "../types.js";
+import type { ModelOption, ProviderStatus } from "../types.js";
 import { ThemeToggle } from "./ThemeToggle.js";
 
 type Props = {
   models: ModelOption[];
   model: string;
   onModel: (id: string) => void;
-  looks: LookOption[];
-  look: string;
-  onLook: (id: string) => void;
   preview: boolean;
   onPreview: (on: boolean) => void;
   provider: ProviderStatus | null;
@@ -37,9 +34,6 @@ export function ConsoleHeader({
   models,
   model,
   onModel,
-  looks,
-  look,
-  onLook,
   preview,
   onPreview,
   provider,
@@ -57,7 +51,10 @@ export function ConsoleHeader({
         <span className="mark" />
         <div>
           <h1>Creative Automation Pipeline</h1>
-          <p>Brief → approved-asset reuse → GenAI for what is missing → channel variants</p>
+          <p>
+            One brief becomes every format and every market. Approved assets are reused; only what
+            is missing is generated.
+          </p>
         </div>
       </div>
 
@@ -78,26 +75,14 @@ export function ConsoleHeader({
             </select>
           </label>
         )}
-        {looks.length > 0 && (
-          <label
-            className="model"
-            title="Art direction. The brief's own look is used unless you pick one."
-          >
-            <select value={look} onChange={(e) => onLook(e.target.value)}>
-              <option value="">Look: from brief</option>
-              {looks.map((l) => (
-                <option key={l.id} value={l.id} title={l.description}>
-                  Look: {l.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
         {provider && (
           <div className="provider">
+            {/* The model picker beside this already names the model, so the
+                pill names the provider. Keyless it carries the full sentence,
+                because "no model will be called" is the whole point of it. */}
             <div className={`pill ${provider.configured ? "ok" : "off"}`}>
               <span className="dot" />
-              {provider.label}
+              {provider.configured && models.length > 0 ? provider.name : provider.label}
             </div>
           </div>
         )}
@@ -133,10 +118,15 @@ export function ConsoleHeader({
         </button>
         {/* The hand-off, as a sentence. Not a Firefly button: this repo has no
             entitlement to run that adapter, and a control that quietly does
-            nothing is worse than an absent one. Last child of the control row
-            on purpose, so it takes its own line underneath rather than
-            wedging five lines of caveat between two buttons. */}
-        {provider?.handoff && <p className="handoff">{provider.handoff}</p>}
+            nothing is worse than an absent one. It reads as a footnote to the
+            provider pill rather than a grey wall under the primary action,
+            because no product leads with its disclaimer. */}
+        {provider?.handoff && (
+          <details className="handoff">
+            <summary>Firefly adapter: written, never executed</summary>
+            <p>{provider.handoff}</p>
+          </details>
+        )}
       </div>
     </header>
   );

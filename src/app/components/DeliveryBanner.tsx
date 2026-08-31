@@ -77,6 +77,16 @@ export function DeliveryBanner({
             </span>
           )}
         </div>
+
+        <div className="dl-group">
+          {/* A producer collects the folder, not one file at a time. */}
+          <a className="ghost dl" href={`/api/campaigns/${report.campaignId}/archive`} download>
+            Download all {m.variantsCreated}
+          </a>
+          <a className="ghost dl" href={`/outputs/${report.campaignId}/report.json`} download>
+            report.json
+          </a>
+        </div>
       </div>
 
       <div className="dmetrics">
@@ -112,16 +122,6 @@ export function DeliveryBanner({
         {report.estimatedCostUsd && (
           <Cell v={`$${report.estimatedCostUsd.totalUsd.toFixed(3)}`} k="estimated GenAI cost" />
         )}
-      </div>
-
-      <div className="dl-group">
-        {/* A producer collects the folder, not one file at a time. */}
-        <a className="ghost dl" href={`/api/campaigns/${report.campaignId}/archive`} download>
-          Download all {m.variantsCreated}
-        </a>
-        <a className="ghost dl" href={`/outputs/${report.campaignId}/report.json`} download>
-          report.json
-        </a>
       </div>
     </div>
   );

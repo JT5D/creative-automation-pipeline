@@ -6,7 +6,16 @@ import type { HeroGenerator } from "./types.js";
 export type ProviderStatus = {
   provider: string;
   model: string;
+  /** Provider and model together, for anywhere the model is not already shown. */
   label: string;
+  /**
+   * The provider alone.
+   *
+   * The console shows this in the status pill, because the model picker sits
+   * directly beside it saying the same model id. Two controls, 570px of header,
+   * one fact.
+   */
+  name: string;
   configured: boolean;
   /**
    * What happens to the provider that is NOT running, in one sentence.
@@ -96,6 +105,12 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
     return {
       provider: g.provider,
       model: g.model,
+      name:
+        g.provider === "adobe-firefly"
+          ? "Adobe Firefly"
+          : g.provider === "google-gemini"
+            ? "Google Gemini"
+            : "Offline preview",
       label:
         g.provider === "adobe-firefly"
           ? `Adobe Firefly - ${g.model}`
@@ -109,6 +124,7 @@ export function providerStatus(env: NodeJS.ProcessEnv = process.env): ProviderSt
     return {
       provider: "none",
       model: "-",
+      name: "Generation unavailable",
       label: error instanceof Error ? error.message : "Generation unavailable",
       configured: false,
       handoff: FIREFLY_HANDOFF,
