@@ -23,9 +23,9 @@
     "provider": "google-gemini",
     "model": "gemini-3-pro-image"
   },
-  "startedAt": "2026-08-31T00:02:48.629Z",
-  "completedAt": "2026-08-31T00:03:21.744Z",
-  "durationMs": 33115,
+  "startedAt": "2026-08-31T00:35:47.984Z",
+  "completedAt": "2026-08-31T00:36:27.558Z",
+  "durationMs": 39574,
   "preflight": {
     "status": "pass",
     "checks": [
@@ -102,8 +102,8 @@
   },
   "successMetrics": {
     "timeSaved": {
-      "minutes": 599.45,
-      "usd": 849.22,
+      "minutes": 599.34,
+      "usd": 849.07,
       "baselineMinutesPerCreative": 25,
       "baselineBreakdown": [
         {
@@ -138,8 +138,12 @@
       "creativesPerGenerationCall": 24,
       "costPerCreativeUsd": 0.00558,
       "reuseRate": 0.5,
-      "secondsPerCreative": 1.38
+      "secondsPerCreative": 1.65
     }
+  },
+  "artDirection": {
+    "look": "daylight",
+    "overriddenSlots": []
   },
   "assignmentProof": {
     "passed": true,
@@ -296,7 +300,7 @@
               }
             ]
           },
-          "durationMs": 864
+          "durationMs": 867
         },
         {
           "ratio": "1x1",
@@ -350,7 +354,7 @@
               }
             ]
           },
-          "durationMs": 497
+          "durationMs": 635
         },
         {
           "ratio": "1x1",
@@ -404,7 +408,7 @@
               }
             ]
           },
-          "durationMs": 481
+          "durationMs": 310
         },
         {
           "ratio": "4x5",
@@ -458,7 +462,7 @@
               }
             ]
           },
-          "durationMs": 331
+          "durationMs": 515
         },
         {
           "ratio": "4x5",
@@ -512,7 +516,7 @@
               }
             ]
           },
-          "durationMs": 507
+          "durationMs": 497
         },
         {
           "ratio": "4x5",
@@ -566,7 +570,7 @@
               }
             ]
           },
-          "durationMs": 334
+          "durationMs": 164
         },
         {
           "ratio": "9x16",
@@ -625,7 +629,7 @@
               }
             ]
           },
-          "durationMs": 366
+          "durationMs": 204
         },
         {
           "ratio": "9x16",
@@ -684,7 +688,7 @@
               }
             ]
           },
-          "durationMs": 198
+          "durationMs": 203
         },
         {
           "ratio": "9x16",
@@ -743,7 +747,7 @@
               }
             ]
           },
-          "durationMs": 359
+          "durationMs": 369
         },
         {
           "ratio": "16x9",
@@ -802,7 +806,7 @@
               }
             ]
           },
-          "durationMs": 298
+          "durationMs": 132
         },
         {
           "ratio": "16x9",
@@ -861,7 +865,7 @@
               }
             ]
           },
-          "durationMs": 127
+          "durationMs": 128
         },
         {
           "ratio": "16x9",
@@ -920,7 +924,7 @@
               }
             ]
           },
-          "durationMs": 132
+          "durationMs": 295
         }
       ]
     },
@@ -969,8 +973,8 @@
           "operation": "image-reference",
           "model": "gemini-3-pro-image",
           "prompt": "Award-winning cinematic advertising photography, editorial quality, shot for a global luxury brand campaign. Rich, filmic colour grade with deep tonal range. Dramatic natural light with real atmosphere and mood. Hyper-detailed and photorealistic, with the subject critically sharp. Not a flat studio packshot, not a stock catalogue render. Campaign photograph of Overnight Recovery Cream by Lumen Botanicals. Audience: Urban professionals 28-45 who buy dermatologist-tested, clean-formula skincare. Market: Germany (DACH). Campaign objective: Drive first-purchase conversion for the autumn skincare range in DACH. Art direction: Calm, clinical, warm. Understated luxury - never hype. Caught at a moment rather than posed: the foliage shadow is mid-drift across the wall, fine dust hangs in the light beam, and the air is faintly moving. Something is happening in the frame. Set on a wide plaster sill in the same room, further from the window, with the foliage shadow thrown longer and lower across the wall behind. The product sits in the LOWER HALF of the frame, horizontally centred, and is large, close and unmistakably the subject -- it fills most of the central 50% of the width, with its base and lid entirely in frame. The UPPER HALF is quiet background: surface, light and shadow alone, because the campaign headline is composited there. The product is shown whole and centred. Shot on a 100mm macro lens at f/4, locked off on a tripod, with focus stacked across the product itself so its form, edges and surface texture are critically sharp while the background falls into a soft, creamy out-of-focus wash with gentle bokeh. Lit by soft natural window daylight raking in from the upper left, warm and directional, with open bounce fill from the right and a narrow rim of light separating the product's edge from the background. A faint atmospheric haze catches the light. Highlights roll off gently and are never blown; shadows are deep but open, with real tonal separation between the product and the set. The lighting is felt, not seen: only the light and the surfaces it falls on appear in the frame. Restrained tonal colour grade, sympathetic to the brand palette without tinting the product itself. Materials must read as real: frosted glass transmits light correctly with a crisp polished rim, and the cap is smooth lacquered metal or resin with a clean specular roll-off and a precise machined edge. The container is sealed and opaque, its cap fully seated, so only the outside of the packaging is visible and nothing of the contents shows. Retouched to catalogue standard: dust-free, fingerprint-free and symmetrical, with smooth unbroken surfaces, clean continuous geometry, circular openings drawn as true undistorted ellipses, and exactly one item alone in the frame. Preserve the supplied product's identity from the reference: its geometry, proportions, cap, closure, surface finish, hue and any label or brand mark already on it. Relighting it into this scene will change how light and dark it reads, and that is expected; its shape, material and colour family must not change. Do not restyle, redraw, relabel or substitute the product. TYPOGRAPHY RULE, absolute: do NOT write, draw, print, emboss or add any text, lettering, numerals, wordmark or logo anywhere in this image. If the reference product already carries printed text, reproduce exactly that and nothing more. If it carries none, the product must stay completely unlabelled and blank. Inventing packaging copy is the single worst failure this image can have.",
-          "durationMs": 24274,
-          "requestId": "v1_Chd3OFNVYXBMLUtlNlBqckVQbjVlQmtBdxIXdzhTVWFwTC1LZTZQanJFUG41ZUJrQXc"
+          "durationMs": 31059,
+          "requestId": "v1_ChdoY3lVYXU3ekc4Q2ZfdU1QM283YjRBYxIXaGN5VWF1N3pHOENmX3VNUDNvN2I0QWM"
         }
       },
       "creatives": [
@@ -980,7 +984,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/en-gb.png",
-          "bytes": 940685,
+          "bytes": 831736,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1026,7 +1030,7 @@
               }
             ]
           },
-          "durationMs": 653
+          "durationMs": 805
         },
         {
           "ratio": "1x1",
@@ -1034,7 +1038,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/de-de.png",
-          "bytes": 942036,
+          "bytes": 833909,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1080,7 +1084,7 @@
               }
             ]
           },
-          "durationMs": 655
+          "durationMs": 805
         },
         {
           "ratio": "1x1",
@@ -1088,7 +1092,7 @@
           "width": 1080,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/1x1/fr-fr.png",
-          "bytes": 948008,
+          "bytes": 840339,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1134,7 +1138,7 @@
               }
             ]
           },
-          "durationMs": 646
+          "durationMs": 313
         },
         {
           "ratio": "4x5",
@@ -1142,7 +1146,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/en-gb.png",
-          "bytes": 1100561,
+          "bytes": 951094,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1188,7 +1192,7 @@
               }
             ]
           },
-          "durationMs": 335
+          "durationMs": 332
         },
         {
           "ratio": "4x5",
@@ -1196,7 +1200,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/de-de.png",
-          "bytes": 1103358,
+          "bytes": 953498,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1242,7 +1246,7 @@
               }
             ]
           },
-          "durationMs": 174
+          "durationMs": 545
         },
         {
           "ratio": "4x5",
@@ -1250,7 +1254,7 @@
           "width": 1080,
           "height": 1350,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/4x5/fr-fr.png",
-          "bytes": 1109896,
+          "bytes": 960836,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1296,7 +1300,7 @@
               }
             ]
           },
-          "durationMs": 675
+          "durationMs": 176
         },
         {
           "ratio": "9x16",
@@ -1304,7 +1308,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/en-gb.png",
-          "bytes": 1590101,
+          "bytes": 1303773,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1355,7 +1359,7 @@
               }
             ]
           },
-          "durationMs": 358
+          "durationMs": 381
         },
         {
           "ratio": "9x16",
@@ -1363,7 +1367,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/de-de.png",
-          "bytes": 1584400,
+          "bytes": 1298629,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1414,7 +1418,7 @@
               }
             ]
           },
-          "durationMs": 206
+          "durationMs": 202
         },
         {
           "ratio": "9x16",
@@ -1422,7 +1426,7 @@
           "width": 1080,
           "height": 1920,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/9x16/fr-fr.png",
-          "bytes": 1590850,
+          "bytes": 1305283,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1473,7 +1477,7 @@
               }
             ]
           },
-          "durationMs": 208
+          "durationMs": 211
         },
         {
           "ratio": "16x9",
@@ -1481,7 +1485,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/en-gb.png",
-          "bytes": 1102046,
+          "bytes": 960237,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1532,7 +1536,7 @@
               }
             ]
           },
-          "durationMs": 140
+          "durationMs": 136
         },
         {
           "ratio": "16x9",
@@ -1540,7 +1544,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/de-de.png",
-          "bytes": 1104413,
+          "bytes": 962702,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1591,7 +1595,7 @@
               }
             ]
           },
-          "durationMs": 131
+          "durationMs": 132
         },
         {
           "ratio": "16x9",
@@ -1599,7 +1603,7 @@
           "width": 1920,
           "height": 1080,
           "outputPath": "lumen-autumn-glow-de/overnight-recovery-cream/16x9/fr-fr.png",
-          "bytes": 1111659,
+          "bytes": 970272,
           "validation": {
             "status": "pass",
             "checks": [
@@ -1650,7 +1654,7 @@
               }
             ]
           },
-          "durationMs": 140
+          "durationMs": 133
         }
       ]
     }
@@ -1666,9 +1670,9 @@
   "estimatedTimeSaved": {
     "baselineMinutesPerCreative": 25,
     "manualMinutes": 600,
-    "pipelineMinutes": 0.552,
-    "savedMinutes": 599.45,
-    "savedUsd": 849.22,
+    "pipelineMinutes": 0.66,
+    "savedMinutes": 599.34,
+    "savedUsd": 849.07,
     "hourlyRateUsd": 85,
     "basis": "Illustrative estimate: manualMinutesPerCreative from the brief × variants produced, minus measured pipeline runtime. Not a measured comparison."
   }

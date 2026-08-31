@@ -208,7 +208,7 @@ export function buildHeroPrompt(
   /** True when an approved packshot is being sent as an identity anchor. */
   hasReference = false,
 ): string {
-  // The widest hatch, and it no longer bypasses the locks.
+  // The widest hatch, and it does not bypass the locks.
   //
   // A custom prompt replaces the art direction, not the two constraints that
   // are not art direction. Returning the brief's string alone would let a
@@ -274,10 +274,9 @@ export function buildHeroPrompt(
     slots.materials,
     slots.integrity,
 
-    // Retouch standard, stated rather than implied, and stated positively.
-    // Google's own guidance for this model is to describe what you want; the
-    // list this replaced named eight defects, which puts eight defects in front
-    // of the model.
+    // Retouch standard, stated rather than implied, and stated positively:
+    // Google's guidance for this model is to describe what you want, and a list
+    // of eight defects to avoid puts eight defects in front of the model.
     "Retouched to catalogue standard: dust-free, fingerprint-free and",
     "symmetrical, with smooth unbroken surfaces, clean continuous geometry,",
     "circular openings drawn as true undistorted ellipses, and exactly one item",
@@ -305,11 +304,10 @@ export function buildHeroPrompt(
         "bare of any printing, mark or label.",
 
     // Typography is LOCKED, and last. A model handed a blank product will
-    // letter it whatever else the prompt says: asked to preserve a completely
-    // blank jar it returned one printed "Lumen Botanicals / Overnight Recovery
-    // Cream", and an earlier run of the same instruction produced "Skin
-    // plattored a. Overnigtrent cream" on a regulated cosmetic. Nothing
-    // downstream reads pixels, so no check would ever have seen it.
+    // letter it whatever else the prompt says: asked to preserve a blank jar,
+    // this one has returned "Lumen Botanicals / Overnight Recovery Cream" and
+    // "Skin plattored a. Overnigtrent cream" on a regulated cosmetic. Nothing
+    // downstream reads pixels, so no check would catch either.
     TYPOGRAPHY_RULE,
   ]
     .filter(Boolean)

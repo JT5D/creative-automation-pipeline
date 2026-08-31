@@ -7,9 +7,9 @@ export type Selection = { creative: Creative; product: ProductRecord };
  * The exported files, grouped by product, at their true aspect ratio.
  *
  * These are the largest thing on screen because they are what the run is for.
- * Cards carry no check list any more -- that detail moved to the inspector,
- * where it applies to one creative instead of stacking eight lines under each
- * of twenty-four.
+ * Cards carry a status dot and nothing else; the checks behind it live in the
+ * inspector, where they apply to one creative rather than stacking eight lines
+ * under each of twenty-four.
  */
 export function Results({
   report,

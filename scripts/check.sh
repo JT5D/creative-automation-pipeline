@@ -33,8 +33,8 @@ if git ls-files -z | xargs -0 grep -lI -e $'\xe2\x80\x94' -e $'\xe2\x80\x93' \
 fi
 
 step "No stray build output tracked"
-# Named directories plus anything that looks generated. The first version of
-# this listed offenders by name and missed .baseline-run/, which then shipped.
+# Named directories plus anything that looks generated. Listing offenders by
+# name alone misses the next one, which is how .baseline-run/ once shipped.
 if git ls-files | grep -qE '^(outputs/|node_modules/|dist/|\.cache/|\.baseline-run/)'; then
   fail "build output or dependencies are tracked"
 fi

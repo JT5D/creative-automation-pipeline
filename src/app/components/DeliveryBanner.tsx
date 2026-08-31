@@ -3,18 +3,17 @@ import type { CampaignReport } from "../types.js";
 /**
  * The five-second answer: what this run produced, and who has to look at it next.
  *
- * Three states, because two were a lie. The old banner could say "Ready to
- * deliver" and "1 item awaiting review" in the same breath -- software does not
- * grant approval, and a freshly generated hero has not been signed off by
- * anyone. It also said "passed every check" off a count that ignored warnings,
- * which is the same defect this project keeps finding: a label broader than the
- * measurement underneath it.
+ * Three states, because two cannot tell the truth here. Software does not grant
+ * approval, and a freshly generated hero has not been signed off by anyone, so
+ * "ready to deliver" and "awaiting review" are different answers and the banner
+ * has to be able to give the second one. "Passed every check" is a third: it
+ * has to count warnings, or the label is broader than the measurement.
  *
  * The verdict answers the operator's question -- is this work finished, and by
  * whom -- and deliberately not `assignmentProof.passed`, which answers whether
- * this particular run demonstrated every requirement the exercise names. The
- * two come apart whenever a hero is served from cache. The proof is reported
- * underneath, unchanged and just as strict.
+ * this run demonstrated every requirement the exercise names. The two come
+ * apart whenever a hero is served from cache. The proof is reported underneath,
+ * unchanged and just as strict.
  */
 export function DeliveryBanner({
   report,
@@ -101,14 +100,11 @@ export function DeliveryBanner({
         />
         <Cell v={`${(report.durationMs / 1000).toFixed(1)}s`} k="elapsed" />
         {/*
-         * The two largest numbers on this banner are the two that were never
-         * measured. They are the brief's own stated baseline multiplied out,
-         * and saying "studio time saved" and "labour cost avoided" states them
-         * as achievements. "estimated" is doing real work in these two labels:
-         * it is the difference between a figure this pipeline observed and a
-         * figure the client supplied an assumption for. The estimate panel
-         * already says "illustrative"; the banner has to say it too, because
-         * this is the screen a reviewer photographs.
+         * The two largest numbers on this banner are the two nothing
+         * measured: they are the brief's own stated baseline multiplied out.
+         * "estimated" is doing real work in these two labels, and it is the
+         * difference between a figure this pipeline observed and an assumption
+         * the client supplied. This is the screen a reviewer photographs.
          */}
         {saved && <Cell v={fmtHours(saved.minutes)} k="studio time saved (est.)" good />}
         {saved?.usd !== undefined && (

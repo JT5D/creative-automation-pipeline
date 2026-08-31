@@ -27,7 +27,7 @@ export function App() {
    * The exercise's client launches hundreds of localized campaigns a month, so
    * the console takes a list rather than one brief. One selected behaves
    * exactly as it always has; more than one runs them as a batch, each with its
-   * own full scope, which is what `npm run portfolio` has always done.
+   * own full scope, which is what `npm run campaign -- --all` does.
    */
   const [selectedBriefs, setSelectedBriefs] = useState<string[]>(["campaign.yaml"]);
 
@@ -115,12 +115,11 @@ export function App() {
     /**
      * One request, because none of this changes between calls.
      *
-     * The console used to open with seven fetches for seven catalogues, which
-     * meant seven things that could each half-fail and leave the screen partly
-     * drawn. `/api/console` returns all of them together. The catch is still
-     * deliberate: a console that cannot reach the server renders its empty
-     * states rather than a blank page, and the pieces that matter announce
-     * their own absence.
+     * Seven catalogues that never change between calls are seven things that
+     * can each half-fail and leave the screen partly drawn. `/api/console`
+     * returns all of them together. The catch is deliberate: a console that
+     * cannot reach the server renders its empty states rather than a blank
+     * page, and the pieces that matter announce their own absence.
      */
     fetch("/api/console")
       .then((r) => (r.ok ? (r.json() as Promise<ConsoleBootstrap>) : null))
@@ -151,9 +150,9 @@ export function App() {
   /**
    * Locales come from the brief text, so the toggles track what you typed.
    *
-   * Both formats have to work here. A YAML-shaped regex found nothing in a JSON
-   * brief, so the market chips silently vanished on the sample that advertises
-   * itself as the same campaign in JSON. The format test is the same one
+   * Both formats have to work here, because the Edit source pane accepts
+   * either. A YAML-shaped regex finds nothing in a JSON brief and the market
+   * chips vanish without anything failing. The format test is the same one
    * parseBrief uses on the server: a leading brace means JSON.
    */
   const locales = useMemo(() => {
@@ -210,12 +209,11 @@ export function App() {
   /**
    * Every write this console makes, in one shape.
    *
-   * Five call sites were the same eight lines: post JSON, parse it, decide
-   * whether the server refused, set an error from its message, and translate a
-   * thrown fetch into "the local server is not running". The last two are the
-   * ones worth having in a single place - a refusal is the server's sentence
-   * and should be shown verbatim, and a network throw means something entirely
-   * different and should never be reported as a server refusal.
+   * Post JSON, parse it, decide whether the server refused, set an error from
+   * its message, and translate a thrown fetch into "the local server is not
+   * running". The last two are why this is in one place: a refusal is the
+   * server's own sentence and is shown verbatim, and a network throw means
+   * something entirely different and must never be reported as a refusal.
    *
    * Returns the parsed body on success and null on any failure, so callers read
    * as `const r = await post(...); if (!r) return;` rather than as a nest of
@@ -354,8 +352,8 @@ export function App() {
                   together, the same headline appears in three languages beside
                   itself and nothing is comparable. The count beside the tabs
                   says how much of the run is on screen, because a banner
-                  reading "24 creatives exported" over eight visible cards is
-                  the dead end this console has already shipped once. */}
+                  reading "24 creatives exported" over eight visible cards is a
+                  dead end. */}
               {activeRun.report.markets.length > 1 && (
                 <>
                   <Chips

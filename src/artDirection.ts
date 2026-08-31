@@ -216,11 +216,11 @@ export const COMPOSITION =
  * Last clause of every prompt that can reach a paid generation.
  *
  * A model handed a blank product will letter it whatever else the prompt says.
- * Asked to preserve a completely blank jar it returned one printed "Lumen
- * Botanicals / Overnight Recovery Cream" - accurate by luck - and an earlier
- * run of the same instruction produced "Skin plattored a. Overnigtrent cream"
- * on a regulated cosmetic. Nothing downstream reads pixels, so neither the
- * prohibited-claim scan nor any other check would ever have seen it.
+ * Asked to preserve a completely blank jar, this one has returned "Lumen
+ * Botanicals / Overnight Recovery Cream" - accurate by luck - and "Skin
+ * plattored a. Overnigtrent cream" on a regulated cosmetic. Nothing downstream
+ * reads pixels, so neither the prohibited-claim scan nor any other check would
+ * catch either.
  */
 export const TYPOGRAPHY_RULE =
   "TYPOGRAPHY RULE, absolute: do NOT write, draw, print, emboss or add any " +
@@ -318,9 +318,8 @@ export function resolveArtDirection(
   const look = (brief.look ?? DEFAULT_LOOK) as LookName;
   const base = LOOKS[look] ?? LOOKS[DEFAULT_LOOK];
 
-  // A bare string is the set, which is what `artDirection` has always meant.
-  // Keeping that shape means every brief written before looks existed still
-  // says exactly what it said.
+  // A bare string is the set. Keeping that shape means a brief that names one
+  // means it, whether or not it also names a look.
   const overrides: SlotValues =
     typeof brief.artDirection === "string"
       ? { set: brief.artDirection.trim() }

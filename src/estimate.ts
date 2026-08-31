@@ -34,13 +34,14 @@ export type CampaignEstimate = {
   campaignId: string;
   campaignName: string;
   /**
-   * Who the campaign is for and what it is trying to do.
+   * Where the campaign runs, who it is for, and what it is trying to do.
    *
    * The console showed the message and nothing else, so two of the four things
    * the exercise requires a brief to carry - audience and objective - were
    * visible only by opening the YAML. They are inputs to the prompt, so a
    * reviewer reading the generated image has a right to see them next to it.
    */
+  region: string;
   audience: string;
   objective?: string;
   /**
@@ -132,6 +133,7 @@ export async function estimateCampaign(
   return {
     campaignId: brief.id,
     campaignName: brief.name,
+    region: brief.region,
     audience: brief.audience,
     objective: brief.objective,
     look: art.look,

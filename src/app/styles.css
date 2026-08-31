@@ -404,7 +404,7 @@ body {
 }
 
 /* The only filled button on the screen. It sits in the header now, so it is
-   sized to its label rather than to a panel it no longer lives in. */
+   sized to its label rather than to a panel. */
 .run {
   padding: 10px 20px;
   background: var(--brand);
@@ -867,7 +867,7 @@ body {
   align-items: stretch;
   gap: 0;
   /* The banner is a bar, not a panel. It carries the same eight figures it
-     always has; it just no longer takes 380px of the fold to say them, which
+     always has, in a bar rather than a panel: 380px of the fold spent on status
      is what put the first creative below the bottom of the screen. */
   background: var(--surface);
   border: 1px solid var(--border);

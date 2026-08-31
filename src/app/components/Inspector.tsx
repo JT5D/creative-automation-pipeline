@@ -4,10 +4,9 @@ import type { Creative, ProductRecord } from "../types.js";
 /**
  * One creative, at size, with its own provenance and checks.
  *
- * The per-card check lists this replaces were eight lines under every one of
- * twenty-four cards -- a wall nobody read. Selecting a creative is the natural
- * moment to ask "is this one right", so the detail lives here and the gallery
- * stays a gallery.
+ * Selecting a creative is the natural moment to ask "is this one right", so the
+ * checks live here rather than as eight lines under every one of twenty-four
+ * cards, and the gallery stays a gallery.
  *
  * There is no Approve or Regenerate control. The repo has no approval store,
  * and a button that silently does nothing is worse than an absent one: a

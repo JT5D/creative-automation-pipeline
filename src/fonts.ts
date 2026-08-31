@@ -80,9 +80,8 @@ function loadFont(face: Face): opentype.Font {
 
 /**
  * Exact advance width in pixels, summed from the font's own hmtx table plus
- * kerning pairs. This replaced a per-character width table that guessed at
- * Helvetica metrics -- the guess was wrong for Rubik, and a CTA pill sized
- * from it clipped its own label.
+ * kerning pairs. A per-character width table guessing at Helvetica metrics is
+ * wrong for Rubik, and a CTA pill sized from one clips its own label.
  *
  * Glyphs are walked directly rather than through getAdvanceWidth(), because
  * that path runs opentype.js's shaping engine, which throws on Rubik's ccmp

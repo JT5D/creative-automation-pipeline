@@ -429,7 +429,7 @@ app.post("/api/runs", async (req, res) => {
  *
  * Sequential, deliberately. Each campaign can spend money, and running them
  * concurrently would multiply rate-limit exposure and make the spend
- * impossible to watch. It is the same loop `npm run portfolio` has always been.
+ * impossible to watch. It is the same loop `npm run campaign -- --all` runs.
  */
 app.post("/api/batches", async (req, res) => {
   const files: unknown = req.body?.files;
@@ -510,9 +510,9 @@ app.get("/api/runs/:runId", (req, res) => {
  */
 /**
  * Exported so the routes can be driven without a port, and listening only when
- * this file is what was run. Seventeen routes and four that spend money or
- * write files had no test at all, because there was no way to reach them
- * without starting the real thing.
+ * this file is what was run. Four of them spend money or write files, and a
+ * route that can only be reached by starting the real thing is a route nothing
+ * tests.
  */
 export { app };
 

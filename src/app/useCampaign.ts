@@ -97,9 +97,9 @@ export function useCampaign({
   /**
    * Everything downstream of "a new run is starting".
    *
-   * Three call sites cleared the same four pieces of state and one of them had
-   * already drifted. The guards above mean a miss is no longer a rendering bug,
-   * but there is still no reason to write the list three times.
+   * Four pieces of state, cleared from one place. The guards above mean a miss
+   * is not a rendering bug, but there is no reason to write the list three
+   * times and let one of the copies drift.
    */
   const clearRun = useCallback(() => {
     setRun(null);
@@ -250,11 +250,10 @@ export function useCampaign({
     setBusy(true);
     setError(null);
     clearRun();
-    // Filters belong to the run that is being replaced. Carrying them over let
-    // a second run land filtered to a market it no longer contains, and since
-    // the filter row only appears for multi-market runs there was then no
-    // control on screen to clear it: the banner reported six creatives above a
-    // completely empty stage, recoverable only by reloading the page.
+    // Filters belong to the run being replaced. Carried over, a second run can
+    // land filtered to a market it does not contain -- and the filter row only
+    // appears for multi-market runs, so there would be no control on screen to
+    // clear it: a banner reporting six creatives above an empty stage.
 
     // Every exit from here has to clear `busy`, including the ones that throw.
     // A dropped connection must not leave the button spinning with no way back

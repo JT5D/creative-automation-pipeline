@@ -13,7 +13,7 @@ import sharp from "sharp";
  *
  * It measures GEOMETRY AND TONE ONLY. It greyscales first, so it is blind to
  * colour by construction -- see colourSignature below, which is the other half
- * and exists because this one alone was being described as "appearance".
+ * and exists because a luminance grid alone is not "appearance".
  */
 const SIGNATURE_GRID = 12;
 const SIGNATURE_LEVELS = 16;

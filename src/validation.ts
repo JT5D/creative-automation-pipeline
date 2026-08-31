@@ -299,9 +299,9 @@ const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
  * The compositor truncates rather than shrink below the legibility floor, which
  * is the right trade -- but the exercise requires the campaign message to be
  * displayed on the final post, and half a headline is not that message. Nobody
- * ships an ad with the headline cut off. It was a warning, which meant the
- * creative rolled up to "warning" rather than "fail", which meant
- * `assignmentProof` stayed green over a violated requirement.
+ * ships an ad with the headline cut off, so this fails rather than warns. A
+ * warning would roll the creative up to "warning", and `assignmentProof` would
+ * stay green over a violated requirement.
  *
  * The remedy is in the operator's hands and the message says so.
  */
@@ -341,9 +341,9 @@ const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
  * Presence of logo, which is the exercise's own example of a brand check.
  *
  * Never returns null. A check that disappears when a brief names no logoPath
- * reads as a passed check in every count that matters: 16 of 16, from a suite
- * that silently dropped the brand's most visible asset. An absent measurement
- * is the same defect as a label broader than its measurement, one level up.
+ * reads as a passed check in every count that matters -- 16 of 16, from a suite
+ * that dropped the brand's most visible asset. An absent measurement is the
+ * same defect as a label broader than its measurement, one level up.
  *
  * Not configured is a warning, not a failure. The brief is the authority on
  * what this brand's identity contains, and a campaign can legitimately run
@@ -413,11 +413,11 @@ const disclaimerCheck: CreativeCheck = ({ brief, rendered, market }) =>
  * Screens exactly the copy that reached the pixels.
  *
  * Headline always, plus the CTA and the disclaimer when they actually
- * rendered. Scanning the headline alone let this report "rendered copy is
- * clear of prohibited terms" while a banned claim sat in the CTA. Preflight
- * blocks that case earlier and for free, so this is the second gate rather
- * than the only one -- but a check whose message is broader than its
- * measurement is the wrong kind of green.
+ * rendered. Scanning the headline alone would report "rendered copy is clear of
+ * prohibited terms" over a banned claim sitting in the CTA. Preflight blocks
+ * that case earlier and for free, so this is the second gate rather than the
+ * only one -- but a check whose message is broader than its measurement is the
+ * wrong kind of green.
  */
 const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered, market }) => {
   const renderedCopy = [

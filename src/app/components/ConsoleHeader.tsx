@@ -20,10 +20,8 @@ type Props = {
 /**
  * The title and every control that applies to the whole console.
  *
- * Lifted out of App for the same reason the lifecycle was: App was carrying the
- * layout and the decisions at once and the linter had started refusing it. This
- * is a hundred lines of markup with no state of its own, so moving it takes a
- * hundred lines of branching out of the component that has to be explainable.
+ * A hundred lines of markup with no state of its own, kept out of App so that
+ * App reads as a layout rather than a layout and a control panel at once.
  *
  * The order of the row is deliberate and is the one rule the whole console
  * follows: the thing that spends money is last, it is the only element in the

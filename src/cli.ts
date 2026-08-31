@@ -56,11 +56,8 @@ const file = args.find((a) => !a.startsWith("--")) ?? "samples/campaign.yaml";
 if (args.includes("--all")) {
   // --dry-run is honoured here too, and it was not.
   //
-  // This branch used to sit ABOVE the dry-run handler, so
-  // `--all --dry-run` was accepted, silently ignored, and ran the whole
-  // library against the live key. A flag whose label reads "spending nothing"
-  // and whose behaviour spends is the exact defect this repo keeps finding,
-  // and this one cost real money to find.
+  // A flag whose label reads "spending nothing" must not be able to spend, and
+  // this branch sits below the one that sets `dryRun` so it cannot.
   //
   // Same contract as a single run: a refused brief or a failed product is a
   // non-zero exit, so this is usable in a pipeline rather than always green.

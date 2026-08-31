@@ -13,9 +13,9 @@ import { Timeline } from "./Timeline.js";
  * Collapsed by default, and that is the design decision worth defending: an
  * operator must never need to open this to know whether the run succeeded --
  * the delivery banner already said so. What lives here is evidence for when
- * the answer is disputed: the event stream, the assignment checks counted off
- * the files on disk, and
- * the cross-run reuse rate.
+ * the answer is disputed: the event stream, the eleven assignment checks the
+ * run asserted about itself, and the reuse rate across every run on this
+ * machine.
  */
 export function RunDetails({
   report,
@@ -57,7 +57,7 @@ export function RunDetails({
           {proof && (
             <div>
               <span className="insp-label">
-                Assignment proof - counted off the files on disk, not asserted here
+                Assignment proof - asserted by the run, not by this panel
               </span>
               <ul className="checks">
                 {proof.checks.map((c) => (

@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveArtDirection } from "./artDirection.js";
 import { costEstimate, timeSavedEstimate } from "./pricing.js";
 import {
   baselineMinutes,
@@ -117,6 +118,14 @@ export type CampaignReport = {
    * it demonstrably has not met the "generate missing assets with a GenAI
    * image model" requirement.
    */
+  /**
+   * The art direction this run resolved to, and which slots the brief replaced.
+   *
+   * Provenance for a creative decision, and the report had none. Two runs of the
+   * same brief under different looks produced different photographs and
+   * identical reports, distinguishable only by the folder they landed in.
+   */
+  artDirection: { look: string; overriddenSlots: string[] };
   assignmentProof: { passed: boolean; checks: AssignmentCheck[] };
   products: ProductRecord[];
   /** Products that failed. Empty on a clean run; the run still completes. */
@@ -166,6 +175,7 @@ export function createReport(args: {
   const { brief, markets, products, failures, preflight, mode, provider, startedAt, completedAt } =
     args;
   const creatives = products.flatMap((p) => p.creatives);
+  const art = resolveArtDirection(brief);
 
   // One pass over the heroes. Every hero figure below reads from this tally, so
   // two metrics sitting next to each other cannot disagree about the same run.
@@ -173,11 +183,9 @@ export function createReport(args: {
   for (const product of products) heroes[product.hero.source]++;
 
   const cost = costEstimate(provider.model, heroes.generated);
-  // Only creatives that passed. Time and money "saved" were being paid out on
-  // every file the run wrote, including the ones it had just declared failed --
-  // a denominator of the produced set rather than the surviving set, which is
-  // the same shape as every false green this project has found. Nobody saves
-  // studio hours by producing an asset they cannot ship.
+  // Only creatives that passed. Nobody saves studio hours by producing an asset
+  // they cannot ship, so the denominator is the surviving set rather than the
+  // produced set.
   const shippable = creatives.filter((c) => c.validation.status === "pass").length;
   const timeSaved = timeSavedEstimate(
     baselineMinutes(brief),
@@ -238,6 +246,7 @@ export function createReport(args: {
         ),
       },
     },
+    artDirection: { look: art.look, overriddenSlots: art.overridden },
     assignmentProof: proveAssignment(products, brief.products.length, mode),
     products,
     failures,
@@ -382,10 +391,10 @@ function proveAssignment(
 /**
  * Keeps provenance reproducible on someone else's machine.
  *
- * An absolute path is correct at runtime and wrong in a published artifact: an
- * earlier committed report.json carried `/Users/<name>/...` all the way into
- * the repo. Anything inside the project becomes project-relative; anything
- * outside it is reduced to a filename rather than leaking a home directory.
+ * An absolute path is correct at runtime and wrong in a published artifact,
+ * where it is both useless on another machine and a small privacy leak.
+ * Anything inside the project becomes project-relative; anything outside it is
+ * reduced to a filename rather than exposing a home directory.
  */
 export { sanitizeId };
 

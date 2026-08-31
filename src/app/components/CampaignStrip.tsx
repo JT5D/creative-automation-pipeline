@@ -175,6 +175,11 @@ export function CampaignStrip(props: Props) {
         <section className="rail-block">
           <span className="rail-k">Campaign message</span>
           <p className="rail-msg">{message || "-"}</p>
+          {estimate?.region && (
+            <span className="rail-sub">
+              <b>Region</b> {estimate.region}
+            </span>
+          )}
           {estimate?.audience && (
             <span className="rail-sub">
               <b>Audience</b> {estimate.audience}

@@ -117,18 +117,15 @@ type Template = {
    * open photo, mid-frame and low contrast. There it follows the CTA instead,
    * so headline, CTA and disclaimer read as one block on the scrim.
    *
-   * One field, not two. It was a coordinate plus a boolean saying to ignore
-   * the coordinate, so the story template carried a baseline value nothing
-   * could ever read -- and a test compared against it.
+   * One field, not two: null IS "follow the CTA", so no template can carry a
+   * coordinate that nothing reads.
    */
   disclaimerY: number | null;
   /** True when this format must honour the Meta 9:16 safe zone. */
   enforceSafeZone: boolean;
   /**
    * True when copy sits on the photograph under a gradient scrim, false when
-   * it sits on a solid brand panel. It was a three-state union carrying a
-   * "bottom" variant no template returned, which kept about thirty lines of
-   * scrim code and a header comment describing a layout that does not exist.
+   * it sits on a solid brand panel.
    */
   scrim: boolean;
   maxLines: number;
@@ -415,11 +412,10 @@ export async function composeVariant(input: ComposeInput): Promise<ComposedCreat
   const textInkRatio = await inkRatio(textPng);
   const ctaInkRatio = textLayer.ctaSvg ? await inkOf(textLayer.ctaSvg) : 0;
   const disclaimerInkRatio = textLayer.disclaimerSvg ? await inkOf(textLayer.disclaimerSvg) : 0;
-  // The logo is measured too, and for the same reason. This was the last
-  // element still reporting Boolean(fileLoaded): a logo PNG that decoded and
-  // resized perfectly but carried no opaque pixels rendered nothing and still
-  // reported "Brand logo composited". Sharp already refuses an out-of-bounds
-  // composite, so visible ink is the one remaining thing worth measuring.
+  // The logo is measured too, and for the same reason: a PNG can decode and
+  // resize perfectly, carry no opaque pixels, render nothing, and satisfy any
+  // check that asks whether a file loaded. Sharp already refuses an
+  // out-of-bounds composite, so visible ink is what is left worth measuring.
   const logoInkRatio = logoBuffer ? await inkRatio(logoBuffer) : 0;
   layers.push({ input: textPng, left: 0, top: 0 });
 
