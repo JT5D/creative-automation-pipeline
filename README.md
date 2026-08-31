@@ -677,10 +677,10 @@ the one field in the Firefly request that cannot be cited from an Adobe example:
 
 - **The hero crop is centred**, which is right because the art direction demands
   a centred product with negative space - but that is a convention the prompt
-  enforces, not product detection. An off-centre approved asset would still crop
-  badly. Firefly Expand or a product-aware crop is the production answer. This
-  previously used Sharp's `attention` saliency heuristic, which sliced the
-  product out of the 9:16 frame.
+  enforces, not product detection, so an off-centre approved asset would still
+  crop badly. Product-aware crop selection is the production answer, and
+  `composeVariant` is where it drops in. Sharp's `attention` saliency heuristic
+  is not it: tried here, it sliced the product out of the 9:16 frame.
 - **Text is laid out by hand** - wrapping, auto-fit and glyph metrics in
   `textLayout.ts` and `fonts.ts`. The current best-practice stack is
   [Satori](https://github.com/vercel/satori) feeding Sharp, which is what

@@ -260,15 +260,18 @@ function scrimOpacity(luminance: number, floor: number, ceiling: number): number
  * SEAM: subject-aware reframing.
  *
  * This centre-crops one square hero to every ratio with sharp's `cover`, which
- * assumes the subject sits in the middle. That assumption is why COMPOSITION is
- * locked to the centred 56% the 9:16 crop keeps, and it is the reason an earlier
- * hero came back sliced in half.
+ * assumes the subject sits in the middle. That assumption is exactly why
+ * COMPOSITION is locked to the centred 56% the 9:16 crop keeps: the prompt
+ * guarantees what the crop assumes, and a hero that ignored it comes back
+ * sliced in half.
  *
- * Adobe's Reframe API tracks the subject across shots and aspect ratios rather
- * than assuming where it is, so it replaces the geometry here without touching
- * anything else in this file: same input hero, same output sizes, the crop
- * window chosen from the picture instead of from arithmetic.
- * developer.adobe.com/firefly-services/docs/guides/ - verified 2026-08-29.
+ * Nothing in Firefly Services replaces this. Adobe's Reframe API does track a
+ * subject across aspect ratios, but it is a VIDEO API - video in, video out,
+ * with the output derived solely from the source video (verified on
+ * developer.adobe.com/audio-video-firefly-services, 2026-08-30). The image
+ * answer is product detection choosing the crop window from the picture
+ * instead of from arithmetic, and it drops in here: same input hero, same
+ * output sizes, nothing else in this file changes.
  */
 export async function composeVariant(input: ComposeInput): Promise<ComposedCreative> {
   const { brief, hero, ratio, market } = input;

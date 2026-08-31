@@ -98,10 +98,9 @@ export async function preflight(brief: CampaignBrief): Promise<ValidationResult>
   if (baseline) checks.push(baseline);
 
   checks.push({
-    // Named for what it measures. It was `brand.colors`, which read as though
-    // the brand palette had been checked against the creative; it only ever
-    // confirmed the marketer typed a colour. The creative-level check of the
-    // same name now does the real one, against pixels.
+    // Named for what it measures, which is that the marketer typed a valid
+    // colour. Checking the palette against the finished creative is a different
+    // check on real pixels, and it lives per-creative.
     id: "brand.colorFormat",
     status: isHex(brief.brand.primaryColor) && isHex(brief.brand.secondaryColor) ? "pass" : "fail",
     message: "Brand colours are valid hex values",
