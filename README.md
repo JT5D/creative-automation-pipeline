@@ -34,28 +34,17 @@ real files. It is not a deployed system - storage is local, there is no queue,
 and [Production extension](#production-extension) names what a customer's stack
 would replace.
 
-### On scope
-
-The exercise suggests two to three hours. The pipeline that satisfies every
-requirement it lists is small, and it is the part I would want reviewed:
-`src/pipeline.ts` is one screen, and everything the brief asks for happens in
-it.
-
-Most of what came after was not features. It was verification, and it kept
-finding the same defect: **a check whose label was broader than its
-measurement.** Each one was invisible to a passing test suite and obvious on
-opening the file it was meant to be guarding. The one I would lead with in a
-review: twenty-four committed visual baselines, every
-test named *"matches its committed appearance"*, every one of them greyscaling
-the image before measuring it. The worst rendering bug this project had was a
-colour bug.
-
-I kept going because a creative pipeline that quietly ships the wrong pixels is
-worse than one that does not run at all, and because finding out which of your
-own checks are lying is the interesting part of this job. If that reads as more
-than the exercise asked for, that is a fair reading;
-[Checks that can actually fail](#11-checks-that-can-actually-fail) is the
-argument for it.
+**One deviation, stated first because it is the most contestable thing here.**
+The brief names GenAI for "resized and localized variations". This pipeline does
+both **deterministically** instead, and that is a judgement rather than a
+shortcut. A generated resize gives you a different photograph in every format,
+which breaks the one thing a campaign has to hold; a generated translation is a
+model authoring regulated claims per jurisdiction with nobody signing them off.
+Adobe's own answer is the same shape: pre-translated strings injected into
+layers. So the nondeterminism sits where it creates creative value, in the
+hero, and everything contractual past it - product identity, approved messaging,
+brand typography, localized and legal copy, dimensions and placement - is
+deterministic, auditable and reproducible.
 
 ---
 
@@ -123,10 +112,10 @@ Nothing is auto-selected when both providers are configured - see
 npm run dev                                            # console + API
 npm run campaign -- samples/campaign.yaml              # same pipeline, CLI
 npm run campaign -- samples/campaign.yaml --dry-run    # what it costs, spending nothing
-npm run portfolio                                      # every brief in samples/, one command
-npm run shots -- samples/campaign.yaml radiance-serum --prompts   # camera set-ups, spending nothing
-npm run look -- samples/campaign.yaml nocturne         # one hero, one look, about 3 cents
-npm run campaign -- samples/campaign.yaml --preview    # the whole campaign for about 7 cents
+npm run campaign -- --all                              # every brief in samples/, one command
+npm run campaign -- samples/campaign.yaml --prompts    # the exact prompt it would send, for nothing
+npm run campaign -- samples/campaign.yaml --preview    # the whole campaign for about 3 cents
+npm run doctor                                         # is the key live and the model id real
 npm run check                                          # the release gate
 ```
 
@@ -196,11 +185,112 @@ four representative creatives.
 
 ---
 
+## Requirements traceability
+
+| Assignment requirement | Implementation | Evidence |
+|---|---|---|
+| Campaign brief (JSON/YAML) | `src/schema.ts` - one Zod schema, both formats | test: *accepts YAML and JSON identically* |
+| ≥ 2 products | `.min(2)` on the products array | test: *rejects a brief with fewer than two products* |
+| Target region / market | `region` (required) | `Germany (DACH)` in report.json |
+| Target audience | `audience` (required) | recorded in report.json |
+| Campaign message | `message` + per-market copy | rasterized into every output, verified by ink and fit |
+| Accept input assets, reuse when available | `findApprovedHero()` | Product A → **Reused**; test asserts `liveHeroGenerations === 1` |
+| Generate when missing, with a **real** model | `HeroGenerator` → `src/providers/gemini.ts` | Product B → **Generated**, provenance in report.json |
+| Real model, not a stand-in | `MVP_MODE=final` refuses the offline renderer | test: *refuses to fabricate a missing hero in final mode* |
+| ≥ 3 aspect ratios | `RATIOS` + `templateFor()` | **4 delivered**, asserted per run by `assignmentProof` |
+| Campaign message on final posts | `buildTextLayer()` → Sharp raster | ink **and** fit checked per creative |
+| Localization (bonus) | `markets[]` | en-GB · de-DE · fr-FR at zero extra generation; the global-launch brief runs all five markets it names, for the same two generations |
+| Runs locally | Vite console + Express, or CLI | `npm run dev` · `npm run campaign` |
+| Outputs organized by product + ratio | `outputs/<campaign>/<product>/<ratio>/<locale>.png` | tree above |
+| Brand compliance checks (bonus) | `src/validation.ts` | both of the exercise's examples measured in pixels: logo ink, and brand accent coverage in the finished creative |
+| Legal content checks (bonus) | word-boundary prohibited scan | `samples/campaign-legal-fail.yaml` fails preflight |
+| Logging / reporting (bonus) | `src/report.ts` | `report.json`, live event stream, `runs.jsonl` |
+| Caption + hashtags per post | `src/socialCopy.ts` - assembled from approved copy, no model call | `copy/<locale>.txt` per product, and `socialCopy` in report.json |
+
+`report.json → assignmentProof` answers the exercise's minimum from the run's
+own records - eleven checks over what the run actually wrote, every coverage figure
+measured against the products the *brief* asked for rather than the ones that
+finished. An offline preview produces real, correctly-sized, validated files
+and still reports `false`, because it has not demonstrated the one thing the
+exercise needs a model for.
+
+---
+
+## What this solves, and what it honestly does not
+
+A global consumer-goods team launches hundreds of localized campaigns a month.
+Ideation is cheap. The expense sits in producing the same message across every
+product and format, repeatedly, on brand, without breaking each market's legal
+rules. Most of that work is mechanical. This automates the mechanical part
+and spends model budget only where a human genuinely needs something new.
+
+Generated work is never presented as approved. Every product a model touched is
+badged **Review generated hero**, and sign-off is a person's job - this is
+designed for creative operations with explicit human review, not to replace the
+director.
+
+| Business goal | Where it is answered | Honest status |
+|---|---|---|
+| 1 · Campaign velocity | One brief → 24 validated creatives in 33.1s | **Delivered** |
+| 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
+| 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
+| 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
+| 5 · Actionable insights | `report.json` provenance and per-check results; `runs.jsonl` reuse and spend across runs | **Production telemetry.** Campaign-performance insight belongs after activation - GenStudio for Performance Marketing |
+
+| Pain point | What this does about it |
+|---|---|
+| 1 · Manual production overload | One brief → 24 finished creatives, 1.38s each |
+| 2 · Inconsistent quality | Brand rules are code, not a style guide someone remembers |
+| 3 · Approval bottlenecks | Prohibited claims stop the run before production; a human only reviews what a model touched |
+| 4 · Analysis at scale | Every run writes provenance and per-check results as data |
+| 5 · Resource drain | Approved assets reuse automatically; the model is called only for the gap |
+
+**The three data sources the brief names**
+
+| Data source | Here |
+|---|---|
+| User inputs - briefs and assets uploaded manually | Briefs are `samples/*.yaml` / `*.json`, editable in the console behind **Edit source**. Assets live in `samples/assets/` - dropped in by hand, or supplied through the inspector on any product a model generated, which writes the file and adds `approvedHeroPath` to the brief. Either route is the same mechanism, and it is the one the pipeline turns on |
+| Storage - *"can be Azure, AWS or Dropbox"* | Local filesystem behind `findApprovedHero()`. That one function is the seam; Firefly's own v4 API accepts output storage on exactly those domains, so the production swap is a storage target, not a redesign |
+| GenAI - best-fit APIs for hero images and variations | `HeroGenerator` → Gemini 3 Pro Image (runs) or Firefly Image Model 5 (written, not entitled). Resized and localized variations are produced **deterministically**, not by a model |
+
+---
+
 ## Key design decisions
 
-### 1. Asset origin is a boundary concern
+### 1. One paid generation per product, and every format derived from it
 
-A reused approved asset and a freshly generated one normalize into one type:
+This is the decision everything else follows from, and the reasons that outrank
+cost come first.
+
+**Consistency.** Generating per aspect ratio would produce four *different*
+products in one campaign: different bottle, different lighting, different scene.
+That is a brand failure, not a budget one. One hero means every format is
+demonstrably the same photograph.
+
+**Reuse of approved work.** Regenerating an asset a brand has already signed off
+discards a human approval that carries legal weight, and it is slower and
+non-deterministic as well. The branch is a real `fs.access()`: delete
+`samples/assets/radiance-serum-hero.png` and the same brief takes the generation
+path on the next run.
+
+**Reproducibility.** Everything downstream of the hero is pure transformation,
+so the same brief and the same hero produce the same bytes. That is what makes
+the layout testable, the brand checks meaningful and the whole thing auditable.
+
+**Then cost**, which is the evidence rather than the argument. A model is called
+once per missing hero at 2K square and every channel format is cut from it
+locally with Sharp, so adding a format or a market costs **zero additional
+generation**. A test asserts it: the variant count derives from the `RATIOS`
+constant while `liveHeroGenerations` stays at 1. At hundreds of campaigns a
+month that is the difference between a rounding error and a budget line.
+
+This is also the industry pattern rather than a trick of ours. Every creative
+automation platform in this category works the same way: a product feed plus
+structured templates with layout rules, producing many on-brand variants from
+one design.
+
+A reused approved asset and a freshly generated one then normalize into one type,
+so nothing past that line knows or cares where the image came from:
 
 ```ts
 type CanonicalHeroAsset = {
@@ -211,35 +301,11 @@ type CanonicalHeroAsset = {
 };
 ```
 
-Past that line nothing knows or cares where the image came from. Composition,
-validation, export and reporting are deterministic and source-agnostic - which
-is what makes the provider swappable and the pipeline testable without a
-network.
+`findApprovedHero()` is deliberately tiny, and it is the seam a customer's DAM,
+AEM Assets or S3 bucket replaces. Its entire contract is "a local path, or
+nothing."
 
-### 2. Reuse beats regenerate
-
-Regenerating an asset a brand has already approved is worse on every axis: it
-costs money, takes seconds instead of milliseconds, is non-deterministic, and
-discards a human approval that carries legal weight. The branch is a real
-`fs.access()` - delete `samples/assets/radiance-serum-hero.png` and the same
-brief takes the generation path on the next run.
-
-`findApprovedHero()` is deliberately tiny. It is the seam a customer's DAM, AEM
-or S3 bucket replaces, and its entire contract is "a local path, or nothing."
-
-### 3. One canonical hero, then transform
-
-Generating per aspect ratio would multiply cost and - far worse - produce four
-*different* products in one campaign: different bottle, different lighting,
-different scene. That is a brand failure, not a budget one.
-
-So a model is called **once per missing hero** at 2K square, and every channel
-format is cut from that one asset locally with Sharp. Adding a format or a
-market costs **zero additional GenAI generation**, and a test asserts it: the
-variant count derives from the `RATIOS` constant while `liveHeroGenerations`
-stays at 1.
-
-### 4. Each ratio is a template, not a resize
+### 2. Each ratio is a template, not a resize
 
 | Format | Placement | Art direction |
 |---|---|---|
@@ -267,7 +333,7 @@ half as quiet background, and sizes the product from the crop that actually
 binds: 9:16 keeps 9/16 = 56% of the width. Full derivation in
 [`docs/CREATIVE_STANDARDS.md`](docs/CREATIVE_STANDARDS.md) §7.
 
-### 5. Typography is bundled, and measured
+### 3. Typography is bundled, and measured
 
 Rubik and Cormorant Garamond ship in `assets/fonts/` under the SIL Open Font
 License. The creatives therefore render identically on any machine instead of
@@ -279,13 +345,13 @@ enough that a CTA pill clipped its own label.
 The console is set in Rubik and the advertisement's headline in Cormorant: the
 tool and the ad are different products and should not share a voice.
 
-### 6. Translation is data, not a runtime model call
+### 4. Translation is data, not a runtime model call
 
 No text LLM runs at any point. Localized copy is supplied per market in the
 brief, because a localized claim on a regulated cosmetic carries legal weight
 and needs human sign-off. Markets multiply output at zero additional generation.
 
-### 7. A creative is not a post
+### 5. A creative is not a post
 
 A picture still needs words beside it. Whoever schedules these has to write a
 caption and a tag set for every product in every market, which is the same
@@ -306,7 +372,7 @@ A caption is published copy; gating the image on the legal list and not the
 words underneath it would be a strange place to stop. That scan now sees one
 thing it could not before: a banned claim inside a **product name**.
 
-### 8. One campaign, or a hundred
+### 6. One campaign, or a hundred
 
 The exercise opens with a client *"launching hundreds of localized social ad
 campaigns monthly"*, and its first pain point is producing those variants at
@@ -314,10 +380,11 @@ that volume. A console that runs one campaign at a time does not show the shape
 of that problem, so the brief selector is a **multi-select** and the run button
 counts what it will run.
 
-The estimate counts with it. Six briefs together is 148 creatives from **9**
-generations, and the console says so, and says it costs $1.206, before anything
-is spent. That ratio is the whole argument: the expensive step is per missing
-hero, and everything after it is free.
+The estimate counts with it. The whole sample library together is **100
+creatives from 5 generations for $0.670**, and the console says so, and
+`npm run campaign -- --all --dry-run` says the same thing in the terminal,
+before anything is spent. That ratio is the argument: the expensive step is per
+missing hero, and everything after it is free.
 
 ![Batch run](docs/images/ui-batch.png)
 
@@ -329,7 +396,7 @@ Three things it does deliberately:
 
 - **Sequential, not concurrent.** Every campaign in a batch can spend money.
   Running them at once would multiply rate-limit exposure and make the spend
-  impossible to watch as it happens. It is the same loop `npm run portfolio`
+  impossible to watch as it happens. It is the same loop `npm run campaign -- --all`
   has always been: scale here is a loop, not an architecture.
 - **Each brief runs at its own scope.** Format and market chips belong to the
   brief being previewed; applying one brief's locales to another would silently
@@ -342,7 +409,7 @@ Three things it does deliberately:
 A brief that is refused is a normal outcome in a batch, not a failure of it:
 the row says which gate stopped it and the batch keeps going.
 
-### 9. Art direction is slots, with two of them locked
+### 7. Art direction is slots, with two of them locked
 
 The prompt is named slots - `standard · optics · light · set · moment · grade ·
 materials · integrity` - each with a default. `moment` is what Google's own
@@ -366,12 +433,12 @@ so a brief that could override it would slice its own product in half.
 invented claims on a regulated cosmetic. Even `generationPrompt`, which replaces
 all of the art direction, still gets both appended.
 
-This grain exists because the old one caused a real defect. The fragrance brief
-asked for *"a single low raking light and soft falloff into black"* and the
-pipeline silently prepended *"soft natural window daylight, warm, with open
-bounce fill"* - two contradictory lighting instructions in one prompt, because
-the only hatch that existed reached the set and nothing else. The model split
-the difference, which is what "generic" looks like from the inside.
+The grain matters. A brief that asks for *"a single low raking light and soft
+falloff into black"* while the pipeline prepends *"soft natural window daylight,
+warm, with open bounce fill"* has put two contradictory lighting instructions in
+one prompt, and the model splits the difference. That is what "generic" looks
+like from the inside, and it is what a single flat prompt with one escape hatch
+produces.
 
 `npm run campaign -- <brief> --dry-run --prompts` prints which slots a brief
 changed and what it inherited, for nothing. Control you cannot see is not
@@ -380,45 +447,40 @@ the cascade reachable only from a YAML field. A run may override the look; a
 slot the brief names by hand still outranks it, because the brief is the
 campaign's stated intent and the picker is someone trying something.
 
-### 10. Prompts are written in code, not by a model
+### 8. Prompts are written in code, not by a model
 
-There is a well-known way to build this half, and it is worth saying why this
-repo does not use it. The pattern is to hand an LLM a reference image and ask
-it to author the variant prompts: *"create 10 high-quality image prompts, each
-beginning exactly with `<fixed prefix>`, describing radically distinct
-framings"*, emit them delimited, split on the delimiter, and fan each one out to
-its own image call. It works, it is fast to assemble in a node-graph tool, and
-it produces genuinely varied output.
-
-This pipeline writes the same prompts as data in `SHOT_SET` and composes them
-through the slot cascade instead. Three reasons, in order:
+There is a well-known way to build this half: hand an LLM a reference image and
+ask it to author the variant prompts, emit them delimited, split, and fan each
+one out to its own image call. It works and it is fast to assemble. This
+pipeline writes the prompts as data in `src/shots.ts` and composes them through
+the slot cascade instead, for three reasons in order.
 
 1. **A prompt written by a model is a prompt nobody reviewed.** These are ads
    for a regulated cosmetic. The clause that stops a blank jar coming back
    printed with invented claims is only load-bearing if it cannot be paraphrased
    away by a generator working from its own summary of the brief.
-2. **It removes a paid, non-deterministic call from every run.** The authoring
-   step is an LLM call whose output changes the images. Two runs of the same
-   brief would no longer be the same campaign, and `assignmentProof` would be
+2. **It removes a paid, non-deterministic call from every run.** Two runs of the
+   same brief would stop being the same campaign, and `assignmentProof` would be
    asserting over a moving target.
-3. **The variation was never the hard part.** Nine set-ups written once cover
-   the same ground, and because they are data they can be measured: two of them
-   were generated, scored for visual drift against the reference, found to
-   return the source frame almost unchanged, and deleted. You cannot delete a
-   set-up a model invents at runtime.
+3. **The variation was never the hard part.** Set-ups written once cover the same
+   ground, and because they are data they can be measured: two were generated,
+   scored for visual drift against the reference, found to return the source
+   frame almost unchanged, and deleted. You cannot delete a set-up a model
+   invents at runtime.
 
 The trade is real and worth stating: an LLM would adapt its framings to the
-subject, and `SHOT_SET` cannot. The two set-ups deleted here failed on a jar on
-a plinth, and would likely have worked on a person. `HeroGenerator` is where a
-prompt-authoring step would attach if a client wanted that trade the other way.
+subject and a fixed catalogue cannot. The two set-ups deleted here failed on a
+jar on a plinth and would likely have worked on a person. `HeroGenerator` is
+where a prompt-authoring step attaches if a client wants that trade the other
+way.
 
-### 11. One hero, or a shoot
+### 9. One hero, or a shoot
 
 A campaign generates one hero and crops it, because a crop is free and a
 generation is not. That buys consistency and costs coverage: every format is
 the same photograph, and a real shoot covers a product from several set-ups.
 
-`npm run shots` buys that coverage back at one paid generation per set-up,
+The console buys that coverage back at one paid generation per set-up,
 opt-in, never part of a campaign run. The reference image is **the hero
 itself**, and the prompt is short:
 
@@ -458,7 +520,7 @@ instruction competed with a dozen other constraints and lost: all four framings
 came back as the same eye-level three-quarter view. Anchoring on the finished
 scene and leaving exactly one degree of freedom is what made it work.
 
-### 12. Checks that can actually fail
+### 10. Checks that can actually fail
 
 A validation rule earns its place only if it can go red on real input. Four
 checks in this repo could not, and each was fixed only after the defect was
@@ -473,6 +535,23 @@ demonstrated:
 
 All four were the same shape: a label broader than its measurement. Each fix
 ships with a test verified to fail against the old code.
+
+The one worth leading with, because it is a decision about what a check is
+worth rather than a bug report: this repo committed twenty-four visual
+baselines, every test named *"matches its committed appearance"*, and every one
+of them greyscaled the image before measuring it. So the worst rendering defect
+the project had was a colour bug its own regression suite could not see. The
+signatures now carry mean RGB and a distinct-colour floor alongside the tone
+grid, and one test re-encodes a creative to a 256-colour palette to prove the
+check goes red on exactly that.
+
+`report.json -> assignmentProof` gets the same treatment.
+`tests/proof-can-fail.test.ts` corrupts a fixture per check and asserts that
+specific check, and only that check, turns false. Writing it found one more:
+`ships_at_full_resolution` read the run mode and never read a pixel dimension,
+so its label promised something nothing measured. It now measures every export
+against the size its format declares. A check nobody has watched fail is a check
+nobody has tested.
 
 ---
 
@@ -494,7 +573,7 @@ named no `logoPath`, so the two brands that shipped without a lockup produced
 creatives reporting 16 of 16 checks passed from a brand suite that had silently
 dropped the exercise's own example of a brand check. An absent check reads as a
 passed check in every count that matters. A brief with no logo now gets a
-warning that says so, and all seven sample brands ship one.
+warning that says so, and every sample brand ships one.
 
 Four elements are measured, not assumed: the headline, CTA, disclaimer and logo
 are each rasterized **alone** and their opaque pixels counted. A combined layer
@@ -579,43 +658,6 @@ the one field in the Firefly request that cannot be cited from an Adobe example:
 
 ---
 
-## What this solves, and what it honestly does not
-
-A global consumer-goods team launches hundreds of localized campaigns a month.
-Ideation is cheap. The expense sits in producing the same message across every
-product and format, repeatedly, on brand, without breaking each market's legal
-rules. Most of that work is mechanical. This automates the mechanical part
-and spends model budget only where a human genuinely needs something new.
-
-Generated work is never presented as approved. Every product a model touched is
-badged **Review generated hero**, and sign-off is a person's job - this is
-designed for creative operations with explicit human review, not to replace the
-director.
-
-| Business goal | Where it is answered | Honest status |
-|---|---|---|
-| 1 · Campaign velocity | One brief → 24 validated creatives in 33.1s | **Delivered** |
-| 2 · Brand consistency | Deterministic templates, approved-asset reuse, logo/colour/typography/safe-zone/disclaimer checks applied identically every run | **POC evidence.** Enterprise brand governance is Adobe Brand Intelligence |
-| 3 · Relevance & personalization | Per-market message, CTA and disclaimer rasterized into each export at zero extra generation | **Partial.** Copy is localized; offers, art direction and cultural imagery are not adapted |
-| 4 · Marketing ROI | Runtime, estimated generation cost, reuse rate, creatives per generation | **Cost side only.** CTR, CPA and conversion are post-publication; this never publishes, so none is invented |
-| 5 · Actionable insights | `report.json` provenance and per-check results; `runs.jsonl` reuse and spend across runs | **Production telemetry.** Campaign-performance insight belongs after activation - GenStudio for Performance Marketing |
-
-| Pain point | What this does about it |
-|---|---|
-| 1 · Manual production overload | One brief → 24 finished creatives, 1.38s each |
-| 2 · Inconsistent quality | Brand rules are code, not a style guide someone remembers |
-| 3 · Approval bottlenecks | Prohibited claims stop the run before production; a human only reviews what a model touched |
-| 4 · Analysis at scale | Every run writes provenance and per-check results as data |
-| 5 · Resource drain | Approved assets reuse automatically; the model is called only for the gap |
-
-**The three data sources the brief names**
-
-| Data source | Here |
-|---|---|
-| User inputs - briefs and assets uploaded manually | Briefs are `samples/*.yaml` / `*.json`, editable in the console behind **Edit source**. Assets live in `samples/assets/` - dropped in by hand, or supplied through the inspector on any product a model generated, which writes the file and adds `approvedHeroPath` to the brief. Either route is the same mechanism, and it is the one the pipeline turns on |
-| Storage - *"can be Azure, AWS or Dropbox"* | Local filesystem behind `findApprovedHero()`. That one function is the seam; Firefly's own v4 API accepts output storage on exactly those domains, so the production swap is a storage target, not a redesign |
-| GenAI - best-fit APIs for hero images and variations | `HeroGenerator` → Gemini 3 Pro Image (runs) or Firefly Image Model 5 (written, not entitled). Resized and localized variations are produced **deterministically**, not by a model |
-
 ---
 
 ## Assumptions
@@ -628,9 +670,8 @@ director.
 - `Lumen Botanicals` is a fictional brand invented for this exercise, as the FAQ
   permits. `samples/assets/` holds its **input** assets, committed so no
   evaluator needs a key to see the reuse path work. The two product images came
-  from `npm run make:samples` calling `gemini-3-pro-image`; the logo is drawn in
-  code. They are inputs, **not pipeline outputs**, and nothing presents them as
-  results.
+  from `gemini-3-pro-image`; the logo is drawn in code. They are inputs, **not
+  pipeline outputs**, and nothing presents them as results.
 
 ## Limitations
 
@@ -674,7 +715,7 @@ director.
   reason every product a model touched is badged **Review generated hero**.
 - **Run state is in memory**, so restarting the server forgets past runs. The
   outputs and `report.json` on disk are the durable artifact.
-- **Single machine, no queue.** `npm run portfolio` runs every brief in the
+- **Single machine, no queue.** `npm run campaign -- --all` runs every brief in the
   manifest back to back, which is the honest shape of batch here: a loop over
   the same `runCampaign()`, not a scheduler. Hundreds of campaigns concurrently,
   with retries and prioritization, is the extension path - see
@@ -691,11 +732,11 @@ director.
 Customer DAM / AEM / S3
       │   replaces findApprovedHero() - the only filesystem assumption
       ▼
-AssetResolver → HeroGenerator          ← replaced by Firefly Services / Composite APIs
+AssetResolver → HeroGenerator          ← Firefly Generate Image, Custom Models
       │
       ▼
-Firefly Creative Production            ← batch asset operations, 1000 files
 Photoshop API                          ← layered/templated production
+Firefly Creative Production            ← batch operations over finished assets
       │
       ▼
 GenStudio                              ← approval, activation, performance
@@ -704,27 +745,44 @@ GenStudio                              ← approval, activation, performance
 The two seams that matter are already isolated. Everything between the canonical
 hero and the exported file stays exactly as it is.
 
-### Which Firefly Service replaces which line of this code
+### Which Adobe product replaces which line of this code
 
-Verified against [Adobe Firefly Services docs](https://developer.adobe.com/firefly-services/docs/guides/)
-on 2026-08-29. Firefly Services is Firefly APIs plus Photoshop, Lightroom and
-Content Tagging APIs; the Firefly REST surface includes Generate, **Reframe**,
-Translate, Lip-Sync and Custom Models.
+Verified on developer.adobe.com and business.adobe.com on 2026-08-30. Three
+claims an earlier version of this table made were wrong and are corrected below,
+because the group reviewing this builds Firefly and will know.
 
-| What this repo does | The seam | Firefly Service that replaces it | Which goal or pain point it moves |
+| What this repo does | The seam | What replaces it in production | Which goal or pain point it moves |
 |---|---|---|---|
-| Generates a hero from a packshot | `HeroGenerator` | **Firefly Generate**, or **Custom Models** trained on the brand's own products | Goal 2, brand consistency. A model trained on the product removes the identity risk this pipeline manages with a reference image and a locked typography rule |
-| Centre-crops one hero to four ratios | `composeVariant`, fit `cover` | **Reframe** | The limitation named in decision 4. Reframe tracks the subject across aspect ratios instead of assuming it sits in the middle 56% |
-| Reads approved assets off disk | `findApprovedHero()` | **AEM Assets / customer DAM**, indexed by **Content Tagging** | Pain point 4, siloed data. Tagging on ingest is what makes "reuse when available" work past a folder |
-| Asks the prompt for a retouch standard | the retouch clause in `buildHeroPrompt` | **Photoshop APIs** (masking, mask refinement) | Deterministic beats hopeful. A mask is not a sentence a model may ignore |
-| Ships localized copy as signed-off data | `markets[].message` | **Firefly Translate**, with the same human gate in front of it | Goal 3, relevance. The seam is real; the sign-off is the point |
-| Produces stills only | nothing here does video | **Text-to-Video** and **Image-to-Video** | Reels and TikTok are video-first placements. This is the largest honest gap in the deliverable |
+| Generates a hero from a packshot | `HeroGenerator` | The **Firefly Generate Image API**, or a **Firefly Custom Model** trained on the brand's own products | Goal 2, brand consistency. A model trained on the product retires the single most fragile thing here, which is asking a general model to preserve a specific one |
+| Reads approved assets off disk | `findApprovedHero()` | **AEM Assets** or the customer's DAM, indexed by **Content Tagging**, which is an Experience Platform Intelligent Service rather than a Firefly one | Pain point 4, siloed data. Tagging on ingest is what makes "reuse when available" work past a folder |
+| Asks the prompt for a retouch standard | the retouch clause in `buildHeroPrompt` | **Photoshop APIs**, masking and mask refinement | Deterministic beats hopeful. A mask is not a sentence a model may ignore |
+| Batch operations over finished assets | nothing here; this repo starts from a brief | **Firefly Creative Production**, which does background removal, cropping to platform presets and colour grading over many files with a job log | Goal 1, velocity, on the half of the problem that starts from assets rather than from a brief |
 | Never publishes | no publishing stub exists, on purpose | **GenStudio** | Goals 4 and 5. Activation and real performance data live where the campaign runs |
 
-Two of those are worth saying out loud in a review. **Reframe** solves a
-limitation this repo documents against itself rather than one it hides, and
-**Custom Models** would retire the single most fragile thing in the generation
-path, which is asking a general model to preserve a specific product.
+**Three corrections worth stating, because getting them wrong in the interview
+would be worse than not knowing.**
+
+**Reframe is a video API.** It lives under Firefly Services' audio and video
+surface, takes video in and returns video in other aspect ratios, and Adobe
+states that "all content in the generated reframed output is derived solely
+from the original source video". There is no image path, so nothing in Firefly
+Services replaces `composeVariant`. The centre crop is ours to defend, and
+decision 2 defends it.
+
+**"Firefly Translate" is Translate and Lip Sync**, an audio and video API that
+returns transcriptions, captions, dubbed audio and lip-synced video. No Adobe API
+translates text that has been baked into an image, and that is not a gap in
+Adobe's line-up. It is the reason the industry answer is to inject
+pre-translated strings into layers rather than to regenerate the picture, which
+is exactly what `markets[].message` does here. Translation is data with a human
+sign-off, and the seam is the sign-off.
+
+**Firefly Foundry is the tier above Custom Models.** Adobe describes Foundry
+models as "trained on your proprietary IP and full catalog of multimedia brand
+or franchise assets", integrated "across the Adobe ecosystem, including
+GenStudio, Creative Cloud, the Firefly app, and Express". That is the roadmap
+this repo's reference packshot points at: a packshot anchors identity today, a
+Custom Model per brand does it properly, Foundry does it for a whole catalogue.
 
 The absence of a publishing stub is also deliberate and is the same argument:
 a stub that cannot be executed is a claim, not a capability. The post body, the
@@ -739,73 +797,6 @@ building those would have added surface without demonstrating anything it asks
 for.
 
 ---
-
-## Requirements traceability
-
-| Assignment requirement | Implementation | Evidence |
-|---|---|---|
-| Campaign brief (JSON/YAML) | `src/schema.ts` - one Zod schema, both formats | test: *accepts YAML and JSON identically* |
-| ≥ 2 products | `.min(2)` on the products array | test: *rejects a brief with fewer than two products* |
-| Target region / market | `region` (required) | `Germany (DACH)` in report.json |
-| Target audience | `audience` (required) | recorded in report.json |
-| Campaign message | `message` + per-market copy | rasterized into every output, verified by ink and fit |
-| Accept input assets, reuse when available | `findApprovedHero()` | Product A → **Reused**; test asserts `liveHeroGenerations === 1` |
-| Generate when missing, with a **real** model | `HeroGenerator` → `src/providers/gemini.ts` | Product B → **Generated**, provenance in report.json |
-| Real model, not a stand-in | `MVP_MODE=final` refuses the offline renderer | test: *refuses to fabricate a missing hero in final mode* |
-| ≥ 3 aspect ratios | `RATIOS` + `templateFor()` | **4 delivered**, asserted per run by `assignmentProof` |
-| Campaign message on final posts | `buildTextLayer()` → Sharp raster | ink **and** fit checked per creative |
-| Localization (bonus) | `markets[]` | en-GB · de-DE · fr-FR at zero extra generation; the Nordics brief runs all four markets it names, for the same two generations |
-| Runs locally | Vite console + Express, or CLI | `npm run dev` · `npm run campaign` |
-| Outputs organized by product + ratio | `outputs/<campaign>/<product>/<ratio>/<locale>.png` | tree above |
-| Brand compliance checks (bonus) | `src/validation.ts` | both of the exercise's examples measured in pixels: logo ink, and brand accent coverage in the finished creative |
-| Legal content checks (bonus) | word-boundary prohibited scan | `samples/campaign-legal-fail.yaml` fails preflight |
-| Logging / reporting (bonus) | `src/report.ts` | `report.json`, live event stream, `runs.jsonl` |
-| Caption + hashtags per post | `src/socialCopy.ts` - assembled from approved copy, no model call | `copy/<locale>.txt` per product, and `socialCopy` in report.json |
-
-`report.json → assignmentProof` answers the exercise's minimum from the run's
-own records - eleven facts counted off the files on disk, every coverage figure
-measured against the products the *brief* asked for rather than the ones that
-finished. An offline preview produces real, correctly-sized, validated files
-and still reports `false`, because it has not demonstrated the one thing the
-exercise needs a model for.
-
----
-
-## Walkthrough (~2:30)
-
-The assignment asks for a short video that helps a reviewer *set up and run the
-app locally*. This is that path, and every timing was measured.
-
-**0:00-0:30 · Setup.** Clone, `npm install`, `cp .env.example .env`, paste one
-Google AI Studio key with billing enabled. `npm run doctor` verifies the key and
-the model id against the live model list before anything is spent.
-
-**0:30-0:50 · The brief.** `npm run dev`. The console opens on
-`samples/campaign.yaml`: two products, region, audience, message, brand rules.
-Product A has an approved hero on disk; product B does not. The default
-selection is the exercise's minimum - 1:1, 9:16, 16:9 in one market.
-
-**0:50-1:30 · The run.** Press **Run campaign**. Product A resolves to
-*Reused* and spends nothing. Product B has no approved hero, so its packshot
-goes to the model as an identity anchor and returns *Generated*. One live
-generation, driven by a real filesystem check - delete the approved file and the
-same brief takes the generate path.
-
-**1:30-2:00 · The output.** Six creatives, each an intentional template rather
-than a resize, served straight off disk. Click any one for its provenance, its
-production checks, and the caption and hashtags that ship beside it. Files land
-in `outputs/<campaign>/<product>/<ratio>/<locale>.png`, with the post copy in
-`copy/<locale>.txt`.
-
-**2:00-2:30 · Scale, and the guardrail.** Add 4:5 and two more markets: 24
-creatives, still one generation, still $0.134. The market tabs open on one
-language, and say how many of the 24 are on screen. Then pick the *Rejected
-copy* brief, which carries a prohibited claim and is stopped at preflight
-before a credit is spent.
-
-Running with **no key at all** also works: a labelled offline preview that
-reports `assignmentProof.passed = false`, because a preview has not demonstrated
-the one thing this exercise needs a model for.
 
 ---
 

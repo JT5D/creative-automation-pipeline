@@ -28,7 +28,8 @@ if (unknown.length || args.includes("--help")) {
   npm run campaign -- <brief> --preview    the whole campaign for about 3 cents
   npm run campaign -- <brief> --dry-run    what it would cost, spending nothing
   npm run campaign -- <brief> --dry-run --prompts   ...and the exact prompts
-  npm run portfolio                        every brief in samples/briefs.json
+  npm run campaign -- --all                every brief in samples/briefs.json
+  npm run campaign -- --all --dry-run      what the whole library would cost
 ${unknown.length ? `\n  Unrecognised: ${unknown.join(", ")}\n` : ""}`);
   process.exit(unknown.length ? 2 : 0);
 }
@@ -44,9 +45,17 @@ const file = args.find((a) => !a.startsWith("--")) ?? "samples/campaign.yaml";
 // scale here is a loop, not an architecture. Heroes already approved cost
 // nothing, so the marginal campaign is usually free.
 if (args.includes("--all")) {
+  // --dry-run is honoured here too, and it was not.
+  //
+  // This branch used to sit ABOVE the dry-run handler, so
+  // `--all --dry-run` was accepted, silently ignored, and ran the whole
+  // library against the live key. A flag whose label reads "spending nothing"
+  // and whose behaviour spends is the exact defect this repo keeps finding,
+  // and this one cost real money to find.
+  //
   // Same contract as a single run: a refused brief or a failed product is a
   // non-zero exit, so this is usable in a pipeline rather than always green.
-  process.exit(await runPortfolio());
+  process.exit(dryRun ? await estimatePortfolio() : await runPortfolio());
 }
 
 // A brief that fails the contract is a normal outcome, not a crash. Without
@@ -187,6 +196,63 @@ function total<T>(rows: T[], pick: (row: T) => number | undefined): number {
  * brief that should be refused and is refused passes. One that should be
  * refused and RUNS fails, which is the case actually worth catching.
  */
+/**
+ * What the whole library would produce and cost, without producing any of it.
+ *
+ * Calls the same `estimateCampaign` a single `--dry-run` calls, so the split it
+ * reports is the split the run would take. No provider is constructed and
+ * nothing is written.
+ */
+async function estimatePortfolio(): Promise<number> {
+  const manifest: { file: string; label: string; expect: string }[] = JSON.parse(
+    await readFile(path.resolve("samples/briefs.json"), "utf8"),
+  );
+
+  console.log(`\nPORTFOLIO DRY RUN  ${manifest.length} briefs, nothing generated\n`);
+
+  let creatives = 0;
+  let generations = 0;
+  let spend = 0;
+  let refused = 0;
+
+  for (const entry of manifest) {
+    try {
+      const brief = await loadBriefFile(path.resolve("samples", entry.file));
+      const e = await estimateCampaign(brief);
+      if (e.blocked) {
+        refused++;
+        console.log(
+          `  · ${entry.label.padEnd(26)} refused at preflight - ${e.preflight.checks.find((c) => c.status === "fail")?.message.split("\n")[0] ?? "blocked"}`,
+        );
+        continue;
+      }
+      creatives += e.variants;
+      generations += e.generations;
+      spend += e.estimatedCostUsd?.totalUsd ?? 0;
+      console.log(
+        `  · ${entry.label.padEnd(26)} ${String(e.variants).padStart(3)} creatives · ` +
+          `${e.generations} generation${e.generations === 1 ? "" : "s"}`,
+      );
+    } catch (error) {
+      refused++;
+      const why = error instanceof Error ? error.message : String(error);
+      console.log(
+        `  · ${entry.label.padEnd(26)} refused by the brief contract - ${why.split("\n")[0]}`,
+      );
+    }
+  }
+
+  console.log(`
+PORTFOLIO DRY RUN COMPLETE
+
+  Creatives it would produce  ${creatives}
+  Heroes it would generate    ${generations}
+  It would spend              $${spend.toFixed(3)}
+  Refused before any spend    ${refused}
+`);
+  return 0;
+}
+
 async function runPortfolio(): Promise<number> {
   const manifest: { file: string; label: string; expect: string }[] = JSON.parse(
     await readFile(path.resolve("samples/briefs.json"), "utf8"),
@@ -224,8 +290,8 @@ async function runPortfolio(): Promise<number> {
     }
   }
 
-  // campaign.json and campaign.yaml are the same campaign in two formats and
-  // write to the same id. Summing both counted it twice.
+  // Two briefs that write to the same campaign id are one campaign. Summing
+  // both would count it twice.
   const unique = [...new Map(done.map((r) => [r.campaignId, r])).values()];
   const creatives = total(unique, (r) => r.metrics.variantsCreated);
   const generations = total(unique, (r) => r.metrics.liveHeroGenerations);

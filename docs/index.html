@@ -81,7 +81,29 @@
   figure img{width:100%;display:block;border-radius:10px;border:1px solid var(--line)}
   figcaption{font-size:13px;color:var(--muted);margin-top:11px}
 
-  .shots{display:grid;gap:20px;grid-template-columns:1.35fr 1fr;align-items:start}
+  /* The hero: the argument on the left, a finished creative on the right, so
+     a reviewer sees real work before scrolling. The creative is 9:16, so the
+     column is sized for a tall image rather than left to stretch. */
+  .hero-grid{display:grid;gap:44px;grid-template-columns:minmax(0,1.35fr) 300px;align-items:center}
+  .hero-shot figcaption{max-width:300px}
+
+  /* The console is wide and dense; a creative is tall. They were sharing one
+     row, which made the console unreadable and opened a gap under it. */
+  .wide-shot{margin-bottom:28px}
+  .shots{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start}
+
+  h3.sub{margin:38px 0 6px;font-size:15px;letter-spacing:.4px;text-transform:uppercase;color:var(--accent);font-weight:500}
+  .note{font-size:14px;margin-bottom:18px}
+  .hero-copy .lede{margin-bottom:20px}
+  .note b{color:var(--ink);font-weight:600}
+  /* Measured or estimated, on every cell. The distinction is the point. */
+  .stats.biz .l em{display:block;font-style:normal;color:var(--accent);letter-spacing:1.1px;margin-top:3px}
+
+  @media(max-width:860px){
+    .hero-grid{grid-template-columns:1fr}
+    .hero-shot{max-width:300px}
+    .hero-shot figcaption{max-width:none}
+  }
   @media(max-width:760px){.shots{grid-template-columns:1fr}}
 
   .video{
@@ -112,26 +134,41 @@
 <body>
 
 <header>
-  <div class="wrap">
-    <p class="eyebrow">Creative operations · Working pipeline</p>
-    <h1>Creative Automation Pipeline</h1>
-    <p class="lede">
-      The exercise asks for two products across 1:1, 9:16 and 16:9. That is what the
-      console runs by default - <strong>6 finished creatives from one paid generation
-      call</strong>. Select every format and market and that same single call produces
-      <strong>24 creatives in 33.1 seconds for $0.134</strong>, because generation
-      happens once per missing hero, not once per output.
-    </p>
-    <div class="byline">
-      <span><b>James Tunick</b></span>
-      <span>James@H3M.ai</span>
-      <span>917-446-8116</span>
-      <span>New York / Los Angeles</span>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Global consumer goods · hundreds of localized campaigns a month</p>
+      <h1>Creative Automation Pipeline</h1>
+      <p class="lede">
+        A brand team launching hundreds of localized social campaigns a month spends
+        most of its budget producing the <em>same</em> message across every product,
+        format and market - on brand, and inside each market's legal rules. Almost all
+        of that work is mechanical.
+      </p>
+      <p class="lede">
+        This automates the mechanical part and pays a model only where a human genuinely
+        needs something new: <strong>one paid generation per product</strong>, and every
+        format and market derived from it deterministically.
+        <strong>24 creatives in 33.1 seconds for $0.134</strong>.
+      </p>
+      <div class="byline">
+        <span><b>James Tunick</b></span>
+        <span>James@H3M.ai</span>
+        <span>917-446-8116</span>
+        <span>New York / Los Angeles</span>
+      </div>
+      <div class="cta-row">
+        <a class="btn primary" href="https://github.com/JT5D/creative-automation-pipeline">View the repository</a>
+        <a class="btn ghost" href="#demo">The demo</a>
+      </div>
     </div>
-    <div class="cta-row">
-      <a class="btn primary" href="https://github.com/JT5D/creative-automation-pipeline">View the repository</a>
-      <a class="btn ghost" href="#demo">The demo</a>
-    </div>
+    <figure class="hero-shot">
+      <img src="images/sample-9x16-de.png" alt="A finished 9:16 story creative in German: brand lockup, headline, call to action and legal line over a generated product photograph">
+      <figcaption>
+        One creative from the run below. The photograph is generated; the lockup,
+        the German headline, the call to action and the legal line are composited
+        from the brief, so they are exact, reproducible and translatable.
+      </figcaption>
+    </figure>
   </div>
 </header>
 
@@ -145,7 +182,7 @@
       <div class="stat"><span class="v">24</span><span class="l">Creatives</span></div>
       <div class="stat hi"><span class="v">1</span><span class="l">Paid generation</span></div>
       <div class="stat"><span class="v">24/24</span><span class="l">Creatives validated</span></div>
-      <div class="stat proof"><span class="v">11/11</span><span class="l">Assignment proof, counted off the files on disk</span></div>
+      <div class="stat proof"><span class="v">11/11</span><span class="l">Assignment proof, asserted by the run itself</span></div>
     </div>
     <p style="margin-top:24px">
       The expensive, non-deterministic step happens <strong>once per product</strong>.
@@ -153,34 +190,61 @@
       multiplies the output at <strong>zero additional cost</strong> - and a test
       asserts exactly that.
     </p>
+
+    <h3 class="sub">Time saved, campaigns generated, efficiency</h3>
+    <p class="note">
+      The three business metrics, separated into what this run <b>measured</b> and what
+      it <b>estimates</b> from a baseline the brief supplies. Nothing here is a CTR, a
+      conversion or a revenue figure: this pipeline produces creative and never
+      publishes, so it has no basis for one.
+    </p>
+    <div class="stats biz">
+      <div class="stat"><span class="v">10.0h</span><span class="l">Time saved per run <em>estimated</em>, from the brief's stated 25 min per creative</span></div>
+      <div class="stat"><span class="v">$849</span><span class="l">Labour cost avoided <em>estimated</em>, same baseline</span></div>
+      <div class="stat"><span class="v">1</span><span class="l">Campaigns generated <em>measured</em>, 24 creatives across 3 markets</span></div>
+      <div class="stat hi"><span class="v">24</span><span class="l">Creatives per paid generation <em>measured</em></span></div>
+      <div class="stat"><span class="v">$0.006</span><span class="l">Cost per creative <em>measured</em></span></div>
+      <div class="stat"><span class="v">50%</span><span class="l">Approved-asset reuse rate <em>measured</em>, and it compounds as the catalogue grows</span></div>
+    </div>
+    <p class="note">
+      Time saved matters multiplied by monthly volume, so the per-run figure is stated
+      honestly and the multiplication is left to the reader. The compounding number is
+      the reuse rate: every campaign costs less than the last as more of the catalogue
+      becomes approved.
+    </p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <h2>The work</h2>
+    <figure class="wide-shot">
+      <img src="images/ui-run.png" alt="The pipeline console: the brief and its cost on the left, every exported creative on the right">
+      <figcaption>
+        The console. The brief, the market, the formats and the price sit on the left;
+        every exported file is served straight off disk on the right, with its own
+        validation result and provenance. What the gallery shows is the file that
+        ships, not a re-render.
+      </figcaption>
+    </figure>
     <div class="shots">
       <figure>
-        <img src="images/ui-run.png" alt="The pipeline console showing live events and every exported creative">
+        <img src="images/sample-16x9-en.png" alt="A 16:9 landscape creative in English">
         <figcaption>
-          Live pipeline events, then every exported file served straight off disk
-          with its own validation checks and provenance. What the gallery shows is
-          the file that ships - not a re-render.
+          16:9. The same hero, a different template - not a resize. The landscape
+          placement gets a brand panel beside the photograph rather than a scrim over it.
         </figcaption>
       </figure>
       <figure>
-        <img src="images/sample-9x16-de.png" alt="A 9:16 story creative in German">
+        <img src="images/ui-batch.png" alt="Three campaigns run as one batch, two of them refused before any spend">
         <figcaption>
-          Product B had no approved campaign image. Its packshot was sent to the
-          model as an identity anchor, so the real jar and lid are preserved and
-          only the scene is generated. German copy, CTA and disclaimer come from
-          that market's entry in the brief.
+          Three campaigns as one job. Two are refused before a credit is spent, for two
+          different reasons: prohibited claims caught by the legal scan, and missing
+          fields caught by the brief contract. The batch keeps going and says which
+          gate stopped each.
         </figcaption>
       </figure>
     </div>
-  </div>
-</section>
-
 <section>
   <div class="wrap">
     <h2>Decisions worth defending</h2>

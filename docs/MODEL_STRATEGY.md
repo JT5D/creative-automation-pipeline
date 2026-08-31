@@ -171,7 +171,7 @@ looking is separated from the price of delivering.
 | Layout, copy fit, safe zone, every validation check | offline renderer, no key needed | **$0** |
 | What my brief changed vs what it inherited | `--dry-run --prompts` slot diff | **$0** |
 | The same thing again | preview and dev cache the hero | **$0** |
-| Is this the right art direction | `npm run look` - one hero, 1K, cheapest model | **$0.0336** |
+| Is this the right art direction | `--preview`, or the console's Preview tier - 1K on the cheapest model | **$0.0336 per hero** |
 | The whole campaign, roughly | `--preview` - 24 creatives, cost is per generation | **$0.067** |
 | The deliverable | `gemini-3-pro-image` at 2K | **$0.134** |
 
@@ -211,7 +211,7 @@ preview exists to answer. `gemini-3.1-flash-lite-image` runs the same
 Interactions API with the same `input` parts array as production, so the
 reference path is the code that already ships.
 
-Verified 2026-08-29 by running `npm run look -- samples/campaign.yaml` against
+Verified 2026-08-29 by generating one hero from `samples/campaign.yaml` against
 `overnight-recovery-cream`, which has a packshot. The 1K preview came back with
 the same frosted glass jar and the same green lacquered lid, closed and
 unlabelled, composited into the `daylight` set. One generation, $0.0336.

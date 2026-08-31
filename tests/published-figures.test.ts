@@ -22,7 +22,27 @@ const report = JSON.parse(
   readFileSync(path.resolve("docs/sample-output/report.json"), "utf8"),
 ) as CampaignReport;
 
-const briefs = JSON.parse(readFileSync(path.resolve("samples/briefs.json"), "utf8")) as unknown[];
+const briefs = JSON.parse(readFileSync(path.resolve("samples/briefs.json"), "utf8")) as {
+  expect: string;
+}[];
+
+/**
+ * What the whole sample library adds up to, summed from what each brief
+ * advertises.
+ *
+ * Those advertised figures are not decoration: tests/pipeline.test.ts runs every
+ * brief that is not meant to be refused and asserts it produces exactly what its
+ * manifest entry claims. So summing them here pins the README's batch sentence
+ * to the same reality, through the manifest, without running six campaigns.
+ */
+const library = briefs.reduce(
+  (acc, b) => {
+    const m = /^(\d+) creatives · (\d+) generations?$/.exec(b.expect);
+    if (!m) return acc;
+    return { creatives: acc.creatives + Number(m[1]), generations: acc.generations + Number(m[2]) };
+  },
+  { creatives: 0, generations: 0 },
+);
 
 const readme = readFileSync(path.resolve("README.md"), "utf8");
 const microsite = readFileSync(path.resolve("docs/index.html"), "utf8");
@@ -32,6 +52,16 @@ const cost = report.estimatedCostUsd?.totalUsd.toFixed(3);
 const perCreative = report.successMetrics.efficiency.secondsPerCreative.toFixed(2);
 const creatives = String(report.metrics.variantsCreated);
 const passedChecks = report.assignmentProof.checks.filter((c) => c.passed).length;
+// The three the recruiter FAQ names by name: time saved, campaigns generated,
+// overall efficiency. They are on the microsite now, so they are pinned like
+// everything else on it.
+const saved = report.successMetrics.timeSaved;
+const eff = report.successMetrics.efficiency;
+if (!saved) throw new Error("the committed run has no timeSaved to pin the microsite against");
+const savedHours = (saved.minutes / 60).toFixed(1);
+const savedUsd = String(Math.round(saved.usd ?? 0));
+const perCreativeUsd = (eff.costPerCreativeUsd ?? 0).toFixed(3);
+const reusePct = String(Math.round(eff.reuseRate * 100));
 // Formats are not a field on the report. Every product is produced in every
 // format in every market, so the count divides out - and deriving it means the
 // strip cannot claim a format the run did not actually cut.
@@ -69,16 +99,52 @@ const CLAIMS: { where: string; doc: string; pattern: RegExp; expected: string }[
     expected: perCreative,
   },
   {
-    where: "README walkthrough - cost at full scale",
-    doc: readme,
-    pattern: /still one generation, still \$([\d.]+)\./,
-    expected: String(cost),
-  },
-  {
     where: "README requirements traceability - assignmentProof check count",
     doc: readme,
-    pattern: /own records - (\w+) facts counted off the files on disk/,
+    pattern: /own records - (\w+) checks over what the run actually wrote/,
     expected: numberWord(report.assignmentProof.checks.length),
+  },
+  {
+    where: "microsite business metrics - time saved",
+    doc: microsite,
+    pattern: /<span class="v">([\d.]+)h<\/span><span class="l">Time saved per run/,
+    expected: savedHours,
+  },
+  {
+    where: "microsite business metrics - labour cost avoided",
+    doc: microsite,
+    pattern: /<span class="v">\$(\d+)<\/span><span class="l">Labour cost avoided/,
+    expected: savedUsd,
+  },
+  {
+    where: "microsite business metrics - creatives per paid generation",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)<\/span><span class="l">Creatives per paid generation/,
+    expected: String(eff.creativesPerGenerationCall),
+  },
+  {
+    where: "microsite business metrics - cost per creative",
+    doc: microsite,
+    pattern: /<span class="v">\$([\d.]+)<\/span><span class="l">Cost per creative/,
+    expected: perCreativeUsd,
+  },
+  {
+    where: "microsite business metrics - reuse rate",
+    doc: microsite,
+    pattern: /<span class="v">(\d+)%<\/span><span class="l">Approved-asset reuse rate/,
+    expected: reusePct,
+  },
+  {
+    where: "README batch scale - creatives across the whole library",
+    doc: readme,
+    pattern: /\*\*(\d+)\ncreatives from \d+ generations for \$[\d.]+\*\*/,
+    expected: String(library.creatives),
+  },
+  {
+    where: "README batch scale - generations across the whole library",
+    doc: readme,
+    pattern: /\*\*\d+\ncreatives from (\d+) generations for \$[\d.]+\*\*/,
+    expected: String(library.generations),
   },
   {
     where: "README sample library size",

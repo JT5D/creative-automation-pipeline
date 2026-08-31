@@ -117,7 +117,7 @@ Body sent here, field by field:
 | `numVariations` | `1` | published Image5 example |
 | `referenceBlobs` | `[]` | published Image5 example - empty selects generation |
 | `modelSpecificPayload.prompt_reasoner` | `"quality"` | published Image5 example |
-| `aspectRatio` | `"1:1"` | **UNVERIFIED VALUE.** The field is documented; Adobe's examples show only `"16:9"` and `"4:3"` and do not enumerate the allowed set |
+| `aspectRatio` | `"1:1"` | **The field is documented and appears in Adobe's own example payloads; the allowed set is not enumerated on any page reached, and every example shows `"16:9"` or `"4:3"`. Re-checked 2026-08-30 and still true, so `"1:1"` remains the one value in this request I cannot cite from an Adobe example.** |
 
 That last row is the one thing in this integration I cannot cite, and it is
 listed rather than buried. Where the live contract differs, the live contract
@@ -137,7 +137,7 @@ instinct:
 
 | Capability | Adobe product that owns it |
 |---|---|
-| Generative expand / reframe | Firefly Expand, Generative Fill |
+| Generative expand | Firefly Expand, Generative Fill. Reframe is a separate, VIDEO-only API and is not an image path (verified on developer.adobe.com, 2026-08-30) |
 | Product-in-scene compositing | Generate Object Composite, Precise / Adaptive Composite |
 | Layered template production | Photoshop API **v2** (v1 reached EOL 2026-07-31) |
 | Batch asset operations at scale | Creative Production, inside the Firefly app: background removal, cropping to platform presets, colour grading, up to 1000 files, with a job log (seen in the product 2026-08-30) |

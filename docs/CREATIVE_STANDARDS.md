@@ -52,16 +52,23 @@ stack, caption, audio label and call-to-action at the bottom. Since Meta
 unified Facebook and Instagram Stories and Reels onto one 9:16 safe zone, the
 same box applies to all four placements.
 
-**On sourcing, precisely.** These three figures are consistent across Meta's
-published ad specs and every current secondary reference to them. Meta's own
-Business Help Center article on text overlays and safe zones for Stories and
-Reels (`facebook.com/business/help/980593475366490`) is the primary source, and
-it is login-gated - so this document does **not** quote it verbatim, and no
-sentence here should be attributed to Meta as published wording. Treat the
-numbers as this project's configured conservative margins, chosen to match the
-platform standard. The reasoning the layout actually depends on - keep every
-key element out of the bands the UI occupies - holds regardless of whether the
-true figure is 35% or 33%.
+**On sourcing, precisely.** An earlier version of this document said the primary
+source was login-gated and refused to quote it. That was wrong. Meta publishes
+the figures on its open Ads Guide page for the Instagram Reels image placement
+(`facebook.com/business/ads-guide/update/image/instagram-reels`), verified
+2026-08-30, and the wording is:
+
+> "Consider leaving roughly 14% of the top, 35% of the bottom, and 6% on each
+> side of your asset free from text, logos, or other key creative elements to
+> avoid cropping key elements or covering them with the profile icon or
+> call-to-action."
+
+Two things follow from the exact wording, and both matter to this pipeline.
+The rule governs **text, logos and other key creative elements**, not the
+photograph, which is why the hero is full-bleed and only the copy is
+constrained. And it says **roughly**, so these are the platform's own stated
+margins used as a conservative box, not a threshold anyone should treat as
+exact.
 
 For 1080 × 1920 that is:
 
