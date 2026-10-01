@@ -74,8 +74,8 @@ adapter, rather than six.
 
 Source: ai.google.dev/gemini-api/docs/pricing, verified 2026-08-28.
 
-- It is **self-serve**. An evaluator can provision a key in minutes, which
-  matters more than a couple of Elo points when the deliverable has to run on
+- It is **self-serve**. Someone running this can provision a key in minutes,
+  which matters more than a couple of Elo points when the project has to run on
   someone else's machine. Billing must be enabled - no Gemini image model has a
   free tier (verified 2026-08-28).
 - It accepts a **reference image**, which is the capability this pipeline
@@ -130,8 +130,8 @@ mechanism on Image 5 needs an entitled account this project does not have.
 ## Models deliberately not integrated
 
 FLUX, Ideogram, Midjourney, Runway, Kling, Veo, Seedance - all credible, none
-integrated. Adding direct adapters would mean more keys for an evaluator, more
-surface to defend, and no new capability the assignment asks for. The
+integrated. Adding direct adapters would mean more keys for anyone running it,
+more surface to defend, and no new capability the requirements ask for. The
 `HeroGenerator` interface is thirty lines; any of them is a one-file addition
 when a customer's governance actually calls for it.
 
@@ -139,7 +139,7 @@ when a customer's governance actually calls for it.
 
 ## The model we run is the model that was recommended
 
-An advisor reviewing this project said the output "doesn't feel like the latest
+Early feedback on this project said the output "doesn't feel like the latest
 nano banana hotness". Worth checking rather than assuming, because it turns out
 to be the same model:
 
@@ -178,7 +178,7 @@ looking is separated from the price of delivering.
 2K is not optional for what ships. Every format is a centre crop of one square
 hero and 9:16 needs 1080x1920 out of it, so a 1K source is upscaled about 1.9x
 and goes soft. Preview mode does not pretend otherwise: the report says
-`preview` and `assignmentProof` fails on it, exactly as it does for the offline
+`preview` and `requirementsProof` fails on it, exactly as it does for the offline
 renderer.
 
 ### Cheaper tiers that exist, and why they are not the default
@@ -250,7 +250,7 @@ That is the ordering worth remembering: the model was never the constraint.
 
 ## Why the cheap model cannot be the shipping model
 
-The client in this exercise is a global consumer goods company. What a brand's
+The target user is a global consumer goods company. What a brand's
 legal team asks about generated imagery is not "how good is it" but "what
 happens if someone claims it infringes".
 

@@ -52,8 +52,8 @@ const seconds = (report.durationMs / 1000).toFixed(1);
 const cost = report.estimatedCostUsd?.totalUsd.toFixed(3);
 const perCreative = report.successMetrics.efficiency.secondsPerCreative.toFixed(2);
 const creatives = String(report.metrics.variantsCreated);
-const passedChecks = report.assignmentProof.checks.filter((c) => c.passed).length;
-// The three the recruiter FAQ names by name: time saved, campaigns generated,
+const passedChecks = report.requirementsProof.checks.filter((c) => c.passed).length;
+// The three success metrics: time saved, campaigns generated,
 // overall efficiency. They are on the microsite now, so they are pinned like
 // everything else on it.
 const saved = report.successMetrics.timeSaved;
@@ -103,10 +103,10 @@ const CLAIMS: { where: string; doc: string; pattern: RegExp; expected: string }[
     expected: perCreative,
   },
   {
-    where: "README requirements traceability - assignmentProof check count",
+    where: "README requirements traceability - requirementsProof check count",
     doc: readme,
     pattern: /own records - (\w+) checks over what the run actually wrote/,
-    expected: numberWord(report.assignmentProof.checks.length),
+    expected: numberWord(report.requirementsProof.checks.length),
   },
   {
     where: "microsite business metrics - time saved",
@@ -174,9 +174,9 @@ const CLAIMS: { where: string; doc: string; pattern: RegExp; expected: string }[
     pattern: /<strong>\d+ creatives in [\d.]+ seconds for \$([\d.]+)<\/strong>/,
     expected: String(cost),
   },
-  // The stat strip is the first thing a reviewer reads and it carried none of
+  // The stat strip is the first thing a reader sees and it carried none of
   // this. One of its tiles said "24/24 checks passed", which is the creative
-  // validation rate wearing the word the assignment proof owns - the same
+  // validation rate wearing the word the requirements proof owns - the same
   // label-broader-than-measurement defect this repo keeps finding. Both
   // numbers are here now so neither can drift and neither can borrow the
   // other's meaning.
@@ -217,10 +217,10 @@ const CLAIMS: { where: string; doc: string; pattern: RegExp; expected: string }[
     expected: `${report.metrics.validationPassed}/${report.metrics.variantsCreated}`,
   },
   {
-    where: "microsite stat strip - assignment proof",
+    where: "microsite stat strip - requirements proof",
     doc: microsite,
-    pattern: /<span class="v">([\d/]+)<\/span><span class="l">Assignment proof[^<]*<\/span>/,
-    expected: `${passedChecks}/${report.assignmentProof.checks.length}`,
+    pattern: /<span class="v">([\d/]+)<\/span><span class="l">Requirements proof[^<]*<\/span>/,
+    expected: `${passedChecks}/${report.requirementsProof.checks.length}`,
   },
 ];
 
@@ -264,7 +264,7 @@ describe("published figures", () => {
     expect(report.metrics.liveHeroGenerations).toBeGreaterThan(0);
     expect(report.metrics.heroesFromCache).toBe(0);
     expect(report.metrics.heroesPlaceholder).toBe(0);
-    expect(report.assignmentProof.passed).toBe(true);
+    expect(report.requirementsProof.passed).toBe(true);
     expect(report.metrics.validationFailed).toBe(0);
   });
 

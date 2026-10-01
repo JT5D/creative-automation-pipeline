@@ -6,7 +6,7 @@ import { crc32 } from "node:zlib";
  * The campaign as one download.
  *
  * A producer collects a campaign, not one PNG at a time. Zip is the only
- * container a reviewer on any desktop platform opens by double-clicking, and
+ * container anyone on any desktop platform opens by double-clicking, and
  * it is worth fifty lines rather than a dependency plus a licence plus a
  * supply-chain question.
  *

@@ -132,7 +132,7 @@ Per-image output pricing, ai.google.dev/gemini-api/docs/pricing, verified
 
 Because the pipeline makes exactly **one** generation call per missing hero,
 the frontier model costs about three cents more per campaign than the flash
-tier - and that single image is the one thing a reviewer actually looks at.
+tier - and that single image is the one thing a viewer actually looks at.
 
 That is the whole cost strategy: spend at the point of visible quality, and
 save everywhere the work is deterministic.
@@ -180,12 +180,11 @@ output is real.** The bug was only visible by opening the PNG.
 
 ## 6. Aspect ratios
 
-1:1 (1080²), 9:16 (1080 × 1920) and 16:9 (1920 × 1080), as the assessment FAQ
-specifies: "Standard social media formats (e.g., Instagram 1:1, Stories 9:16,
-Facebook 16:9) are recommended."
+1:1 (1080²), 9:16 (1080 × 1920) and 16:9 (1920 × 1080), the standard social
+formats: Instagram feed, Stories and Facebook landscape.
 
 Meta's Stories page lists 1440 × 2560 as its recommended 9:16 resolution. The
-pipeline exports 1080 × 1920 because that is what the assignment names; the
+pipeline exports 1080 × 1920 because that is the baseline requirement; the
 templates derive every position from the canvas size, so raising the export
 resolution is a change to the `RATIOS` constant alone.
 

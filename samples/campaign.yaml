@@ -16,7 +16,7 @@ toneOfVoice: Calm, clinical, warm. Understated luxury - never hype.
 # SUCCESS - the documented baseline for the "time saved" figure in report.json.
 #
 # Itemised on purpose. A single "25 minutes per creative" carries the whole
-# time-saved claim and tells a reviewer nothing about whether it is credible,
+# time-saved claim and tells a reader nothing about whether it is credible,
 # so the client states the steps and the pipeline adds them up. These are the
 # client's own assumptions about their current process; nothing here is
 # measured by this tool, and every figure derived from it is labelled an

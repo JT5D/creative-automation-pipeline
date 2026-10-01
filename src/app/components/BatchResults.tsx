@@ -7,8 +7,8 @@ import { Results, type Selection } from "./Results.js";
 /**
  * Several campaigns as one job.
  *
- * The exercise opens with a client launching hundreds of localized campaigns a
- * month. Twenty-four creatives from one brief does not show that; a list of
+ * The target user launches hundreds of localized campaigns a month.
+ * Twenty-four creatives from one brief does not show that; a list of
  * campaigns that all ran from one click does.
  *
  * Rows collapse to a line each, because the point of the view is the count and

@@ -24,11 +24,11 @@ export type { PipelineEvent } from "../pipeline.js";
 export type { ModelOption } from "../pricing.js";
 export type { ProviderStatus } from "../providers/index.js";
 export type {
-  AssignmentCheck,
   CampaignReport,
   CreativeRecord as Creative,
   ProductFailure,
   ProductRecord,
+  RequirementCheck,
 } from "../report.js";
 export type {
   CanonicalHeroAsset as Hero,

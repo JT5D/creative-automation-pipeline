@@ -25,7 +25,7 @@ const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"
  *
  * The pipeline makes exactly ONE generation call per missing hero, so the
  * premium model costs $0.134 against $0.101 for the flash tier -- about three
- * cents per campaign -- and that single image is the one thing a reviewer
+ * cents per campaign -- and that single image is the one thing a viewer
  * actually looks at. Spending at the point of visible quality and saving on
  * the deterministic transforms is the whole cost strategy.
  *

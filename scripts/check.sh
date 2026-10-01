@@ -39,7 +39,7 @@ if git ls-files | grep -qE '^(outputs/|node_modules/|dist/|\.cache/|\.baseline-r
   fail "build output or dependencies are tracked"
 fi
 # A run artifact is only a problem where it was produced. docs/sample-output/
-# holds one on purpose, so a reviewer can see a real result without cloning.
+# holds one on purpose, so a reader can see a real result without cloning.
 if git ls-files | grep -vE '^docs/sample-output/' | grep -qE '(^|/)(report\.json|runs\.jsonl)$'; then
   fail "a generated run artifact is tracked outside docs/sample-output/"
 fi

@@ -44,7 +44,7 @@ export type ComposedCreative = {
   /**
    * Share of the finished creative painted in the brand's accent colour.
    *
-   * The exercise names "use of brand colors" as a brand check, and the only
+   * Use of brand colours is one of the two named brand checks, and the only
    * thing measuring it was `isHex()` on the brief - which proves the marketer
    * typed a colour, not that the colour reached a pixel. Measured on the FINAL
    * composite rather than the text layer on purpose: the accent is always

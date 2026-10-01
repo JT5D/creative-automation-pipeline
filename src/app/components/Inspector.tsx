@@ -10,7 +10,7 @@ import type { Creative, ProductRecord } from "../types.js";
  *
  * There is no Approve or Regenerate control. The repo has no approval store,
  * and a button that silently does nothing is worse than an absent one: a
- * reviewer will click it. Sign-off is named as the human step it is.
+ * person will click it. Sign-off is named as the human step it is.
  */
 export function Inspector({
   creative: c,

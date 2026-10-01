@@ -14,8 +14,8 @@ import { preflight } from "../src/validation.js";
 /**
  * The proof has to be able to say no.
  *
- * `report.json -> assignmentProof` is the headline claim of this submission:
- * eleven checks that assert the exercise's own requirements off the records the
+ * `report.json -> requirementsProof` is the headline claim of this project:
+ * eleven checks that assert the baseline requirements off the records the
  * run produced. A check that cannot go red asserts nothing, and this repo has
  * shipped two of those already -- one green over a palette-quantised creative
  * for forty-one tests, one green with the guard it tested deleted.
@@ -84,7 +84,7 @@ function reportFrom(
 
 const clone = (): ProductRecord[] => structuredClone(baseline.products);
 const check = (report: CampaignReport, id: string) =>
-  report.assignmentProof.checks.find((c) => c.id === id);
+  report.requirementsProof.checks.find((c) => c.id === id);
 
 /**
  * The named check must go red, and nothing else may -- otherwise the case
@@ -98,8 +98,8 @@ const check = (report: CampaignReport, id: string) =>
  */
 function onlyFailure(report: CampaignReport, id: string, alsoExpected: string[] = []) {
   expect(check(report, id)?.passed, `${id} should have gone red`).toBe(false);
-  expect(report.assignmentProof.passed).toBe(false);
-  const others = report.assignmentProof.checks
+  expect(report.requirementsProof.passed).toBe(false);
+  const others = report.requirementsProof.checks
     .filter((c) => c.id !== id && !c.passed)
     .map((c) => c.id);
   expect(others.sort()).toEqual([...alsoExpected].sort());
@@ -134,10 +134,10 @@ afterAll(async () => {
   await rm(workdir, { recursive: true, force: true });
 });
 
-describe("assignmentProof, one corruption per check", () => {
+describe("requirementsProof, one corruption per check", () => {
   it("passes all eleven on an undamaged run, so every case below starts from green", () => {
-    expect(baseline.assignmentProof.checks).toHaveLength(11);
-    expect(baseline.assignmentProof.passed).toBe(true);
+    expect(baseline.requirementsProof.checks).toHaveLength(11);
+    expect(baseline.requirementsProof.passed).toBe(true);
   });
 
   it("minimum_products: goes red on a one-product brief", () => {
@@ -155,7 +155,7 @@ describe("assignmentProof, one corruption per check", () => {
       "required_ratio_9x16",
       "required_ratio_16x9",
       // product-b is the one with no approved hero, so it is also the run's
-      // only live generation. Dropping it removes the exercise's evidence.
+      // only live generation. Dropping it removes the GenAI evidence.
       "real_genai_demonstrated",
     ]);
   });
@@ -199,7 +199,7 @@ describe("assignmentProof, one corruption per check", () => {
 
   it("no_placeholder_output: goes red on a real run served by the offline renderer", async () => {
     // Not a mutated record: the offline renderer actually produces these files.
-    // This is the exercise's hard requirement -- a missing asset must come from
+    // This is the hard requirement -- a missing asset must come from
     // a GenAI model -- and the failure it guards is a run that looks compliant
     // because the placeholder is competent.
     const report = await runCampaign(parseBrief(briefYaml()), {
@@ -209,7 +209,7 @@ describe("assignmentProof, one corruption per check", () => {
     });
     expect(check(report, "no_placeholder_output")?.passed).toBe(false);
     expect(check(report, "real_genai_demonstrated")?.passed).toBe(false);
-    expect(report.assignmentProof.passed).toBe(false);
+    expect(report.requirementsProof.passed).toBe(false);
   }, 120_000);
 
   it("campaign_message_rasterized: goes red when the headline is not legible in the pixels", () => {
@@ -238,9 +238,9 @@ describe("assignmentProof, one corruption per check", () => {
 
 describe("the gates upstream of the proof", () => {
   it("a prohibited claim stops the run before a credit is spent", async () => {
-    // There is no assignmentProof case for legal copy because a brief carrying
+    // There is no requirementsProof case for legal copy because a brief carrying
     // one never reaches a report: preflight refuses it, which is the stronger
-    // outcome and the reason the bonus check is worth having.
+    // outcome and the reason the legal check is worth having.
     const result = await preflight(
       parseBrief(briefYaml().replace("name: Overnight Cream", "name: Miracle Cure Cream")),
     );

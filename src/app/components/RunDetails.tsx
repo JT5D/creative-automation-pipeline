@@ -14,7 +14,7 @@ import { Timeline } from "./Timeline.js";
  * Collapsed by default, and that is the design decision worth defending: an
  * operator must never need to open this to know whether the run succeeded --
  * the delivery banner already said so. What lives here is evidence for when
- * the answer is disputed: the event stream, the eleven assignment checks the
+ * the answer is disputed: the event stream, the eleven requirement checks the
  * run asserted about itself, and the reuse rate across every run on this
  * machine.
  */
@@ -30,7 +30,7 @@ export function RunDetails({
   insights: InsightsData | null;
 }) {
   const [open, setOpen] = useState(false);
-  const proof = report?.assignmentProof;
+  const proof = report?.requirementsProof;
 
   const summary = report
     ? `${report.products.length} products · ${(report.durationMs / 1000).toFixed(1)}s · ` +
@@ -58,7 +58,7 @@ export function RunDetails({
           {proof && (
             <div>
               <span className="insp-label">
-                Assignment proof - asserted by the run, not by this panel
+                Requirements proof - asserted by the run, not by this panel
               </span>
               <ul className="checks">
                 {proof.checks.map((c) => (

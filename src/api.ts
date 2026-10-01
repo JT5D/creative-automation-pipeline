@@ -52,7 +52,7 @@ export type BatchCampaign = {
 /**
  * POST /api/batches, GET /api/batches/:id.
  *
- * The client in this exercise launches hundreds of localized campaigns a month,
+ * The target user launches hundreds of localized campaigns a month,
  * and a console that runs one campaign does not show that shape. This is the
  * same runCampaign() in a loop - scale here is a loop, not an architecture -
  * and it runs them SEQUENTIALLY on purpose: every campaign in a batch can spend
@@ -70,7 +70,7 @@ export type BatchState = {
 export type BriefSummary = {
   file: string;
   label: string;
-  /** What a reviewer learns from running this one. */
+  /** What someone learns from running this one. */
   teaches: string;
   /** What it should produce, asserted by a test against the real run. */
   expect: string;
@@ -94,7 +94,7 @@ export type FormatOption = {
   label: string;
   width: number;
   height: number;
-  /** One of the three the exercise names. Selected by default. */
+  /** One of the three baseline formats. Selected by default. */
   required: boolean;
 };
 

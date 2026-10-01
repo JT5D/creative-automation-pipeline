@@ -145,7 +145,7 @@
     "look": "daylight",
     "overriddenSlots": []
   },
-  "assignmentProof": {
+  "requirementsProof": {
     "passed": true,
     "checks": [
       {

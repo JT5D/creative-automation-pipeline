@@ -213,7 +213,7 @@ export const CampaignBriefSchema = z
     products: z.array(ProductSchema).min(2, "A campaign needs at least 2 products"),
   })
   /**
-   * "at least two DIFFERENT products" is the exercise's wording, so identity is
+   * The products must be different, not merely two of them, so identity is
    * enforced, not just the count. Two ids that sanitize to the same directory
    * ("Product A!" and "Product A?") write to the same folder and the second
    * overwrites the first: 8 creatives reported over 4 files, every validation
@@ -311,7 +311,7 @@ export type CanonicalHeroAsset = {
  * Three of the four are the same numbers Adobe ships as presets in Firefly
  * Creative Production (checked in the product, 2026-08-30): Instagram Post &
  * Carousel 1080x1080, Ad & Portrait post 1080x1350, Stories & Reels and TikTok
- * both 1080x1920. 16:9 is the exercise's own third ratio.
+ * both 1080x1920. 16:9 is the third baseline ratio.
  */
 export const RATIOS = {
   "1x1": { width: 1080, height: 1080, label: "1:1 · Feed" },
@@ -323,10 +323,9 @@ export const RATIOS = {
 export type RatioKey = keyof typeof RATIOS;
 
 /**
- * The three the exercise names: "at least three aspect ratios (e.g., 1:1,
- * 9:16, 16:9)". 4:5 is delivered as well because it is the highest-performing
+ * The three baseline aspect ratios: 1:1, 9:16 and 16:9. 4:5 is delivered as well because it is the highest-performing
  * feed format, but only these three are load-bearing for compliance, and
- * `assignmentProof` in the report checks for exactly them.
+ * `requirementsProof` in the report checks for exactly them.
  */
 export const REQUIRED_RATIOS: RatioKey[] = ["1x1", "9x16", "16x9"];
 

@@ -24,7 +24,7 @@ export function App() {
   /**
    * The campaigns this run will produce.
    *
-   * The exercise's client launches hundreds of localized campaigns a month, so
+   * The target user launches hundreds of localized campaigns a month, so
    * the console takes a list rather than one brief. One selected behaves
    * exactly as it always has; more than one runs them as a batch, each with its
    * own full scope, which is what `npm run campaign -- --all` does.
@@ -130,9 +130,9 @@ export function App() {
         setLibrary(data.briefs);
         setProvider(data.provider);
         setFormats(data.formats);
-        // Default to exactly the formats the exercise asks for. 4:5 is one
-        // click away and demonstrates that scale is free -- but the first run a
-        // reviewer does should be unambiguously the assignment.
+        // Default to exactly the baseline formats. 4:5 is one click away and
+        // demonstrates that scale is free -- but a first-time user's first run
+        // should be unambiguously the baseline.
         setSelectedFormats(data.formats.filter((f) => f.required).map((f) => f.key));
         setModels(data.models.models);
         setPreviewModel(data.models.preview ?? null);
@@ -186,8 +186,8 @@ export function App() {
   }, [brief]);
 
   // One market by default -- the first in the brief, which is the English one.
-  // The exercise requires the message in English at minimum; the other markets
-  // are the localization bonus and cost nothing to add.
+  // The baseline requires the message in English at minimum; the other markets
+  // are optional localization and cost nothing to add.
   useEffect(() => {
     setSelectedLocales(locales.slice(0, 1));
   }, [locales]);
@@ -310,7 +310,7 @@ export function App() {
          * dry run and the delivery banner put the first creative 1,141px down a
          * 900px screen, so a creative director opened this and saw controls.
          * Beside the work instead, every panel says exactly what it said before
-         * and none of them is between the reviewer and the pictures.
+         * and none of them is between the viewer and the pictures.
          */}
         <aside className="rail-col">
           <CampaignStrip

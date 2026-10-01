@@ -5,8 +5,8 @@ import type { GeneratedHero, HeroGenerator, HeroRequest } from "./types.js";
  * Deterministic offline hero renderer. Calls nothing, costs nothing.
  *
  * This exists so the repo runs on a machine that has just cloned it, with no
- * account and no API key -- which matters because the exercise asks for
- * something the interviewers can set up and run locally. It is also what the
+ * account and no API key -- which matters because anyone trying it should be
+ * able to set it up and run it locally. It is also what the
  * test suite uses, so CI never touches a paid endpoint.
  *
  * It is NOT presented as generative output anywhere. Assets it produces carry

@@ -77,9 +77,8 @@ documented legacy path.
 
 `src/providers/firefly.ts` is implemented against Adobe's published contract.
 **It has not been run against a live endpoint.** Firefly Services requires an
-enterprise entitlement on Adobe Developer Console, and the assessment FAQ
-states that no keys are provided ("You may use any third-party tool and
-available API keys. No specific keys are provided.").
+enterprise entitlement on Adobe Developer Console, which this project does
+not hold.
 
 It ships anyway because it makes the provider seam concrete rather than
 theoretical: set the two Firefly variables plus `IMAGE_PROVIDER=firefly` and it

@@ -11,8 +11,8 @@ import type { CampaignReport } from "../types.js";
  * has to count warnings, or the label is broader than the measurement.
  *
  * The verdict answers the operator's question -- is this work finished, and by
- * whom -- and deliberately not `assignmentProof.passed`, which answers whether
- * this run demonstrated every requirement the exercise names. The two come
+ * whom -- and deliberately not `requirementsProof.passed`, which answers whether
+ * this run demonstrated every baseline requirement. The two come
  * apart whenever a hero is served from cache. The proof is reported underneath,
  * unchanged and just as strict.
  */
@@ -25,7 +25,7 @@ export function DeliveryBanner({
   restored?: boolean;
 }) {
   const m = report.metrics;
-  const proof = report.assignmentProof;
+  const proof = report.requirementsProof;
   const failedProof = proof.checks.filter((c) => !c.passed);
 
   // A hero this run did not take from an already-approved asset is new creative
@@ -33,7 +33,7 @@ export function DeliveryBanner({
   const review = report.products.filter((p) => p.hero.source !== "reused").length;
   const blocked = m.validationFailed > 0 || report.failures.length > 0;
 
-  // The three metrics the assessment names are time saved, campaigns generated
+  // The three success metrics are time saved, campaigns generated
   // and efficiency. Two of them were only reachable by opening report.json.
   const saved = report.successMetrics?.timeSaved;
   const state = blocked ? "no" : review > 0 ? "review" : "ok";
@@ -72,7 +72,7 @@ export function DeliveryBanner({
           )}
           {!proof.passed && (
             <span className="verdict-proof">
-              Assignment proof {proof.checks.length - failedProof.length}/{proof.checks.length} -{" "}
+              Requirements proof {proof.checks.length - failedProof.length}/{proof.checks.length} -{" "}
               {failedProof[0]?.message}
             </span>
           )}
@@ -105,7 +105,7 @@ export function DeliveryBanner({
          * measured: they are the brief's own stated baseline multiplied out.
          * "estimated" is doing real work in these two labels, and it is the
          * difference between a figure this pipeline observed and an assumption
-         * the client supplied. This is the screen a reviewer photographs.
+         * the client supplied. This is the screen people screenshot.
          */}
         {saved && <Cell v={fmtHours(saved.minutes)} k="studio time saved (est.)" good />}
         {saved?.usd !== undefined && (

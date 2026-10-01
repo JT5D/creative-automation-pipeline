@@ -12,7 +12,7 @@ import {
  * Adobe Firefly Services - Image Model 5.
  *
  * NOT EXECUTED against a live endpoint: Firefly Services needs an enterprise
- * entitlement I do not hold, and the FAQ states no keys are provided. It ships
+ * entitlement I do not hold. It ships
  * because it makes the provider seam concrete -- swapping Gemini for Firefly is
  * this file plus two environment variables, and nothing downstream of the
  * canonical hero moves. It is never selected by accident: IMAGE_PROVIDER=firefly
@@ -110,12 +110,12 @@ export class FireflyHeroGenerator implements HeroGenerator {
           // Square canonical hero. Every channel format is cut from this one
           // asset locally, so we never pay per ratio.
           aspectRatio: "1:1",
-          numVariations: 1, // Cost control: never fan out candidates.
+          numVariations: 1, // Cost control: never fan out variations.
           // Empty = pure generation. Populated, this is the Object Composite
           // path that would carry an approved packshot.
           referenceBlobs: [],
           // Image5's own quality lever. A campaign hero is the one image a
-          // reviewer actually looks at, so it is the right place to spend it.
+          // viewer actually looks at, so it is the right place to spend it.
           modelSpecificPayload: { prompt_reasoner: "quality" },
         }),
       },

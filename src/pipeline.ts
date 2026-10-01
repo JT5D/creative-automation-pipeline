@@ -56,7 +56,7 @@ export type RunOptions = {
    *
    * A preview is never the deliverable and does not pretend to be: 9:16 needs
    * 1080x1920 out of a square hero, so a 1K source is upscaled about 1.9x and
-   * goes soft. The report says `preview`, and assignmentProof fails, for the
+   * goes soft. The report says `preview`, and requirementsProof fails, for the
    * same reason the offline renderer does.
    */
   preview?: boolean;
@@ -156,8 +156,8 @@ export async function runCampaign(
    * A run that overrides the look gets its own folder, so two looks of the same
    * brief cannot overwrite each other.
    *
-   * Market-level art direction is how business goal 3 - "adapt messaging,
-   * offers and CREATIVE to resonate with local cultures" - is reached here:
+   * Market-level art direction is how business goal 3 - adapting message,
+   * offers and creative to each market's culture - is reached here:
    * select the markets, pick a look, run. Suffixed only when the look is
    * overridden, so the default path stays one hero, every market, one folder.
    */
@@ -261,7 +261,7 @@ export async function runCampaign(
         hero: {
           ...hero,
           // Everything published is relative: report.json has to be readable
-          // on a reviewer's machine, and an absolute path is both useless
+          // on anyone's machine, and an absolute path is both useless
           // there and a small privacy leak.
           localPath: path.relative(outputRoot, heroCopy),
           sourceAssetPath: hero.sourceAssetPath && portablePath(hero.sourceAssetPath),

@@ -64,7 +64,7 @@ app.get("/api/campaigns/:id/archive", async (req, res) => {
  * None of these takes an argument or changes between calls -- they are the
  * catalogues the UI renders from, plus whichever run is already on disk.
  * Serving them together gives the console one thing that can fail instead of
- * six, and a reviewer reading server.ts one bootstrap rather than a count of
+ * six, and a reader of server.ts one bootstrap rather than a count of
  * endpoints.
  *
  * `insights` also has its own route below, because it is the only member of
@@ -76,15 +76,15 @@ app.get("/api/console", async (_req, res) => {
     label: RATIOS[key].label,
     width: RATIOS[key].width,
     height: RATIOS[key].height,
-    // The exercise's own list, not a UI preference: the console defaults to
-    // exactly the formats the assignment asks for, and 4:5 is an opt-in
+    // The baseline list, not a UI preference: the console defaults to
+    // exactly the formats the requirements name, and 4:5 is an opt-in
     // demonstration that scale is free.
     required: REQUIRED_RATIOS.includes(key),
   }));
 
   res.json({
     provider: providerStatus(),
-    // The sample library, so a reviewer can see more than the flattering case.
+    // The sample library, so a user can see more than the flattering case.
     briefs: await readBriefLibrary(),
     // Model choices with published prices, so the picker cannot invent a number.
     models: { models: MODEL_OPTIONS, source: PRICING_SOURCE, preview: PREVIEW_MODEL },
@@ -121,7 +121,7 @@ app.get("/api/briefs/:file", async (req, res) => {
 });
 
 /**
- * Accept an approved asset the way the brief's data sources describe it:
+ * Accept an approved asset the way the user-input data source describes it:
  * a person supplying a file by hand.
  *
  * This is the reuse mechanism made visible. Drop an approved hero in for a
@@ -423,9 +423,8 @@ app.post("/api/runs", async (req, res) => {
 /**
  * Run several campaigns as one job.
  *
- * The exercise opens with a client "launching hundreds of localized social ad
- * campaigns monthly", and its first pain point is producing those variants at
- * that volume. A console that runs one campaign at a time does not show the
+ * The target user launches hundreds of localized social ad campaigns a month,
+ * and the first pain point is producing those variants at that volume. A console that runs one campaign at a time does not show the
  * shape of that problem, so this takes a list.
  *
  * Sequential, deliberately. Each campaign can spend money, and running them
@@ -506,8 +505,8 @@ app.get("/api/runs/:runId", (req, res) => {
 /**
  * Loopback only. This is a single-user local tool that holds a billing-enabled
  * API key in memory; there is no reason for it to answer the network, and the
- * proportional hardening for a local take-home is one argument, not an auth
- * system. (The FAQ is explicit that deployment security is not required.)
+ * proportional hardening for a local proof of concept is one argument, not an
+ * auth system.
  */
 /**
  * Exported so the routes can be driven without a port, and listening only when

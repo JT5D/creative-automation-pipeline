@@ -90,7 +90,7 @@ export async function resolveHero(
     }
   }
 
-  // The assignment's hard requirement is that a MISSING asset is produced by a
+  // The hard requirement is that a MISSING asset is produced by a
   // real GenAI image model. The offline renderer exists so a fresh clone runs
   // without an account -- it is not a generator, and letting it serve this
   // branch in `final` would produce a run that looks compliant and is not.

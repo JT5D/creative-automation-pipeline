@@ -1319,7 +1319,7 @@ body {
   margin: 4px 0 0;
 }
 
-/* The assignment proof is a real answer to a real question, just not the
+/* The requirements proof is a real answer to a real question, just not the
    headline one, so it sits under the verdict rather than replacing it. */
 .verdict-proof {
   font-size: 12px;
@@ -1336,7 +1336,7 @@ body {
 /*
  * The Firefly hand-off, kept out of the focal point.
  *
- * An unexecuted adapter should say so where a reviewer sees it, so the sentence
+ * An unexecuted adapter should say so where a user sees it, so the sentence
  * stays. It sits under the controls, full width and quiet, as a footnote to the
  * provider rather than a control competing with the primary action.
  */
@@ -1390,7 +1390,7 @@ body {
 }
 
 /* The resolved art direction, and the exact prompt a paid call would send.
-   Collapsed, because it is four hundred words and it is not what a reviewer
+   Collapsed, because it is four hundred words and it is not what anyone
    reads first - but one disclosure away, because it is what the money buys. */
 .est-art {
   margin-top: 12px;
@@ -1623,7 +1623,7 @@ body {
   color: var(--text-2);
 }
 
-/* Campaign multi-select. The client launches hundreds a month; a dropdown that
+/* Campaign multi-select. The target user launches hundreds a month; a dropdown that
    holds one of them cannot express that. */
 .briefs {
   display: flex;
@@ -1634,7 +1634,7 @@ body {
   margin: 0 -7px;
 }
 /* One row each, with what it produces under the name. Wrapped in two ragged
-   columns these read as a debug form; the campaign a reviewer is about to run
+   columns these read as a debug form; the campaign a user is about to run
    should look like a choice, and what it costs should be legible from the
    list. */
 .briefs label {

@@ -187,7 +187,7 @@ function baselineCheck(brief: CampaignBrief): ValidationCheck | null {
  * the ink check counts opaque pixels and a row of tofu is opaque, so the
  * creative would ship looking broken with every check green.
  *
- * A failure rather than a warning, because the exercise requires the campaign
+ * A failure rather than a warning, because the requirements put the campaign
  * message ON the post and a row of boxes is not that message. Runs before any
  * generation, so refusing costs nothing. Names the market and the characters,
  * so the fix is to add the face to assets/fonts and set brand.headlineFont.
@@ -280,7 +280,7 @@ const dimensionsCheck: CreativeCheck = ({ rendered, ratio }) => {
  * It measures the HEADLINE layer specifically. Measured against the combined
  * text layer, a creative that drew only its CTA and disclaimer would have
  * passed a check whose name claims the campaign message is present -- which is
- * the requirement the exercise is most explicit about.
+ * the most explicit requirement of all.
  */
 const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
   const ok = rendered.headlineInkRatio >= MIN_INK_RATIO;
@@ -297,10 +297,10 @@ const messageRenderedCheck: CreativeCheck = ({ rendered }) => {
  * A truncated campaign message is a failure, not a warning.
  *
  * The compositor truncates rather than shrink below the legibility floor, which
- * is the right trade -- but the exercise requires the campaign message to be
+ * is the right trade -- but the campaign message is required to be
  * displayed on the final post, and half a headline is not that message. Nobody
  * ships an ad with the headline cut off, so this fails rather than warns. A
- * warning would roll the creative up to "warning", and `assignmentProof` would
+ * warning would roll the creative up to "warning", and `requirementsProof` would
  * stay green over a violated requirement.
  *
  * The remedy is in the operator's hands and the message says so.
@@ -338,7 +338,7 @@ const contrastCheck: CreativeCheck = ({ brief, rendered }) => {
 };
 
 /**
- * Presence of logo, which is the exercise's own example of a brand check.
+ * Presence of logo, the first of the two named brand checks.
  *
  * Never returns null. A check that disappears when a brief names no logoPath
  * reads as a passed check in every count that matters -- 16 of 16, from a suite
@@ -439,14 +439,14 @@ const prohibitedTermsCheck: CreativeCheck = ({ brief, rendered, market }) => {
 };
 
 /**
- * The exercise's second named brand check: "use of brand colors".
+ * The second named brand check: use of brand colours.
  *
  * Measured off the finished creative, not off the brief. The accent carries the
  * rule above the headline and the CTA pill, so if it is absent from the pixels
  * the brand's own colour did not reach the post - whatever the brief said.
  *
  * The floor is deliberately tiny. This asks whether the brand colour is present
- * at all, which is what the exercise names; it is not a proportion-of-palette
+ * at all, which is what the check names; it is not a proportion-of-palette
  * rule, and inventing a threshold for how much gold an ad should contain would
  * be a number with nothing behind it.
  */
@@ -461,7 +461,7 @@ const brandColorCheck: CreativeCheck = ({ brief, rendered }) => {
   };
 };
 
-/** Order here is the order a reviewer reads them in. */
+/** Order here is the order a person reads them in. */
 const CREATIVE_CHECKS: CreativeCheck[] = [
   dimensionsCheck,
   messageRenderedCheck,

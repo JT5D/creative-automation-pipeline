@@ -47,8 +47,8 @@ export type ProductRecord = {
   socialCopy: SocialCopy[];
 };
 
-/** One machine-checkable assignment requirement, answered from real records. */
-export type AssignmentCheck = { id: string; passed: boolean; message: string };
+/** One machine-checkable baseline requirement, answered from real records. */
+export type RequirementCheck = { id: string; passed: boolean; message: string };
 
 export type CampaignReport = {
   campaignId: string;
@@ -79,12 +79,12 @@ export type CampaignReport = {
     liveHeroGenerations: number;
   };
   /**
-   * The three metrics the assessment FAQ names when asked what matters most:
-   * "time saved, number of campaigns generated, and overall efficiency."
-   * Reported together, in that language, rather than left for a reader to
+   * The three success metrics that matter most: time saved, number of
+   * campaigns generated, and overall efficiency. Reported together, in that
+   * language, rather than left for a reader to
    * assemble from the raw counters above, and shown in the console.
    *
-   * Against the brief's business goals: time saved and campaigns generated are
+   * Against the README's business goals: time saved and campaigns generated are
    * goal 1 (campaign velocity); efficiency is the cost half of goal 4 (ROI).
    * The other half of goal 4 -- CTR and conversions -- is deliberately absent.
    * This pipeline never publishes, so it cannot measure them, and a fabricated
@@ -112,7 +112,7 @@ export type CampaignReport = {
     };
   };
   /**
-   * The exercise's own minimum requirements, asserted by the run rather than
+   * The baseline requirements, asserted by the run rather than
    * claimed by the README. Every check is derived from records this run
    * actually produced -- an offline preview reports `passed: false`, because
    * it demonstrably has not met the "generate missing assets with a GenAI
@@ -126,7 +126,7 @@ export type CampaignReport = {
    * identical reports, distinguishable only by the folder they landed in.
    */
   artDirection: { look: string; overriddenSlots: string[] };
-  assignmentProof: { passed: boolean; checks: AssignmentCheck[] };
+  requirementsProof: { passed: boolean; checks: RequirementCheck[] };
   products: ProductRecord[];
   /** Products that failed. Empty on a clean run; the run still completes. */
   failures: ProductFailure[];
@@ -247,7 +247,7 @@ export function createReport(args: {
       },
     },
     artDirection: { look: art.look, overriddenSlots: art.overridden },
-    assignmentProof: proveAssignment(products, brief.products.length, mode),
+    requirementsProof: proveRequirements(products, brief.products.length, mode),
     products,
     failures,
     warnings: args.warnings,
@@ -257,7 +257,7 @@ export function createReport(args: {
 }
 
 /**
- * Answers the exercise's minimum requirements from the run's own records.
+ * Answers the baseline requirements from the run's own records.
  *
  * Deliberately small and deliberately not a compliance framework: nine facts,
  * each one countable off the products and creatives that exist on disk. It is
@@ -267,15 +267,15 @@ export function createReport(args: {
  * `requested` is the count of products the BRIEF asked for, and every coverage
  * denominator below uses it rather than the products that survived. Measuring
  * against the survivors would let a run that dropped a product still prove the
- * assignment -- a three-product brief passing on the two that worked.
+ * requirements -- a three-product brief passing on the two that worked.
  */
-function proveAssignment(
+function proveRequirements(
   products: ProductRecord[],
   requested: number,
   mode: "dev" | "final" | "preview",
 ): {
   passed: boolean;
-  checks: AssignmentCheck[];
+  checks: RequirementCheck[];
 } {
   const creatives = products.flatMap((p) => p.creatives);
   const generated = products.filter(
@@ -286,7 +286,7 @@ function proveAssignment(
   // which of the two it is beats a bare "not met".
   const cached = products.filter((p) => p.hero.source === "generated_cached");
   const placeholders = products.filter((p) => p.hero.source === "placeholder");
-  // The exercise requires the campaign message ON the post -- which means all
+  // The campaign message is required ON the post -- which means all
   // of it. Ink alone proves something drew; it does not prove the message was
   // not cut in half at the legibility floor. Both, or this check would stay
   // green over a truncated headline.
@@ -303,7 +303,7 @@ function proveAssignment(
   const failed = creatives.filter((c) => c.validation.status === "fail");
   const warned = creatives.filter((c) => c.validation.status === "warning");
 
-  const checks: AssignmentCheck[] = [
+  const checks: RequirementCheck[] = [
     {
       id: "minimum_products",
       passed: requested >= 2,

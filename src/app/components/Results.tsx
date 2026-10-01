@@ -31,8 +31,8 @@ export function Results({
   if (!report)
     return (
       /*
-       * The empty state draws the three formats the exercise names, at their
-       * real proportions, because this is the screen a reviewer opens on and a
+       * The empty state draws the three baseline formats, at their
+       * real proportions, because this is the screen a first-time user opens on and a
        * sentence in the top-left corner of 800px of black is not a first
        * impression. It also does the teaching: these shapes are what one
        * generation is about to become.
@@ -141,7 +141,7 @@ export function Results({
 const BASIS: Record<string, number> = { "1x1": 236, "4x5": 190, "9x16": 133, "16x9": 420 };
 
 /**
- * The brief names slow approval cycles as a pain point, so say plainly which
+ * Slow approval cycles are one of the pain points, so say plainly which
  * products a human still has to look at. Derived here rather than stored:
  * anything a new model produced, or anything that did not pass cleanly, needs
  * eyes. Reused approved assets that passed every check do not.

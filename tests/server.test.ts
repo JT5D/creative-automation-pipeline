@@ -7,7 +7,7 @@ import { app } from "../src/server.js";
  * The local app's HTTP surface.
  *
  * Seventeen routes had no test, and four of them spend money or write files.
- * Every test here exercises a REFUSAL or a read: nothing in this file starts a
+ * Every test here covers a REFUSAL or a read: nothing in this file starts a
  * generation, so the suite stays free to run.
  *
  * The guard paths are the ones worth holding. A route that spends money on a

@@ -7,7 +7,7 @@ import opentype from "opentype.js";
  * Typography is bundled, not borrowed.
  *
  * Rubik ships with the repo for two reasons. First, the creatives render
- * identically on any machine -- an evaluator on Linux gets the same pixels I
+ * identically on any machine -- someone on Linux gets the same pixels I
  * get on macOS, instead of whatever their fontconfig happens to fall back to.
  * Second, and more useful: because the font file is right here, line breaking
  * can read real glyph advance widths out of it rather than estimating them.

@@ -48,7 +48,7 @@ const file = args.find((a) => !a.startsWith("--")) ?? "samples/campaign.yaml";
 
 // --all runs every brief in samples/briefs.json back to back.
 //
-// The customer in the exercise launches hundreds of localized campaigns a
+// The target user launches hundreds of localized campaigns a
 // month, and a single-campaign demo does not show that shape. Nothing new is
 // built for it: it is the same runCampaign() in a loop, which is the point --
 // scale here is a loop, not an architecture. Heroes already approved cost

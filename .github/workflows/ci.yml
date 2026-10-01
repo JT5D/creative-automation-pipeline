@@ -25,10 +25,10 @@ jobs:
       # offline provider, so CI never touches a paid endpoint.
       - run: npm run check
 
-  # The experience a reviewer has with no credentials: clone, install, run, get
+  # The experience a first-time user has with no credentials: clone, install, run, get
   # real files. It asserts the OFFLINE PREVIEW semantics on purpose -- that the
   # run works, that nothing was generated, and that it does NOT claim to have
-  # met the exercise's GenAI requirement. The paid smoke run is manual, because
+  # met the GenAI generation requirement. The paid smoke run is manual, because
   # CI must never spend money.
   offline-preview-smoke:
     runs-on: ubuntu-latest
@@ -62,17 +62,17 @@ jobs:
             const m = report.metrics;
             if (!(m.heroesPlaceholder > 0)) throw new Error('expected an offline placeholder hero');
             if (m.liveHeroGenerations !== 0) throw new Error('a keyless run must make no generation requests');
-            if (report.assignmentProof.passed !== false) {
-              throw new Error('an offline preview must not report assignmentProof.passed');
+            if (report.requirementsProof.passed !== false) {
+              throw new Error('an offline preview must not report requirementsProof.passed');
             }
-            console.log(\`verified \${n} creatives; offline preview correctly reports assignmentProof.passed = false\`);
+            console.log(\`verified \${n} creatives; offline preview correctly reports requirementsProof.passed = false\`);
           "
 
-      # The README's first instruction is `npm run dev`, and the required demo
-      # video exists to help a reviewer set up and run this locally. Until this
+      # The README's first instruction is `npm run dev`, and the demo video
+      # exists to help someone set up and run this locally. Until this
       # job existed nothing proved the local app starts -- src/server.ts had no
       # coverage at all, so a boot failure would have surfaced on the
-      # reviewer's machine rather than here.
+      # user's machine rather than here.
       #
       # It asserts EVERY route the console calls, and says how many that was.
       # It used to check four of them and then print "answered every route the
@@ -137,8 +137,8 @@ jobs:
             || { echo "✗ archive did not produce a readable zip"; exit 1; }
           checked=$((checked + 1)); echo "  ✓ GET  /api/campaigns/:id/archive"
 
-          # Several campaigns as one job, which is the shape the exercise's
-          # client actually has. Two of the briefs here exist to be refused, and
+          # Several campaigns as one job, which is the shape a team launching
+          # hundreds of campaigns a month actually has. Two of the briefs here exist to be refused, and
           # the batch has to keep going and say which gate stopped each.
           BATCH=$(curl -s -X POST "$B/api/batches" -H 'Content-Type: application/json' \
             -d '{"files":["campaign-minimal.yaml","campaign-legal-fail.yaml","campaign-incomplete.yaml"]}' \

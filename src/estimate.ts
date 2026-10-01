@@ -37,9 +37,9 @@ export type CampaignEstimate = {
    * Where the campaign runs, who it is for, and what it is trying to do.
    *
    * The console showed the message and nothing else, so two of the four things
-   * the exercise requires a brief to carry - audience and objective - were
-   * visible only by opening the YAML. They are inputs to the prompt, so a
-   * reviewer reading the generated image has a right to see them next to it.
+   * the schema requires a brief to carry - audience and objective - were
+   * visible only by opening the YAML. They are inputs to the prompt, so anyone
+   * judging the generated image has a right to see them next to it.
    */
   region: string;
   audience: string;

@@ -2,13 +2,13 @@
   {
     "file": "campaign.yaml",
     "label": "Autumn Glow - DACH",
-    "teaches": "The canonical run. One hero reused, one generated. The console opens on the exercise's minimum - 1:1, 9:16, 16:9 in one market - for 6 creatives from 1 model call; select every format and market and the SAME single call yields 24.",
+    "teaches": "The canonical run. One hero reused, one generated. The console opens on the baseline requirements - 1:1, 9:16, 16:9 in one market - for 6 creatives from 1 model call; select every format and market and the SAME single call yields 24.",
     "expect": "24 creatives · 1 generation"
   },
   {
     "file": "campaign-global-launch.yaml",
     "label": "Radiance - global launch",
-    "teaches": "The shape the exercise describes: three products across five markets and four formats. 60 creatives from 2 generations, because one product already has an approved hero and markets multiply output at zero additional model cost.",
+    "teaches": "The shape of a real global launch: three products across five markets and four formats. 60 creatives from 2 generations, because one product already has an approved hero and markets multiply output at zero additional model cost.",
     "expect": "60 creatives · 2 generations"
   },
   {

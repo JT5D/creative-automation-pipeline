@@ -143,7 +143,7 @@ export function CampaignStrip(props: Props) {
       <div className="rail">
         <section className="rail-block">
           <span className="rail-k">Campaign</span>
-          {/* Checkboxes, not a dropdown. The client in this exercise launches
+          {/* Checkboxes, not a dropdown. The target user launches
               hundreds of campaigns a month, and a control that can only hold
               one of them cannot express that. Clicking a name previews that
               brief; the box decides what runs. */}
@@ -169,7 +169,7 @@ export function CampaignStrip(props: Props) {
           </button>
         </section>
 
-        {/* Audience and objective are two of the four things the exercise
+        {/* Audience and objective are two of the four things the schema
             requires a brief to carry, and both were readable only by opening
             the YAML. They are inputs to the prompt, so they belong beside the
             proposition rather than behind Edit source. */}
@@ -253,7 +253,7 @@ export function CampaignStrip(props: Props) {
                 key={f.key}
                 className={selectedFormats.includes(f.key) ? "on" : ""}
                 onClick={() => onToggleFormat(f.key)}
-                title={`${f.width}x${f.height} · ${f.label}${f.required ? " · required by the exercise" : ""}`}
+                title={`${f.width}x${f.height} · ${f.label}${f.required ? " · baseline requirement" : ""}`}
               >
                 {f.key.replace("x", ":")}
               </button>

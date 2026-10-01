@@ -159,10 +159,10 @@ products:
   });
 
   it("refuses two products that would write into the same folder", () => {
-    // "at least two DIFFERENT products" is the exercise's wording, and only the
+    // The products must be different, not merely two of them, and only the
     // count was enforced. Two products sharing an id wrote into one folder and
     // the second overwrote the first: the run reported 8 creatives with 4 files
-    // on disk, every validation green, and the assignment proof passing.
+    // on disk, every validation green, and the requirements proof passing.
     expect(() => parseBrief(briefYaml().replace("- id: product-b", "- id: product-a"))).toThrow(
       /two products share the output folder "product-a"/,
     );
@@ -862,7 +862,7 @@ describe("provider selection", () => {
   });
 
   it("refuses a market the bundled typefaces cannot render", async () => {
-    // Localization is the exercise's bonus and the font files are its honest
+    // Localization is optional and the font files are its honest
     // limit. Japanese has no glyphs in Rubik or Cormorant, so the copy would
     // rasterize as .notdef boxes - and nothing downstream would notice, because
     // the ink check counts opaque pixels and a row of tofu is opaque.
@@ -891,7 +891,7 @@ markets:
   });
 
   it("measures the brand accent in the finished creative, not in the brief", async () => {
-    // The exercise names two brand checks: presence of logo, and use of brand
+    // There are two named brand checks: presence of logo, and use of brand
     // colors. The second was `isHex()` on the brief, which proves a marketer
     // typed a colour and nothing about whether it reached a pixel.
     const report = await runCampaign(parseBrief(briefYaml()), {
@@ -1043,8 +1043,8 @@ describe("checks that can actually fail", () => {
   it("never lets the logo check go absent when a brief names no logo", async () => {
     // The two newest sample brands shipped without a lockup, and this rule
     // returned null for them -- so their creatives reported 16 of 16 checks
-    // passed from a brand suite that had silently dropped the exercise's own
-    // example of a brand check. An absent check reads as a passed check.
+    // passed from a brand suite that had silently dropped the most basic
+    // brand check there is. An absent check reads as a passed check.
     const report = await runCampaign(parseBrief(briefYaml().replace(/^ {2}logoPath:.*$/m, "")), {
       outputRoot: outputs,
       mode: "final",
@@ -1135,7 +1135,7 @@ manualBaseline:
   });
 
   it("catches a logo that loads perfectly but renders nothing", async () => {
-    // The exercise's first named bonus is "presence of logo". This file
+    // The first named brand check is presence of logo. This file
     // decodes, resizes and composites without error -- and is fully
     // transparent, so nothing whatsoever appears in the creative. Measuring
     // Boolean(fileLoaded) reported "Brand logo composited" over it.
@@ -1165,10 +1165,10 @@ manualBaseline:
   });
 
   it("refuses to call a truncated campaign message rendered", async () => {
-    // The exercise is most explicit about this one: the campaign message goes
+    // The requirements are most explicit about this one: the campaign message goes
     // on the post. A headline the compositor cut in half at the legibility
     // floor is not that message, and it used to be a warning -- so the creative
-    // rolled up to "warning" rather than "fail", and assignmentProof stayed
+    // rolled up to "warning" rather than "fail", and requirementsProof stayed
     // green over a requirement it had not met.
     const dir = await mkdtemp(path.join(tmpdir(), "cap-trunc-"));
     const brief = parseBrief(briefYaml());
@@ -1191,7 +1191,7 @@ manualBaseline:
     expect(creative.validation.status).toBe("fail");
 
     // And the proof must say so rather than reporting the ink and stopping.
-    const proof = report.assignmentProof;
+    const proof = report.requirementsProof;
     expect(proof.passed).toBe(false);
     expect(proof.checks.find((c) => c.id === "campaign_message_rasterized")?.passed).toBe(false);
     await rm(dir, { recursive: true, force: true });
@@ -1229,7 +1229,7 @@ describe("end-to-end campaign run", () => {
   it("reuses one hero, generates the other, and writes every channel variant", async () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
-      mode: "final", // bypass cache so the generator is genuinely exercised
+      mode: "final", // bypass cache so the generator genuinely runs
       generator: new FakeApiGenerator(),
     });
 
@@ -1263,8 +1263,7 @@ describe("end-to-end campaign run", () => {
   });
 
   it("measures the headline separately, so CTA ink cannot vouch for it", async () => {
-    // The campaign message is the requirement the exercise is most explicit
-    // about. Measured against the combined text layer, a creative that drew
+    // The campaign message is the most explicit requirement of all. Measured against the combined text layer, a creative that drew
     // only its CTA and disclaimer would pass a check claiming the message is
     // present. These must therefore be two different measurements.
     const dir = await mkdtemp(path.join(tmpdir(), "cap-ink-"));
@@ -1361,7 +1360,7 @@ describe("end-to-end campaign run", () => {
   });
 
   it("refuses to fabricate a missing hero in final mode", async () => {
-    // The exercise requires a real model for a MISSING asset. The offline
+    // A MISSING asset requires a real model. The offline
     // renderer is a setup convenience, so `final` must refuse it outright
     // rather than produce a run that looks compliant and is not.
     const report = await runCampaign(parseBrief(briefYaml()), {
@@ -1377,21 +1376,21 @@ describe("end-to-end campaign run", () => {
 
     expect(report.metrics.heroesPlaceholder).toBe(0);
     expect(report.metrics.liveHeroGenerations).toBe(0);
-    expect(report.assignmentProof.passed).toBe(false);
+    expect(report.requirementsProof.passed).toBe(false);
     expect(
-      report.assignmentProof.checks.find((c) => c.id === "real_genai_demonstrated")?.passed,
+      report.requirementsProof.checks.find((c) => c.id === "real_genai_demonstrated")?.passed,
     ).toBe(false);
   });
 
-  it("proves the exercise's own requirements off the records it produced", async () => {
+  it("proves the baseline requirements off the records it produced", async () => {
     const report = await runCampaign(parseBrief(briefYaml()), {
       outputRoot: outputs,
       mode: "final",
       generator: new FakeApiGenerator(),
     });
 
-    expect(report.assignmentProof.passed).toBe(true);
-    // The three the exercise names, plus the facts that make them meaningful.
+    expect(report.requirementsProof.passed).toBe(true);
+    // The three baseline ratios, plus the facts that make them meaningful.
     for (const id of [
       "minimum_products",
       "required_ratio_1x1",
@@ -1403,7 +1402,7 @@ describe("end-to-end campaign run", () => {
       "no_failed_creative_validation",
       "all_products_produced",
     ]) {
-      expect(report.assignmentProof.checks.find((c) => c.id === id)?.passed).toBe(true);
+      expect(report.requirementsProof.checks.find((c) => c.id === id)?.passed).toBe(true);
     }
   });
 
@@ -1580,7 +1579,7 @@ describe("end-to-end campaign run", () => {
     expect(SLOTS).not.toContain("typography");
   });
 
-  it("cannot prove the assignment when a requested product never got produced", async () => {
+  it("cannot prove the requirements when a requested product never got produced", async () => {
     // The fifth false green this project has found, and the same shape as the
     // other four: the proof measured the products that SURVIVED, so a run that
     // dropped one still counted every ratio as fully covered. A three-product
@@ -1606,7 +1605,7 @@ describe("end-to-end campaign run", () => {
     expect(report.metrics.liveHeroGenerations).toBe(1);
 
     // The checks that would have hidden it, now measured against the brief.
-    const check = (id: string) => report.assignmentProof.checks.find((c) => c.id === id);
+    const check = (id: string) => report.requirementsProof.checks.find((c) => c.id === id);
     expect(check("all_products_produced")?.passed).toBe(false);
     expect(check("all_products_produced")?.message).toBe("2/3 requested products produced");
     for (const ratio of ["1x1", "9x16", "16x9"]) {
@@ -1618,7 +1617,7 @@ describe("end-to-end campaign run", () => {
     // failing because the pipeline broke, only because it is incomplete.
     expect(check("real_genai_demonstrated")?.passed).toBe(true);
     expect(check("no_failed_creative_validation")?.passed).toBe(true);
-    expect(report.assignmentProof.passed).toBe(false);
+    expect(report.requirementsProof.passed).toBe(false);
   });
 
   it("publishes provenance paths that work on another machine", async () => {

@@ -1,7 +1,7 @@
-# The shape the exercise actually describes: one brief, many markets.
+# The shape a real launch takes: one brief, many markets.
 #
-# The client is "launching hundreds of localized social ad campaigns monthly",
-# and the cost argument only becomes obvious at that width. Three products
+# A team launching hundreds of localized social ad campaigns a month is the
+# target user, and the cost argument only becomes obvious at that width. Three products
 # across five markets and four formats is 60 finished creatives from THREE
 # generations, because the model is called once per missing hero and never once
 # per output. Adding the fourth and fifth market cost nothing at all.
